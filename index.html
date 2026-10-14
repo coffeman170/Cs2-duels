@@ -311,8 +311,7 @@
             }
         }
     }
-
-} else if (action.type === 'ARMOR') {
+ else if (action.type === 'ARMOR') {
     const resCT = await animateTrack('trackArmorCT', ARMOR_ITEMS);
     const resT = await animateTrack('trackArmorT', ARMOR_ITEMS);
     armorCTItem = resCT; armorTItem = resT;
