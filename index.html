@@ -41,32 +41,11 @@
             opacity: 0.5;
             cursor: not-allowed !important;
         }
-        @keyframes fall {
-            0% { transform: translateY(-20px) rotate(0deg); opacity: 1; }
-            100% { transform: translateY(100vh) rotate(360deg); opacity: 0; }
-        }
-        .falling-item {
-            position: fixed;
-            top: -30px;
-            font-size: 24px;
-            animation: fall 3s linear infinite;
-            z-index: 999;
-            pointer-events: none;
-        }
     </style>
 </head>
 <body class="p-3 md:p-6 flex flex-col items-center min-h-screen justify-center">
 
-    <!-- МОДАЛЬНОЕ ОКНО ИТОГОВ КНБ (5 СЕКУНД) -->
-    <div id="rpsOverlay" class="fixed inset-0 bg-black/80 flex items-center justify-center z-50 hidden">
-        <div id="rpsOverlayBox" class="p-8 rounded-2xl border-2 text-center space-y-4 max-w-md w-full shadow-2xl transition-all">
-            <h1 id="rpsOverlayTitle" class="text-3xl font-black uppercase"></h1>
-            <p id="rpsOverlayText" class="text-sm font-bold text-slate-200"></p>
-            <div id="rpsOverlayIcons" class="text-4xl"></div>
-        </div>
-    </div>
-
-    <!-- ВЫБОР РЕЖИМА В МЕНЮ -->
+    <!-- ГЛАВНОЕ МЕНЮ -->
     <div id="mainMenu" class="max-w-md w-full bg-slate-900/90 p-8 rounded-2xl border border-slate-800 text-center space-y-6 shadow-2xl">
         <h1 class="text-3xl font-black text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 to-emerald-400 uppercase pt-2">CS2 DUEL CENTER</h1>
         <p class="text-xs text-slate-400">Выберите игровой режим:</p>
@@ -80,70 +59,40 @@
         </div>
     </div>
 
-    <!-- ЭКРАН СОЗДАНИЯ И ВХОДА В ДУЭЛЬ -->
+    <!-- ЭКРАН СОЗДАНИЯ КОМНАТЫ -->
     <div id="csSpinScreen" class="hidden max-w-md w-full bg-slate-900 p-6 rounded-2xl border border-slate-800 space-y-6 shadow-2xl">
         <div class="flex justify-between items-center border-b border-slate-800 pb-4">
             <h2 class="text-cyan-400 text-lg font-black uppercase">⚔️ Тактическая Дуэль</h2>
             <button onclick="backToMenu()" class="px-3 py-1.5 bg-slate-800 hover:bg-slate-700 rounded-lg text-xs font-bold transition">⬅️ В меню</button>
         </div>
-        
         <div class="space-y-4">
             <div>
                 <label class="block text-xs text-slate-400 mb-1">Ваш никнейм:</label>
                 <input type="text" id="usernameInput" value="User" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-3 text-sm text-white focus:outline-none focus:border-cyan-500">
             </div>
-
             <div class="p-4 bg-slate-950 rounded-xl border border-slate-800 space-y-3">
                 <button onclick="createRoom()" class="w-full py-3 bg-cyan-600 hover:bg-cyan-500 rounded-xl font-bold text-sm uppercase transition shadow-lg shadow-cyan-900/30">
                     ➕ Создать комнату
                 </button>
             </div>
-
             <div class="text-center text-xs text-slate-500 font-bold">— ИЛИ —</div>
-
             <div class="p-4 bg-slate-950 rounded-xl border border-slate-800 space-y-3">
                 <input type="text" id="roomCodeInput" placeholder="Код комнаты" class="w-full bg-slate-900 border border-slate-800 rounded-xl px-4 py-2 text-sm text-white text-center uppercase tracking-widest focus:outline-none focus:border-emerald-500">
                 <button onclick="joinRoom('CT')" class="w-full py-3 bg-emerald-600 hover:bg-emerald-500 rounded-xl font-bold text-sm uppercase transition shadow-lg shadow-emerald-900/30">
-                    🔗 Подключиться за CT
+                    🔗 Войти за CT
                 </button>
                 <button onclick="joinRoom('T')" class="w-full py-3 bg-amber-600 hover:bg-amber-500 rounded-xl font-bold text-sm uppercase transition shadow-lg shadow-amber-900/30">
-                    🔗 Подключиться за T
+                    🔗 Войти за T
                 </button>
             </div>
         </div>
     </div>
 
-    <!-- ЛОББИ / МИНИ-ИГРА КНБ -->
-    <div id="lobbyScreen" class="hidden max-w-md w-full bg-slate-900 p-6 rounded-2xl border border-slate-800 space-y-6 shadow-2xl text-center">
-        <h2 class="text-cyan-400 text-lg font-black uppercase">⚔️ Комната: <span id="displayRoomCode" class="text-white"></span></h2>
-        <div id="playersList" class="text-xs text-slate-300 font-bold">Ожидание игроков...</div>
-        
-        <div id="rpsSection" class="space-y-4 pt-4 border-t border-slate-800">
-            <div id="timerDisplay" class="text-sm font-bold text-amber-400">⏱️ Время на выбор: <span id="timeLeft">15</span>с</div>
-            <p class="text-xs text-slate-400">Выберите Камень, Ножницы или Бумагу, чтобы определить сторону:</p>
-            <div class="flex justify-center gap-3">
-                <button onclick="playRPS('Камень')" class="px-4 py-3 bg-slate-800 hover:bg-slate-700 rounded-xl font-bold text-xs transition border border-slate-700">✊ Камень</button>
-                <button onclick="playRPS('Ножницы')" class="px-4 py-3 bg-slate-800 hover:bg-slate-700 rounded-xl font-bold text-xs transition border border-slate-700">✌️ Ножницы</button>
-                <button onclick="playRPS('Бумага')" class="px-4 py-3 bg-slate-800 hover:bg-slate-700 rounded-xl font-bold text-xs transition border border-slate-700">✋ Бумага</button>
-            </div>
-            <div id="rpsStatus" class="text-xs font-bold text-cyan-400"></div>
-            <div id="rpsResult" class="text-sm font-bold text-emerald-400"></div>
-        </div>
-
-        <div id="sideChoiceSection" class="hidden space-y-3 pt-4 border-t border-slate-800">
-            <p class="text-xs text-slate-300">Вы победили! Выберите свою стартовую сторону:</p>
-            <div class="flex gap-3">
-                <button onclick="resolveConflict('CT')" class="flex-1 py-2 bg-blue-600 hover:bg-blue-500 rounded-lg text-xs font-bold uppercase transition">💙 Играть за CT</button>
-                <button onclick="resolveConflict('T')" class="flex-1 py-2 bg-amber-600 hover:bg-amber-500 rounded-lg text-xs font-bold uppercase transition">💛 Играть за T</button>
-            </div>
-        </div>
-    </div>
-
-    <!-- ОСНОВНОЙ ИГРОВОЙ ЭКРАН -->
+    <!-- ИГРОВОЙ ЭКРАН ДУЭЛИ -->
     <div id="gameScreen" class="hidden max-w-4xl w-full space-y-5">
         <div class="bg-slate-900 p-4 rounded-2xl border border-slate-800 flex justify-between items-center shadow-lg">
             <div class="text-sm font-black text-cyan-400 uppercase">⚔️ CS2 DUEL CENTER</div>
-            <div class="text-xs text-slate-400">Комната: <span id="gameRoomCode" class="text-white font-bold"></span> | Ваша сторона: <span id="mySideDisplay" class="font-bold"></span></div>
+            <div class="text-xs text-slate-400">Комната: <span id="gameRoomCode" class="text-white font-bold"></span> | Сторона: <span id="mySideDisplay" class="font-bold"></span></div>
             <button onclick="backToMenu()" class="px-3 py-1 bg-slate-800 hover:bg-slate-700 rounded-lg text-xs font-bold transition">Выйти</button>
         </div>
 
@@ -161,19 +110,16 @@
                         <button id="spinCTBtn" onclick="triggerSpin('CT')" class="spin-btn px-3 py-1 bg-blue-600 hover:bg-blue-500 rounded text-[10px] font-bold uppercase transition">🎲 Крутить оружие</button>
                     </div>
                     <div class="roulette-container h-24"><div class="pointer"></div><div id="trackWeaponCT" class="roulette-track h-full"></div></div>
-                    <div id="slotsCT" class="grid grid-cols-3 gap-2 pt-1">
-                        <div class="h-14 bg-slate-950 rounded-xl border border-slate-800 flex items-center justify-center text-[10px] text-slate-600">Слот 1</div>
-                        <div class="h-14 bg-slate-950 rounded-xl border border-slate-800 flex items-center justify-center text-[10px] text-slate-600">Слот 2</div>
-                        <div class="h-14 bg-slate-950 rounded-xl border border-slate-800 flex items-center justify-center text-[10px] text-slate-600">Слот 3</div>
-                    </div>
+                    <div id="slotsCT" class="grid grid-cols-3 gap-2 pt-1"></div>
                 </div>
                 <!-- Броня -->
                 <div class="space-y-2 pt-2 border-t border-slate-800">
                     <div class="flex justify-between items-center">
-                        <span class="text-xs font-bold text-slate-400">Броня: <span id="resArmorCT" class="text-slate-200">Не куплена</span></span>
-                        <button id="spinArmorCTBtn" onclick="triggerSpin('ARMOR_CT')" class="spin-btn px-3 py-1 bg-slate-800 hover:bg-slate-700 rounded text-[10px] font-bold uppercase transition">🎲 Броня</button>
+                        <span class="text-xs font-bold text-slate-400">Снаряжение брони:</span>
+                        <button id="spinArmorCTBtn" onclick="triggerSpin('ARMOR_CT')" class="spin-btn px-3 py-1 bg-slate-800 hover:bg-slate-700 rounded text-[10px] font-bold uppercase transition">🎲 Крутить броню</button>
                     </div>
                     <div class="roulette-container h-20"><div class="pointer"></div><div id="trackArmorCT" class="roulette-track h-full"></div></div>
+                    <div id="armorSlotCT" class="h-12 bg-slate-950 rounded-xl border border-slate-800 flex items-center justify-center text-xs text-slate-400">Броня не выбрана</div>
                 </div>
             </div>
 
@@ -190,68 +136,25 @@
                         <button id="spinTBtn" onclick="triggerSpin('T')" class="spin-btn px-3 py-1 bg-amber-600 hover:bg-amber-500 rounded text-[10px] font-bold uppercase transition">🎲 Крутить оружие</button>
                     </div>
                     <div class="roulette-container h-24"><div class="pointer"></div><div id="trackWeaponT" class="roulette-track h-full"></div></div>
-                    <div id="slotsT" class="grid grid-cols-3 gap-2 pt-1">
-                        <div class="h-14 bg-slate-950 rounded-xl border border-slate-800 flex items-center justify-center text-[10px] text-slate-600">Слот 1</div>
-                        <div class="h-14 bg-slate-950 rounded-xl border border-slate-800 flex items-center justify-center text-[10px] text-slate-600">Слот 2</div>
-                        <div class="h-14 bg-slate-950 rounded-xl border border-slate-800 flex items-center justify-center text-[10px] text-slate-600">Слот 3</div>
-                    </div>
+                    <div id="slotsT" class="grid grid-cols-3 gap-2 pt-1"></div>
                 </div>
                 <!-- Броня -->
                 <div class="space-y-2 pt-2 border-t border-slate-800">
                     <div class="flex justify-between items-center">
-                        <span class="text-xs font-bold text-slate-400">Броня: <span id="resArmorT" class="text-slate-200">Не куплена</span></span>
-                        <button id="spinArmorTBtn" onclick="triggerSpin('ARMOR_T')" class="spin-btn px-3 py-1 bg-slate-800 hover:bg-slate-700 rounded text-[10px] font-bold uppercase transition">🎲 Броня</button>
+                        <span class="text-xs font-bold text-slate-400">Снаряжение брони:</span>
+                        <button id="spinArmorTBtn" onclick="triggerSpin('ARMOR_T')" class="spin-btn px-3 py-1 bg-slate-800 hover:bg-slate-700 rounded text-[10px] font-bold uppercase transition">🎲 Крутить броню</button>
                     </div>
                     <div class="roulette-container h-20"><div class="pointer"></div><div id="trackArmorT" class="roulette-track h-full"></div></div>
+                    <div id="armorSlotT" class="h-12 bg-slate-950 rounded-xl border border-slate-800 flex items-center justify-center text-xs text-slate-400">Броня не выбрана</div>
                 </div>
             </div>
         </div>
 
-        <!-- УСЛОВИЯ / ЧЕЛЛЕНДЖИ -->
-        <div class="bg-slate-900 p-5 rounded-2xl border border-slate-800 space-y-3">
-            <h3 class="text-xs font-black uppercase text-purple-400">⚖️ Усложнение раунда (Челлендж)</h3>
-            <div class="flex gap-2 flex-wrap">
-                <button onclick="chooseChallengeMode('none')" class="px-3 py-1.5 bg-slate-800 hover:bg-slate-700 border border-slate-600 rounded text-xs font-bold text-white transition">🛡️ Без усложнений</button>
-                <button onclick="chooseChallengeMode('general')" class="px-3 py-1.5 bg-purple-900/60 hover:bg-purple-800 border border-purple-600 rounded text-xs font-bold text-white transition">⚖️ Общее усложнение</button>
-                <button onclick="chooseChallengeMode('individual')" class="px-3 py-1.5 bg-indigo-900/60 hover:bg-indigo-800 border border-indigo-600 rounded text-xs font-bold text-white transition">👥 Каждому своё</button>
-                <button onclick="chooseChallengeMode('random')" class="px-3 py-1.5 bg-pink-900/60 hover:bg-pink-800 border border-pink-600 rounded text-xs font-bold text-white transition">🎲 Рандом</button>
-            </div>
-            <div id="challengeStatusInfo" class="text-[11px] text-slate-400 pt-1">Ожидание выбора обоих игроков...</div>
-
-            <!-- ОБЩАЯ РУЛЕТКА -->
-            <div id="generalChallengeContainer" class="space-y-2">
-                <div class="flex justify-end pt-1">
-                    <button id="spinChallengeBtn" onclick="triggerSpin('CHALLENGE')" class="spin-btn px-4 py-2 bg-purple-600 hover:bg-purple-500 rounded-lg text-xs font-bold uppercase tracking-wider transition">
-                        🎲 Выбить Челлендж
-                    </button>
-                </div>
-                <div class="roulette-container h-24"><div class="pointer"></div><div id="trackChallenge" class="roulette-track h-full"></div></div>
-            </div>
-
-            <!-- РАЗДЕЛЬНЫЕ РУЛЕТКИ ДЛЯ «КАЖДОМУ СВОЁ» -->
-            <div id="individualChallengeContainer" class="hidden grid grid-cols-1 md:grid-cols-2 gap-3 pt-2">
-                <div class="space-y-1">
-                    <div class="flex justify-between items-center pb-1">
-                        <span class="text-xs font-bold text-cyan-400">Челлендж CT: <span id="resChallengeCT" class="text-slate-200">Не выбито</span></span>
-                        <button id="spinChallengeCTBtn" onclick="triggerSpin('CHALLENGE_CT')" class="spin-btn px-3 py-1 bg-cyan-600 hover:bg-cyan-500 rounded text-[10px] font-bold uppercase transition">🎲 Выбить CT</button>
-                    </div>
-                    <div class="roulette-container h-24"><div class="pointer"></div><div id="trackChallengeCT" class="roulette-track h-full"></div></div>
-                </div>
-                <div class="space-y-1">
-                    <div class="flex justify-between items-center pb-1">
-                        <span class="text-xs font-bold text-amber-400">Челлендж T: <span id="resChallengeT" class="text-slate-200">Не выбито</span></span>
-                        <button id="spinChallengeTBtn" onclick="triggerSpin('CHALLENGE_T')" class="spin-btn px-3 py-1 bg-amber-600 hover:bg-amber-500 rounded text-[10px] font-bold uppercase transition">🎲 Выбить T</button>
-                    </div>
-                    <div class="roulette-container h-24"><div class="pointer"></div><div id="trackChallengeT" class="roulette-track h-full"></div></div>
-                </div>
-            </div>
-        </div>
-
-        <!-- SUMMARY И ЛЕНТА СОБЫТИЙ -->
+        <!-- УСЛОВИЯ / ЛЕНТА -->
         <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
             <div class="md:col-span-1 bg-slate-900 p-4 rounded-2xl border border-slate-800 space-y-2">
                 <h4 class="text-xs font-black uppercase text-slate-400">📋 Итоги раунда</h4>
-                <div id="summaryChallenge" class="text-xs text-slate-300 font-bold">Модификатор: Ожидание...</div>
+                <div id="summaryChallenge" class="text-xs text-slate-300 font-bold">Ожидание...</div>
             </div>
             <div class="md:col-span-2 bg-slate-900 p-4 rounded-2xl border border-slate-800 space-y-2">
                 <h4 class="text-xs font-black uppercase text-slate-400">📢 Лента событий</h4>
@@ -262,7 +165,7 @@
         </div>
     </div>
 
-    <!-- ЭКРАН MINI GAME 20$ -->
+    <!-- MINI GAME 20$ -->
     <div id="miniGameScreen" class="hidden max-w-md w-full bg-slate-900 p-6 rounded-2xl border border-slate-800 space-y-6 shadow-2xl text-center">
         <div class="flex justify-between items-center border-b border-slate-800 pb-4">
             <h2 class="text-emerald-400 text-lg font-black uppercase">🎲 Mini Game 20$</h2>
@@ -296,45 +199,34 @@
         let playerSide = '';
         let roomRef = null;
         let isSpinning = false;
-        let timerInterval = null;
 
+        // Реальные цены и названия оружия CS2
         const WEAPONS_CT = [
-            { title: 'M4A1-S | Printstream', price: 120, tag: 'ВИНТОВКА', color: 'border-cyan-500/50 bg-cyan-950/30' },
-            { title: 'USP-S | Cortex', price: 15, tag: 'ПИСТОЛЕТ', color: 'border-blue-500/50 bg-blue-950/30' },
-            { title: 'AWP | Asiimov', price: 150, tag: 'СНАЙПЕРКА', color: 'border-amber-500/50 bg-amber-950/30' },
-            { title: 'Desert Eagle | Printstream', price: 35, tag: 'ПИСТОЛЕТ', color: 'border-purple-500/50 bg-purple-950/30' }
+            { title: 'M4A1-S', price: 2900, color: 'border-cyan-500/50 bg-cyan-950/30' },
+            { title: 'USP-S', price: 200, color: 'border-blue-500/50 bg-blue-950/30' },
+            { title: 'AWP', price: 4750, color: 'border-amber-500/50 bg-amber-950/30' },
+            { title: 'Desert Eagle', price: 700, color: 'border-purple-500/50 bg-purple-950/30' },
+            { title: 'MP9', price: 1250, color: 'border-emerald-500/50 bg-emerald-950/30' }
         ];
 
         const WEAPONS_T = [
-            { title: 'AK-47 | Redline', price: 40, tag: 'ВИНТОВКА', color: 'border-rose-500/50 bg-rose-950/30' },
-            { title: 'Glock-18 | Water Elemental', price: 12, tag: 'ПИСТОЛЕТ', color: 'border-cyan-500/50 bg-cyan-950/30' },
-            { title: 'AWP | Asiimov', price: 150, tag: 'СНАЙПЕРКА', color: 'border-amber-500/50 bg-amber-950/30' },
-            { title: 'Desert Eagle | Printstream', price: 35, tag: 'ПИСТОЛЕТ', color: 'border-purple-500/50 bg-purple-950/30' }
+            { title: 'AK-47', price: 2700, color: 'border-rose-500/50 bg-rose-950/30' },
+            { title: 'Glock-18', price: 200, color: 'border-cyan-500/50 bg-cyan-950/30' },
+            { title: 'AWP', price: 4750, color: 'border-amber-500/50 bg-amber-950/30' },
+            { title: 'Desert Eagle', price: 700, color: 'border-purple-500/50 bg-purple-950/30' },
+            { title: 'Galil AR', price: 1800, color: 'border-emerald-500/50 bg-emerald-950/30' }
         ];
 
+        // 3 варианта брони CS2 с точными ценами
         const ARMOR_ITEMS = [
-            { title: 'Шлем и Броня', price: 65, color: 'border-blue-500/50 bg-blue-950/30' },
-            { title: 'Легкая Броня', price: 35, color: 'border-slate-500/50 bg-slate-950/30' }
+            { title: 'Без брони', price: 0, color: 'border-slate-700 bg-slate-950/30' },
+            { title: 'Броня', price: 650, color: 'border-blue-500/50 bg-blue-950/30' },
+            { title: 'Броня + Шлем', price: 1000, color: 'border-amber-500/50 bg-amber-950/30' }
         ];
-
-        const CHALLENGES = [
-            { title: '🎯 Только хедшоты', desc: 'Урон только в голову', color: 'border-rose-500/50 bg-rose-950/30' },
-            { title: '🔭 Без прицела (No Scope)', desc: 'Запрещено использовать зум', color: 'border-cyan-500/50 bg-cyan-950/30' },
-            { title: '🎛️ Без Ctrl', desc: 'Запрещено приседать (Ctrl)', color: 'border-purple-500/50 bg-purple-950/30' }
-        ];
-
-        const MODE_NAMES = {
-            'none': 'Без усложнений',
-            'general': 'Общее усложнение',
-            'individual': 'Каждому своё',
-            'random': 'Рандом'
-        };
 
         let spinCountCT = 0, spinCountT = 0;
         let itemsCT = [null, null, null], itemsT = [null, null, null];
         let armorCTItem = null, armorTItem = null;
-        let currentChallenge = null, challengeCTItem = null, challengeTItem = null;
-        let activeChallengeMode = 'general';
         let feedList = [];
 
         function openGame(type) {
@@ -348,11 +240,9 @@
 
         function backToMenu() {
             document.getElementById('csSpinScreen').classList.add('hidden');
-            document.getElementById('lobbyScreen').classList.add('hidden');
             document.getElementById('gameScreen').classList.add('hidden');
             document.getElementById('miniGameScreen').classList.add('hidden');
             document.getElementById('mainMenu').classList.remove('hidden');
-            if(timerInterval) clearInterval(timerInterval);
             if (roomRef) {
                 roomRef.off();
                 roomRef = null;
@@ -377,7 +267,7 @@
             };
 
             roomRef.set(roomData).then(() => {
-                showLobby(currentRoomCode, 'Ожидание второго игрока...');
+                showGameScreen(currentRoomCode);
                 listenRoom();
             });
         }
@@ -396,26 +286,13 @@
                     const players = data.players || {};
                     const sides = data.sides || {};
 
-                    if(Object.keys(players).length >= 2 && !players[playerName]) {
-                        alert('Комната заполнена!');
-                        return;
-                    }
-
                     currentRoomCode = code;
                     players[playerName] = true;
-                    
-                    let assignedSide = chosenSide;
-                    const existingSide = Object.values(sides)[0];
-                    if(existingSide) {
-                        assignedSide = existingSide === 'CT' ? 'T' : 'CT';
-                    }
-                    playerSide = assignedSide;
-                    sides[playerName] = assignedSide;
+                    sides[playerName] = chosenSide;
 
                     roomRef.update({ players, sides, status: 'ready' }).then(() => {
-                        showLobby(code, 'Оба игрока в сборе!');
+                        showGameScreen(code);
                         listenRoom();
-                        startRpsTimer(roomRef, Object.keys(players));
                     });
                 } else {
                     alert('Комната не найдена!');
@@ -423,11 +300,12 @@
             });
         }
 
-        function showLobby(code, statusText) {
+        function showGameScreen(code) {
             document.getElementById('csSpinScreen').classList.add('hidden');
-            document.getElementById('lobbyScreen').classList.remove('hidden');
-            document.getElementById('displayRoomCode').innerText = code;
-            document.getElementById('playersList').innerText = statusText;
+            document.getElementById('gameScreen').classList.remove('hidden');
+            document.getElementById('gameRoomCode').innerText = code;
+            document.getElementById('mySideDisplay').innerText = playerSide;
+            document.getElementById('mySideDisplay').className = playerSide === 'CT' ? 'font-bold text-blue-400' : 'font-bold text-amber-400';
         }
 
         function listenRoom() {
@@ -441,27 +319,15 @@
                 itemsT = data.itemsT || [null, null, null];
                 armorCTItem = data.armorCTItem || null;
                 armorTItem = data.armorTItem || null;
-                currentChallenge = data.currentChallenge || null;
-                challengeCTItem = data.challengeCTItem || null;
-                challengeTItem = data.challengeTItem || null;
-                activeChallengeMode = data.activeChallengeMode || 'general';
                 feedList = data.feedList || [];
 
                 const sides = data.sides || {};
                 const players = Object.keys(data.players || {});
 
-                if(players.length === 2) {
-                    document.getElementById('lobbyScreen').classList.add('hidden');
-                    document.getElementById('gameScreen').classList.remove('hidden');
-                    document.getElementById('gameRoomCode').innerText = currentRoomCode;
-                    document.getElementById('mySideDisplay').innerText = playerSide;
-                    document.getElementById('mySideDisplay').className = playerSide === 'CT' ? 'font-bold text-blue-400' : 'font-bold text-amber-400';
-                    
-                    const ctPlayer = players.find(p => sides[p] === 'CT') || '-';
-                    const tPlayer = players.find(p => sides[p] === 'T') || '-';
-                    document.getElementById('playerCTName').innerText = ctPlayer;
-                    document.getElementById('playerTName').innerText = tPlayer;
-                }
+                const ctPlayer = players.find(p => sides[p] === 'CT') || '-';
+                const tPlayer = players.find(p => sides[p] === 'T') || '-';
+                document.getElementById('playerCTName').innerText = ctPlayer;
+                document.getElementById('playerTName').innerText = tPlayer;
 
                 renderState();
                 renderFeed();
@@ -475,84 +341,10 @@
             });
         }
 
-        function playRPS(choice) {
-            if(!roomRef) return;
-            roomRef.child('rps/' + playerName).set(choice);
-            document.getElementById('rpsStatus').innerText = `Вы выбрали: ${choice}. Ожидание оппонента...`;
-
-            roomRef.once('value', snapshot => {
-                const data = snapshot.val() || {};
-                const players = Object.keys(data.players || {});
-                const rpsData = data.rps || {};
-
-                if(players.length === 2 && players.every(p => rpsData[p])) {
-                    const p1 = players[0], p2 = players[1];
-                    const c1 = rpsData[p1], c2 = rpsData[p2];
-                    let winner = p1;
-                    if(c1 !== c2) {
-                        if((c1==='Камень'&&c2==='Ножницы')||(c1==='Ножницы'&&c2==='Бумага')||(c1==='Бумага'&&c2==='Камень')) winner = p1;
-                        else winner = p2;
-                    }
-                    const sides = data.sides || {};
-                    roomRef.child('rpsWinner').set({ winner, sides });
-                }
-            });
-        }
-
-        function startRpsTimer(ref, players) {
-            if (timerInterval) return;
-            let timeLeft = 15;
-            const timerEl = document.getElementById('timeLeft');
-            timerInterval = setInterval(() => {
-                timeLeft--;
-                timerEl.innerText = timeLeft;
-                if(timeLeft <= 0) {
-                    clearInterval(timerInterval);
-                    ref.once('value', snap => {
-                        const data = snap.val() || {};
-                        const rpsChoices = data.rps || {};
-                        const missingPlayer = players.find(p => !rpsChoices[p]);
-                        if (missingPlayer && missingPlayer === playerName) {
-                            const winner = players.find(p => p !== playerName);
-                            ref.child('sides').once('value', sSnap => {
-                                const sides = sSnap.val() || {};
-                                ref.child('rpsWinner').set({ winner, sides });
-                            });
-                        }
-                    });
-                }
-            }, 1000);
-        }
-
-        function resolveConflict(newSide) {
-            roomRef.child('sides').once('value', snap => {
-                const sides = snap.val() || {};
-                const players = Object.keys(sides);
-                const otherPlayer = players.find(p => p !== playerName);
-
-                let updates = {};
-                updates[playerName] = newSide;
-                if(otherPlayer) {
-                    updates[otherPlayer] = newSide === 'CT' ? 'T' : 'CT';
-                }
-
-                roomRef.child('sides').update(updates).then(() => {
-                    roomRef.child('rpsWinner').remove();
-                    roomRef.child('rps').remove();
-                    roomRef.child('timerStarted').remove();
-                });
-            });
-        }
-
-        function chooseChallengeMode(mode) {
-            if(!roomRef) return;
-            roomRef.child('challengeChoices/' + playerName).set({ mode, dice: Math.floor(Math.random() * 10) + 1 });
-        }
-
         function triggerSpin(type) {
             if (isSpinning) return;
-            if(type === 'CT' && playerSide !== 'CT') { alert('Вы играете за Т! Нельзя крутить оружие CT.'); return; }
-            if(type === 'T' && playerSide !== 'T') { alert('Вы играете за CT! Нельзя крутить оружие T.'); return; }
+            if(type === 'CT' && playerSide !== 'CT') { alert('Вы играете за Т!'); return; }
+            if(type === 'T' && playerSide !== 'T') { alert('Вы играете за CT!'); return; }
             if(type === 'ARMOR_CT' && playerSide !== 'CT') { alert('Вы играете за Т!'); return; }
             if(type === 'ARMOR_T' && playerSide !== 'T') { alert('Вы играете за CT!'); return; }
 
@@ -561,36 +353,33 @@
             else if (type === 'T') payload.winner = WEAPONS_T[Math.floor(Math.random() * WEAPONS_T.length)];
             else if (type === 'ARMOR_CT') payload.winnerCT = ARMOR_ITEMS[Math.floor(Math.random() * ARMOR_ITEMS.length)];
             else if (type === 'ARMOR_T') payload.winnerT = ARMOR_ITEMS[Math.floor(Math.random() * ARMOR_ITEMS.length)];
-            else if (type === 'CHALLENGE' || type === 'CHALLENGE_CT' || type === 'CHALLENGE_T') {
-                payload.winner = CHALLENGES[Math.floor(Math.random() * CHALLENGES.length)];
-            }
+
             roomRef.child('action').set(payload);
         }
 
-        function createCard(item, isChallenge = false) {
+        function createCard(item) {
             const div = document.createElement('div');
             div.className = `flex-shrink-0 flex flex-col items-center justify-center p-2 rounded-xl border ${item.color} text-center`;
-            div.style.width = isChallenge ? '200px' : '110px';
-            div.innerHTML = `<div class="text-[11px] font-bold text-white truncate w-full">${item.title}</div>` +
-                            (!isChallenge ? `<div class="text-[10px] text-emerald-400 font-black">$${item.price}</div>` : `<div class="text-[9px] text-slate-400 truncate w-full">${item.desc}</div>`);
+            div.style.width = '110px';
+            div.innerHTML = `<div class="text-xs font-bold text-white truncate w-full">${item.title}</div><div class="text-[10px] text-emerald-400 font-black">$${item.price}</div>`;
             return div;
         }
 
-        function fillTrack(trackId, pool, isChallenge = false) {
+        function fillTrack(trackId, pool) {
             const track = document.getElementById(trackId);
             if(!track) return;
             track.innerHTML = '';
-            for (let i = 0; i < 40; i++) track.appendChild(createCard(pool[i % pool.length], isChallenge));
+            for (let i = 0; i < 40; i++) track.appendChild(createCard(pool[i % pool.length]));
         }
 
-        async function animateTrackWithWinner(trackId, pool, winner, isChallenge = false) {
+        async function animateTrackWithWinner(trackId, pool, winner) {
             return new Promise(resolve => {
                 const track = document.getElementById(trackId);
                 if(!track) return resolve(winner);
                 const targetIdx = 30;
-                track.children[targetIdx].replaceWith(createCard(winner, isChallenge));
-                const cardWidth = isChallenge ? 216 : 120;
-                const offset = (targetIdx * cardWidth) - (track.parentElement.clientWidth / 2) + (cardWidth / 2) + (Math.random() * 40 - 20);
+                track.children[targetIdx].replaceWith(createCard(winner));
+                const cardWidth = 120;
+                const offset = (targetIdx * cardWidth) - (track.parentElement.clientWidth / 2) + (cardWidth / 2) + (Math.random() * 30 - 15);
                 
                 track.style.transition = 'none';
                 track.style.transform = `translateX(0px)`;
@@ -627,25 +416,16 @@
                 feedList.unshift({ player: action.player, title: action.winner.title, price: action.winner.price });
             } else if (action.type === 'ARMOR_CT') {
                 armorCTItem = await animateTrackWithWinner('trackArmorCT', ARMOR_ITEMS, action.winnerCT);
-                feedList.unshift({ player: action.player, title: `Броня CT: ${action.winnerCT.title}`, price: action.winnerCT.price });
+                feedList.unshift({ player: action.player, title: `Снаряжение: ${action.winnerCT.title}`, price: action.winnerCT.price });
             } else if (action.type === 'ARMOR_T') {
                 armorTItem = await animateTrackWithWinner('trackArmorT', ARMOR_ITEMS, action.winnerT);
-                feedList.unshift({ player: action.player, title: `Броня T: ${action.winnerT.title}`, price: action.winnerT.price });
-            } else if (action.type === 'CHALLENGE') {
-                currentChallenge = await animateTrackWithWinner('trackChallenge', CHALLENGES, action.winner, true);
-                feedList.unshift({ player: action.player, title: `Челлендж: ${action.winner.title}`, price: 0 });
-            } else if (action.type === 'CHALLENGE_CT') {
-                challengeCTItem = await animateTrackWithWinner('trackChallengeCT', CHALLENGES, action.winner, true);
-                feedList.unshift({ player: action.player, title: `Челлендж CT: ${action.winner.title}`, price: 0 });
-            } else if (action.type === 'CHALLENGE_T') {
-                challengeTItem = await animateTrackWithWinner('trackChallengeT', CHALLENGES, action.winner, true);
-                feedList.unshift({ player: action.player, title: `Челлендж T: ${action.winner.title}`, price: 0 });
+                feedList.unshift({ player: action.player, title: `Снаряжение: ${action.winnerT.title}`, price: action.winnerT.price });
             }
 
-            if (roomRef && playerName === Object.keys(data => data.players || {})[0]) {
+            if (roomRef) {
                 roomRef.update({
                     spinCountCT, spinCountT, itemsCT, itemsT,
-                    armorCTItem, armorTItem, currentChallenge, challengeCTItem, challengeTItem, feedList
+                    armorCTItem, armorTItem, feedList
                 });
             }
             isSpinning = false;
@@ -663,9 +443,9 @@
                     const div = document.createElement('div');
                     if(item) {
                         div.className = `h-14 rounded-xl border ${item.color} p-1 flex flex-col justify-center text-center`;
-                        div.innerHTML = `<div class="text-[10px] font-bold text-white truncate">${item.title}</div><div class="text-[9px] text-emerald-400 font-bold">$${item.price}</div>`;
+                        div.innerHTML = `<div class="text-xs font-bold text-white truncate">${item.title}</div><div class="text-[10px] text-emerald-400 font-bold">$${item.price}</div>`;
                     } else {
-                        div.className = 'h-14 bg-slate-950 rounded-xl border border-slate-800 flex items-center justify-center text-[10px] text-slate-600';
+                        div.className = 'h-14 bg-slate-950 rounded-xl border border-slate-800 flex items-center justify-center text-xs text-slate-600';
                         div.innerText = `Слот ${i+1}`;
                     }
                     container.appendChild(div);
@@ -674,21 +454,23 @@
             renderSlots(itemsCT, 'slotsCT');
             renderSlots(itemsT, 'slotsT');
 
-            if(armorCTItem) document.getElementById('resArmorCT').innerText = `${armorCTItem.title} ($${armorCTItem.price})`;
-            if(armorTItem) document.getElementById('resArmorT').innerText = `${armorTItem.title} ($${armorTItem.price})`;
-
-            if(activeChallengeMode === 'individual') {
-                document.getElementById('generalChallengeContainer').classList.add('hidden');
-                document.getElementById('individualChallengeContainer').classList.remove('hidden');
-                let strCT = challengeCTItem ? challengeCTItem.title : 'Не выбито';
-                let strT = challengeTItem ? challengeTItem.title : 'Не выбито';
-                document.getElementById('summaryChallenge').innerText = `Модификатор (Каждому своё) -> CT: [${strCT}] | T: [${strT}]`;
+            // Отрисовка слота брони
+            const armorSlotCT = document.getElementById('armorSlotCT');
+            if(armorCTItem) {
+                armorSlotCT.className = `h-12 rounded-xl border ${armorCTItem.color} px-3 flex justify-between items-center text-xs`;
+                armorSlotCT.innerHTML = `<span class="font-bold text-white">${armorCTItem.title}</span><span class="text-emerald-400 font-bold">$${armorCTItem.price}</span>`;
             } else {
-                document.getElementById('generalChallengeContainer').classList.remove('hidden');
-                document.getElementById('individualChallengeContainer').classList.add('hidden');
-                if(currentChallenge) {
-                    document.getElementById('summaryChallenge').innerText = `Модификатор: ${currentChallenge.title} (${currentChallenge.desc})`;
-                }
+                armorSlotCT.className = 'h-12 bg-slate-950 rounded-xl border border-slate-800 flex items-center justify-center text-xs text-slate-600';
+                armorSlotCT.innerText = 'Броня не выбрана';
+            }
+
+            const armorSlotT = document.getElementById('armorSlotT');
+            if(armorTItem) {
+                armorSlotT.className = `h-12 rounded-xl border ${armorTItem.color} px-3 flex justify-between items-center text-xs`;
+                armorSlotT.innerHTML = `<span class="font-bold text-white">${armorTItem.title}</span><span class="text-emerald-400 font-bold">$${armorTItem.price}</span>`;
+            } else {
+                armorSlotT.className = 'h-12 bg-slate-950 rounded-xl border border-slate-800 flex items-center justify-center text-xs text-slate-600';
+                armorSlotT.innerText = 'Броня не выбрана';
             }
         }
 
@@ -730,9 +512,6 @@
         fillTrack('trackWeaponT', WEAPONS_T);
         fillTrack('trackArmorCT', ARMOR_ITEMS);
         fillTrack('trackArmorT', ARMOR_ITEMS);
-        fillTrack('trackChallenge', CHALLENGES, true);
-        fillTrack('trackChallengeCT', CHALLENGES, true);
-        fillTrack('trackChallengeT', CHALLENGES, true);
     </script>
 </body>
 </html>
