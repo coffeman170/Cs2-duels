@@ -150,17 +150,20 @@
             <div class="space-y-3 bg-slate-900/90 p-4 rounded-xl border border-indigo-500/30">
                 <div class="flex justify-between items-center">
                     <span class="font-bold text-indigo-400 text-sm md:text-base">🪖 РУЛЕТКА БРОНИ</span>
-                    <button id="spinArmorBtn" onclick="triggerSpin('ARMOR')" class="spin-btn px-4 py-2 bg-indigo-600 hover:bg-indigo-500 rounded-lg text-xs font-bold uppercase tracking-wider transition">
-                        ⚙️ Крутить Броню (CT + T)
-                    </button>
                 </div>
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
                     <div class="space-y-1">
-                        <div class="text-xs font-semibold text-cyan-400 flex justify-between"><span>Броня CT:</span><span id="resArmorCT" class="text-slate-200">Не выбито</span></div>
+                        <div class="flex justify-between items-center pb-1">
+                            <span class="text-xs font-semibold text-cyan-400">Броня CT: <span id="resArmorCT" class="text-slate-200">Не выбито</span></span>
+                            <button id="spinArmorCTBtn" onclick="triggerSpin('ARMOR_CT')" class="spin-btn px-3 py-1.5 bg-cyan-600 hover:bg-cyan-500 rounded text-[10px] font-bold uppercase transition">⚙️ Крутить Броню CT</button>
+                        </div>
                         <div class="roulette-container h-32"><div class="pointer"></div><div id="trackArmorCT" class="roulette-track h-full"></div></div>
                     </div>
                     <div class="space-y-1">
-                        <div class="text-xs font-semibold text-amber-400 flex justify-between"><span>Броня T:</span><span id="resArmorT" class="text-slate-200">Не выбито</span></div>
+                        <div class="flex justify-between items-center pb-1">
+                            <span class="text-xs font-semibold text-amber-400">Броня T: <span id="resArmorT" class="text-slate-200">Не выбито</span></span>
+                            <button id="spinArmorTBtn" onclick="triggerSpin('ARMOR_T')" class="spin-btn px-3 py-1.5 bg-amber-600 hover:bg-amber-500 rounded text-[10px] font-bold uppercase transition">⚙️ Крутить Броню T</button>
+                        </div>
                         <div class="roulette-container h-32"><div class="pointer"></div><div id="trackArmorT" class="roulette-track h-full"></div></div>
                     </div>
                 </div>
@@ -170,6 +173,22 @@
             <div class="space-y-3 bg-slate-900/90 p-4 rounded-xl border border-purple-500/30">
                 <div class="flex justify-between items-center">
                     <span class="font-bold text-purple-400 text-sm md:text-base">⚠️ УСЛОЖНЕНИЕ РАУНДА</span>
+                </div>
+                
+                <!-- ВЫБОР РЕЖИМА УСЛОЖНЕНИЙ -->
+                <div id="challengeModeSelection" class="bg-slate-950/60 p-3 rounded-lg border border-purple-500/20 space-y-2 text-center">
+                    <div class="text-xs text-purple-300 font-bold">Выберите тип усложнений для раунда:</div>
+                    <div class="flex flex-wrap justify-center gap-2">
+                        <button onclick="chooseChallengeMode('none')" class="px-3 py-1.5 bg-slate-800 hover:bg-slate-700 border border-slate-600 rounded text-xs font-bold text-white transition">🛡️ Без усложнений</button>
+                        <button onclick="chooseChallengeMode('general')" class="px-3 py-1.5 bg-purple-900/60 hover:bg-purple-800 border border-purple-600 rounded text-xs font-bold text-white transition">⚖️ Общее усложнение</button>
+                        <button onclick="chooseChallengeMode('individual')" class="px-3 py-1.5 bg-indigo-900/60 hover:bg-indigo-800 border border-indigo-600 rounded text-xs font-bold text-white transition">👥 Каждому своё</button>
+                        <button onclick="chooseChallengeMode('random')" class="px-3 py-1.5 bg-pink-900/60 hover:bg-pink-800 border border-pink-600 rounded text-xs font-bold text-white transition">🎲 Рандом (25/50/25)</button>
+                    </div>
+                    <div id="challengeStatusInfo" class="text-[11px] text-slate-400 pt-1">Ожидание выбора обоих игроков...</div>
+                </div>
+
+                <!-- КНОПКА КРУТИТЬ И РУЛЕТКА -->
+                <div class="flex justify-end pt-1">
                     <button id="spinChallengeBtn" onclick="triggerSpin('CHALLENGE')" class="spin-btn px-4 py-2 bg-purple-600 hover:bg-purple-500 rounded-lg text-xs font-bold uppercase tracking-wider transition">
                         🎲 Выбить Челлендж
                     </button>
@@ -233,7 +252,11 @@
         const CHALLENGES = [
             { title: '🚫 Без A / D', desc: 'Запрещено нажимать A и D. Только мышь!', color: 'border-purple-500/50 bg-purple-950/30' },
             { title: '⚔️ Без укрытий', desc: 'Только открытая дуэль в лоб.', color: 'border-purple-500/50 bg-purple-950/30' },
-            { title: '🦘 Без прыжков', desc: 'Запрещено прыгать весь раунд', color: 'border-purple-500/50 bg-purple-950/30' }
+            { title: '🦘 Без прыжков', desc: 'Запрещено прыгать весь раунд', color: 'border-purple-500/50 bg-purple-950/30' },
+            { title: '🔇 Без звука', desc: 'Играйте полностью без звука (в наушниках/без наушников)', color: 'border-purple-500/50 bg-purple-950/30' },
+            { title: '🛑 Без Shift', desc: 'Запрещено зажимать Shift (бег на носочках запрещен)', color: 'border-purple-500/50 bg-purple-950/30' },
+            { title: '🎛️ Без Ctrl', desc: 'Запрещено приседать (нажимать Ctrl)', color: 'border-purple-500/50 bg-purple-950/30' },
+            { title: '🔦 Только с ножом / пистолетом', desc: 'Дополнительное ограничение по движению или стрельбе', color: 'border-purple-500/50 bg-purple-950/30' }
         ];
 
         let spinCountCT = 0, spinCountT = 0;
@@ -276,25 +299,26 @@
                     const sides = data.sides || {};
                     const players = Object.keys(data.players || {});
 
-                    // Проверяем конфликт: оба игрока выбрали одну и ту же сторону
                     if (players.length >= 2) {
                         const p1 = players[0], p2 = players[1];
                         if (sides[p1] && sides[p2] && sides[p1] === sides[p2]) {
-                            // Конфликт! Показываем лобби с КНБ
                             document.getElementById('lobbyScreen').classList.remove('hidden');
                             document.getElementById('gameScreen').classList.add('hidden');
                             startRpsTimer(roomRef, players);
                         } else if (sides[playerName]) {
-                            // Стороны разные — сразу в игру!
                             playerSide = sides[playerName];
                             document.getElementById('lobbyScreen').classList.add('hidden');
                             document.getElementById('gameScreen').classList.remove('hidden');
                             if(timerInterval) clearInterval(timerInterval);
                         }
                     } else {
-                        // Ожидание второго игрока
                         document.getElementById('lobbyScreen').classList.remove('hidden');
                         document.getElementById('playersList').innerText = `Ожидание второго игрока в комнате... Вы зашли за ${chosenSide}`;
+                    }
+
+                    // Обновляем статус выбора усложнений
+                    if(data.challengeChoices) {
+                        updateChallengeChoicesUI(data.challengeChoices, players);
                     }
 
                     renderState();
@@ -308,20 +332,60 @@
                     runAnimation(action);
                 }
             });
+        }
 
-            roomRef.child('rpsWinner').on('value', snapshot => {
-                const winner = snapshot.val();
-                if(winner) {
-                    document.getElementById('timerDisplay').classList.add('hidden');
-                    document.getElementById('rpsResult').innerText = winner.includes('Ничья') ? winner : `Победитель мини-игры: ${winner}!`;
-                    if(winner === playerName) {
-                        document.getElementById('sideChoiceSection').classList.remove('hidden');
-                    } else {
-                        document.getElementById('sideChoiceSection').classList.add('hidden');
-                        document.getElementById('rpsResult').innerText += " Ожидание, пока победитель сменит сторону...";
-                    }
-                }
-            });
+        function chooseChallengeMode(mode) {
+            if(!roomRef) return;
+            roomRef.child('challengeChoices/' + playerName).set({ mode, dice: Math.floor(Math.random() * 100) + 1 });
+        }
+
+        function updateChallengeChoicesUI(choices, players) {
+            const statusEl = document.getElementById('challengeStatusInfo');
+            const p1 = players[0], p2 = players[1];
+            if (!p2 || !choices[p1] || !choices[p2]) {
+                statusEl.innerText = "Ожидание выбора усложнения от второго игрока...";
+                return;
+            }
+
+            const c1 = choices[p1].mode;
+            const c2 = choices[p2].mode;
+
+            if (c1 === c2) {
+                statusEl.innerText = `Оба выбрали одинаковый режим (${c1}). Применено!`;
+                applyResolvedChallengeMode(c1, players);
+            } else {
+                statusEl.innerText = `Выборы разлись (${p1}: ${c1} vs ${p2}: ${c2}). Бросаем кубик...`;
+                // Сравниваем кубики
+                setTimeout(() => {
+                    const d1 = choices[p1].dice;
+                    const d2 = choices[p2].dice;
+                    const winner = d1 > d2 ? p1 : (d2 > d1 ? p2 : p1);
+                    const winningMode = choices[winner].mode;
+                    statusEl.innerText = `У ${p1} выпало ${d1}, у ${p2} выпало ${d2}. Победил ${winner}, выбран режим: ${winningMode}`;
+                    applyResolvedChallengeMode(winningMode, players);
+                }, 1000);
+            }
+        }
+
+        function applyResolvedChallengeMode(mode, players) {
+            let finalMode = mode;
+            if(mode === 'random') {
+                // Рандом: 25% none, 50% general, 25% individual
+                const rand = Math.random();
+                if(rand < 0.25) finalMode = 'none';
+                else if(rand < 0.75) finalMode = 'general';
+                else finalMode = 'individual';
+            }
+
+            if(finalMode === 'none') {
+                document.getElementById('summaryChallenge').innerText = "Модификатор: Без усложнений (Чистый раунд)";
+            } else if(finalMode === 'general') {
+                document.getElementById('summaryChallenge').innerText = "Модификатор: Общее усложнение раунда (Крутите рулетку ниже)";
+            } else if(finalMode === 'individual') {
+                const rand1 = CHALLENGES[Math.floor(Math.random() * CHALLENGES.length)].title;
+                const rand2 = CHALLENGES[Math.floor(Math.random() * CHALLENGES.length)].title;
+                document.getElementById('summaryChallenge').innerText = `Модификатор: Каждому своё -> ${players[0]}: [${rand1}] | ${players[1]}: [${rand2}]`;
+            }
         }
 
         function startRpsTimer(ref, players) {
@@ -402,8 +466,9 @@
             if (type === 'CT' || type === 'T') {
                 const pool = type === 'CT' ? WEAPONS_CT : WEAPONS_T;
                 payload.winner = pool[Math.floor(Math.random() * pool.length)];
-            } else if (type === 'ARMOR') {
+            } else if (type === 'ARMOR_CT') {
                 payload.winnerCT = ARMOR_ITEMS[Math.floor(Math.random() * ARMOR_ITEMS.length)];
+            } else if (type === 'ARMOR_T') {
                 payload.winnerT = ARMOR_ITEMS[Math.floor(Math.random() * ARMOR_ITEMS.length)];
             } else if (type === 'CHALLENGE') {
                 payload.winner = CHALLENGES[Math.floor(Math.random() * CHALLENGES.length)];
@@ -486,10 +551,12 @@
                         }
                     }
 
-                } else if (action.type === 'ARMOR') {
+                } else if (action.type === 'ARMOR_CT') {
                     armorCTItem = await animateTrackWithWinner('trackArmorCT', ARMOR_ITEMS, action.winnerCT);
+                    feedList.unshift({ player: action.player, title: `Броня CT: ${action.winnerCT.title}`, price: action.winnerCT.price });
+                } else if (action.type === 'ARMOR_T') {
                     armorTItem = await animateTrackWithWinner('trackArmorT', ARMOR_ITEMS, action.winnerT);
-                    feedList.unshift({ player: action.player, title: `Броня: ${action.winnerCT.title} / ${action.winnerT.title}`, price: action.winnerCT.price + action.winnerT.price });
+                    feedList.unshift({ player: action.player, title: `Броня T: ${action.winnerT.title}`, price: action.winnerT.price });
                 } else if (action.type === 'CHALLENGE') {
                     currentChallenge = await animateTrackWithWinner('trackChallenge', CHALLENGES, action.winner, true);
                     feedList.unshift({ player: action.player, title: `Челлендж: ${action.winner.title}`, price: 0 });
