@@ -58,107 +58,139 @@
 </head>
 <body class="p-3 md:p-6 flex flex-col items-center min-h-screen justify-center">
 
+    <!-- ЛЕНТА ВЫПАВШИХ ПРЕДМЕТОВ СВЕРХУ (CASE BATTLE FEED) -->
+    <div id="caseFeed" class="max-w-4xl w-full bg-slate-900/80 border border-slate-800 rounded-xl p-2 mb-4 flex items-center gap-3 overflow-x-auto h-14 text-xs">
+        <span class="text-slate-500 font-bold whitespace-nowrap">📜 Лента выпадений:</span>
+        <div id="feedItems" class="flex gap-2"></div>
+    </div>
+
     <div class="max-w-4xl w-full space-y-5">
         
         <!-- HEADER -->
         <header class="text-center space-y-1">
             <h1 class="text-2xl md:text-4xl font-black text-cyan-400 tracking-wider uppercase">CS2 DUEL GENERATOR ONLINE</h1>
-            <p class="text-xs text-slate-400">Введите комнату с другом и крутите рулетки вместе в реальном времени!</p>
+            <p class="text-xs text-slate-400">Мультиплеер рулетка с выбором сторон через мини-игру!</p>
         </header>
 
-        <!-- ONLINE ROOM SETUP -->
-        <div class="bg-slate-900/90 p-4 rounded-xl border border-emerald-500/40 flex flex-col md:flex-row gap-3 items-center justify-between">
-            <div class="text-xs space-y-0.5">
-                <div class="font-bold text-emerald-400 uppercase">🌐 Мультиплеер комната</div>
-                <div class="text-slate-400">Введите одинаковый код комнаты с другом:</div>
-            </div>
-            <div class="flex gap-2 w-full md:w-auto">
-                <input id="roomInput" type="text" placeholder="Код (напр. duel77)" class="px-3 py-2 bg-slate-800 border border-slate-700 rounded-lg text-xs font-bold text-white outline-none focus:border-emerald-500 w-full md:w-48" />
-                <button onclick="joinRoom()" class="px-4 py-2 bg-emerald-600 hover:bg-emerald-500 rounded-lg text-xs font-bold uppercase transition">Войти</button>
+        <!-- ЭКРАН ВХОДА И ЛОББИ -->
+        <div id="loginScreen" class="bg-slate-900/90 p-5 rounded-xl border border-emerald-500/40 space-y-4 text-center">
+            <h2 class="text-lg font-bold text-emerald-400">Вход в лобби</h2>
+            <div class="flex flex-col md:flex-row gap-3 justify-center">
+                <input id="usernameInput" type="text" placeholder="Ваше имя (например, Maxim)" class="px-3 py-2 bg-slate-800 border border-slate-700 rounded-lg text-xs font-bold text-white outline-none focus:border-emerald-500" />
+                <input id="roomInput" type="text" placeholder="Код комнаты (например, duel77)" class="px-3 py-2 bg-slate-800 border border-slate-700 rounded-lg text-xs font-bold text-white outline-none focus:border-emerald-500" />
+                <button onclick="joinRoom()" class="px-6 py-2 bg-emerald-600 hover:bg-emerald-500 rounded-lg text-xs font-bold uppercase transition">Войти в лобби</button>
             </div>
         </div>
 
-        <!-- WEAPON CT -->
-        <div class="space-y-2 bg-slate-900/90 p-3 rounded-xl border border-cyan-500/30">
-            <div class="flex justify-between items-center">
-                <span class="font-bold text-cyan-400 text-sm md:text-base">🛡️ ОРУЖИЕ CT</span>
-                <button id="spinBtnCT" onclick="triggerSpin('CT')" class="spin-btn px-4 py-2 bg-cyan-600 hover:bg-cyan-500 rounded-lg text-xs font-bold uppercase tracking-wider transition">
-                    🎰 Крутить Оружие CT (1/3)
-                </button>
-            </div>
+        <!-- ЛОББИ И МИНИ-ИГРА (КАМЕНЬ-НОЖНИЦЫ-БУМАГА) -->
+        <div id="lobbyScreen" class="hidden bg-slate-900/95 p-5 rounded-xl border border-blue-500/40 space-y-4 text-center">
+            <h2 class="text-lg font-bold text-blue-400">Лобби комнаты</h2>
+            <div id="playersList" class="text-xs text-slate-300">Игроки в комнате: ожидание...</div>
             
-            <div class="roulette-container h-32">
-                <div class="pointer"></div>
-                <div id="trackWeaponCT" class="roulette-track h-full"></div>
-            </div>
-
-            <div class="grid grid-cols-3 gap-2 pt-1" id="slotsCT">
-                <div id="slotCT_0" class="item-slot h-16 border border-dashed border-slate-700 rounded-lg flex items-center justify-center text-xs text-slate-500 font-bold">Слот 1</div>
-                <div id="slotCT_1" class="item-slot h-16 border border-dashed border-slate-700 rounded-lg flex items-center justify-center text-xs text-slate-500 font-bold">Слот 2</div>
-                <div id="slotCT_2" class="item-slot h-16 border border-dashed border-slate-700 rounded-lg flex items-center justify-center text-xs text-slate-500 font-bold">Слот 3</div>
-            </div>
-        </div>
-
-        <!-- WEAPON T -->
-        <div class="space-y-2 bg-slate-900/90 p-3 rounded-xl border border-amber-500/30">
-            <div class="flex justify-between items-center">
-                <span class="font-bold text-amber-400 text-sm md:text-base">🔥 ОРУЖИЕ T</span>
-                <button id="spinBtnT" onclick="triggerSpin('T')" class="spin-btn px-4 py-2 bg-amber-600 hover:bg-amber-500 rounded-lg text-xs font-bold uppercase tracking-wider transition">
-                    🎰 Крутить Оружие T (1/3)
-                </button>
-            </div>
-            
-            <div class="roulette-container h-32">
-                <div class="pointer"></div>
-                <div id="trackWeaponT" class="roulette-track h-full"></div>
-            </div>
-
-            <div class="grid grid-cols-3 gap-2 pt-1" id="slotsT">
-                <div id="slotT_0" class="item-slot h-16 border border-dashed border-slate-700 rounded-lg flex items-center justify-center text-xs text-slate-500 font-bold">Слот 1</div>
-                <div id="slotT_1" class="item-slot h-16 border border-dashed border-slate-700 rounded-lg flex items-center justify-center text-xs text-slate-500 font-bold">Слот 2</div>
-                <div id="slotT_2" class="item-slot h-16 border border-dashed border-slate-700 rounded-lg flex items-center justify-center text-xs text-slate-500 font-bold">Слот 3</div>
-            </div>
-        </div>
-
-        <!-- ARMOR SECTION -->
-        <div class="space-y-3 bg-slate-900/90 p-4 rounded-xl border border-indigo-500/30">
-            <div class="flex justify-between items-center">
-                <span class="font-bold text-indigo-400 text-sm md:text-base">🪖 РУЛЕТКА БРОНИ</span>
-                <button id="spinArmorBtn" onclick="triggerSpin('ARMOR')" class="spin-btn px-4 py-2 bg-indigo-600 hover:bg-indigo-500 rounded-lg text-xs font-bold uppercase tracking-wider transition">
-                    ⚙️ Крутить Броню (CT + T)
-                </button>
-            </div>
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
-                <div class="space-y-1">
-                    <div class="text-xs font-semibold text-cyan-400 flex justify-between"><span>Броня CT:</span><span id="resArmorCT" class="text-slate-200">Не выбито</span></div>
-                    <div class="roulette-container h-32"><div class="pointer"></div><div id="trackArmorCT" class="roulette-track h-full"></div></div>
+            <div id="rpsSection" class="border-t border-slate-800 pt-4 space-y-3">
+                <div class="text-xs text-yellow-400 font-bold">Мини-игра: Камень, Ножницы, Бумага (Победитель выбирает сторону!)</div>
+                <div id="rpsStatus" class="text-xs text-slate-400">Выберите жест:</div>
+                <div class="flex justify-center gap-3">
+                    <button onclick="playRPS('Камень')" class="px-4 py-2 bg-slate-800 hover:bg-slate-700 border border-slate-700 rounded text-xs font-bold">✊ Камень</button>
+                    <button onclick="playRPS('Ножницы')" class="px-4 py-2 bg-slate-800 hover:bg-slate-700 border border-slate-700 rounded text-xs font-bold">✌️ Ножницы</button>
+                    <button onclick="playRPS('Бумага')" class="px-4 py-2 bg-slate-800 hover:bg-slate-700 border border-slate-700 rounded text-xs font-bold">🖐️ Бумага</button>
                 </div>
-                <div class="space-y-1">
-                    <div class="text-xs font-semibold text-amber-400 flex justify-between"><span>Броня T:</span><span id="resArmorT" class="text-slate-200">Не выбито</span></div>
-                    <div class="roulette-container h-32"><div class="pointer"></div><div id="trackArmorT" class="roulette-track h-full"></div></div>
+                <div id="rpsResult" class="text-xs font-bold text-cyan-300"></div>
+            </div>
+
+            <!-- ВЫБОР СТОРОНЫ ДЛЯ ПОБЕДИТЕЛЯ -->
+            <div id="sideChoiceSection" class="hidden border-t border-slate-800 pt-4 space-y-3">
+                <div class="text-xs text-emerald-400 font-bold">Вы победили в мини-игре! Выберите свою сторону:</div>
+                <div class="flex justify-center gap-4">
+                    <button onclick="chooseSide('CT')" class="px-6 py-2 bg-cyan-600 hover:bg-cyan-500 rounded text-xs font-bold uppercase">Защита (CT)</button>
+                    <button onclick="chooseSide('T')" class="px-6 py-2 bg-amber-600 hover:bg-amber-500 rounded text-xs font-bold uppercase">Атака (T)</button>
                 </div>
             </div>
+            <div id="currentSideInfo" class="text-xs font-bold text-slate-400"></div>
         </div>
 
-        <!-- CHALLENGE SECTION -->
-        <div class="space-y-3 bg-slate-900/90 p-4 rounded-xl border border-purple-500/30">
-            <div class="flex justify-between items-center">
-                <span class="font-bold text-purple-400 text-sm md:text-base">⚠️ УСЛОЖНЕНИЕ РАУНДА</span>
-                <button id="spinChallengeBtn" onclick="triggerSpin('CHALLENGE')" class="spin-btn px-4 py-2 bg-purple-600 hover:bg-purple-500 rounded-lg text-xs font-bold uppercase tracking-wider transition">
-                    🎲 Выбить Челлендж
-                </button>
+        <!-- ОСНОВНОЙ ИГРОВОЙ ИНТЕРФЕЙС -->
+        <div id="gameScreen" class="hidden space-y-5">
+            
+            <!-- WEAPON CT -->
+            <div class="space-y-2 bg-slate-900/90 p-3 rounded-xl border border-cyan-500/30">
+                <div class="flex justify-between items-center">
+                    <span class="font-bold text-cyan-400 text-sm md:text-base">🛡️ ОРУЖИЕ CT</span>
+                    <button id="spinBtnCT" onclick="triggerSpin('CT')" class="spin-btn px-4 py-2 bg-cyan-600 hover:bg-cyan-500 rounded-lg text-xs font-bold uppercase tracking-wider transition">
+                        🎰 Крутить Оружие CT (1/3)
+                    </button>
+                </div>
+                <div class="roulette-container h-32">
+                    <div class="pointer"></div>
+                    <div id="trackWeaponCT" class="roulette-track h-full"></div>
+                </div>
+                <div class="grid grid-cols-3 gap-2 pt-1" id="slotsCT">
+                    <div id="slotCT_0" class="item-slot h-16 border border-dashed border-slate-700 rounded-lg flex items-center justify-center text-xs text-slate-500 font-bold">Слот 1</div>
+                    <div id="slotCT_1" class="item-slot h-16 border border-dashed border-slate-700 rounded-lg flex items-center justify-center text-xs text-slate-500 font-bold">Слот 2</div>
+                    <div id="slotCT_2" class="item-slot h-16 border border-dashed border-slate-700 rounded-lg flex items-center justify-center text-xs text-slate-500 font-bold">Слот 3</div>
+                </div>
             </div>
-            <div class="roulette-container h-24"><div class="pointer"></div><div id="trackChallenge" class="roulette-track h-full"></div></div>
-        </div>
 
-        <!-- SUMMARY -->
-        <div class="bg-slate-900 p-4 rounded-xl border border-slate-800 text-center space-y-3">
-            <div class="text-xs font-bold text-slate-400 uppercase tracking-widest">ФИНАЛЬНЫЙ ВЫБОР ДУЭЛИ</div>
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-3 text-xs md:text-sm font-bold">
-                <div id="summaryCT" class="p-3 bg-slate-900 rounded-xl border border-cyan-500/40 text-cyan-400 flex items-center justify-center text-center">CT: Выберите оружие</div>
-                <div id="summaryT" class="p-3 bg-slate-900 rounded-xl border border-amber-500/40 text-amber-300 flex items-center justify-center text-center">T: Выберите оружие</div>
+            <!-- WEAPON T -->
+            <div class="space-y-2 bg-slate-900/90 p-3 rounded-xl border border-amber-500/30">
+                <div class="flex justify-between items-center">
+                    <span class="font-bold text-amber-400 text-sm md:text-base">🔥 ОРУЖИЕ T</span>
+                    <button id="spinBtnT" onclick="triggerSpin('T')" class="spin-btn px-4 py-2 bg-amber-600 hover:bg-amber-500 rounded-lg text-xs font-bold uppercase tracking-wider transition">
+                        🎰 Крутить Оружие T (1/3)
+                    </button>
+                </div>
+                <div class="roulette-container h-32">
+                    <div class="pointer"></div>
+                    <div id="trackWeaponT" class="roulette-track h-full"></div>
+                </div>
+                <div class="grid grid-cols-3 gap-2 pt-1" id="slotsT">
+                    <div id="slotT_0" class="item-slot h-16 border border-dashed border-slate-700 rounded-lg flex items-center justify-center text-xs text-slate-500 font-bold">Слот 1</div>
+                    <div id="slotT_1" class="item-slot h-16 border border-dashed border-slate-700 rounded-lg flex items-center justify-center text-xs text-slate-500 font-bold">Слот 2</div>
+                    <div id="slotT_2" class="item-slot h-16 border border-dashed border-slate-700 rounded-lg flex items-center justify-center text-xs text-slate-500 font-bold">Слот 3</div>
+                </div>
             </div>
-            <div id="summaryChallenge" class="p-2.5 bg-purple-950/40 rounded-lg border border-purple-500/40 text-purple-300 font-bold text-xs md:text-sm">Модификатор: Обычный бой</div>
+
+            <!-- ARMOR SECTION -->
+            <div class="space-y-3 bg-slate-900/90 p-4 rounded-xl border border-indigo-500/30">
+                <div class="flex justify-between items-center">
+                    <span class="font-bold text-indigo-400 text-sm md:text-base">🪖 РУЛЕТКА БРОНИ</span>
+                    <button id="spinArmorBtn" onclick="triggerSpin('ARMOR')" class="spin-btn px-4 py-2 bg-indigo-600 hover:bg-indigo-500 rounded-lg text-xs font-bold uppercase tracking-wider transition">
+                        ⚙️ Крутить Броню (CT + T)
+                    </button>
+                </div>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+                    <div class="space-y-1">
+                        <div class="text-xs font-semibold text-cyan-400 flex justify-between"><span>Броня CT:</span><span id="resArmorCT" class="text-slate-200">Не выбито</span></div>
+                        <div class="roulette-container h-32"><div class="pointer"></div><div id="trackArmorCT" class="roulette-track h-full"></div></div>
+                    </div>
+                    <div class="space-y-1">
+                        <div class="text-xs font-semibold text-amber-400 flex justify-between"><span>Броня T:</span><span id="resArmorT" class="text-slate-200">Не выбито</span></div>
+                        <div class="roulette-container h-32"><div class="pointer"></div><div id="trackArmorT" class="roulette-track h-full"></div></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- CHALLENGE SECTION -->
+            <div class="space-y-3 bg-slate-900/90 p-4 rounded-xl border border-purple-500/30">
+                <div class="flex justify-between items-center">
+                    <span class="font-bold text-purple-400 text-sm md:text-base">⚠️ УСЛОЖНЕНИЕ РАУНДА</span>
+                    <button id="spinChallengeBtn" onclick="triggerSpin('CHALLENGE')" class="spin-btn px-4 py-2 bg-purple-600 hover:bg-purple-500 rounded-lg text-xs font-bold uppercase tracking-wider transition">
+                        🎲 Выбить Челлендж
+                    </button>
+                </div>
+                <div class="roulette-container h-24"><div class="pointer"></div><div id="trackChallenge" class="roulette-track h-full"></div></div>
+            </div>
+
+            <!-- SUMMARY -->
+            <div class="bg-slate-900 p-4 rounded-xl border border-slate-800 text-center space-y-3">
+                <div class="text-xs font-bold text-slate-400 uppercase tracking-widest">ФИНАЛЬНЫЙ ВЫБОР ДУЭЛИ</div>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-3 text-xs md:text-sm font-bold">
+                    <div id="summaryCT" class="p-3 bg-slate-900 rounded-xl border border-cyan-500/40 text-cyan-400 flex items-center justify-center text-center">CT: Выберите оружие</div>
+                    <div id="summaryT" class="p-3 bg-slate-900 rounded-xl border border-amber-500/40 text-amber-300 flex items-center justify-center text-center">T: Выберите оружие</div>
+                </div>
+                <div id="summaryChallenge" class="p-2.5 bg-purple-950/40 rounded-lg border border-purple-500/40 text-purple-300 font-bold text-xs md:text-sm">Модификатор: Обычный бой</div>
+            </div>
+
         </div>
 
     </div>
@@ -168,9 +200,10 @@
         firebase.initializeApp(firebaseConfig);
         const db = firebase.database();
         let roomRef = null;
+        let playerName = "";
+        let playerSide = null; // 'CT' или 'T' или null если наблюдатель/не выбрал
         let isSpinning = false;
 
-        // SVG ICONS
         const svgAK = `<svg class="w-16 h-10 my-auto" viewBox="0 0 100 40" fill="none"><path d="M5 18 L25 18 L28 12 L38 12 L40 18 L82 18 L88 20 L82 22 L40 22 L36 32 L30 32 L34 22 L20 22 L15 30 L8 30 L12 20 Z" fill="#78350f" stroke="#d97706" stroke-width="0.8"/><rect x="38" y="15" width="28" height="6" fill="#1e293b" stroke="#94a3b8" stroke-width="0.8"/><line x1="82" y1="19" x2="96" y2="19" stroke="#cbd5e1" stroke-width="2.5"/></svg>`;
         const svgM4A4 = `<svg class="w-16 h-10 my-auto" viewBox="0 0 100 40" fill="none"><path d="M5 18 L22 18 L25 14 L42 14 L44 18 L80 18 L84 20 L80 22 L42 22 L38 32 L32 32 L36 22 L22 22 L18 28 L10 28 L14 20 Z" fill="#0f172a" stroke="#f97316" stroke-width="1"/><line x1="80" y1="19.5" x2="94" y2="19.5" stroke="#94a3b8" stroke-width="3"/></svg>`;
         const svgAWP = `<svg class="w-16 h-10 my-auto" viewBox="0 0 100 40" fill="none"><path d="M2 20 L20 20 L26 15 L48 15 L52 20 L82 20 L85 21 L82 23 L50 23 L44 32 L38 32 L42 23 L18 23 L12 28 L4 28 L8 21 Z" fill="#064e3b" stroke="#34d399" stroke-width="1"/><line x1="82" y1="21.5" x2="98" y2="21.5" stroke="#cbd5e1" stroke-width="3"/></svg>`;
@@ -210,12 +243,27 @@
         let itemsCT = [null, null, null], itemsT = [null, null, null];
         let selectedCTIndexes = [], selectedTIndexes = [];
         let armorCTItem = null, armorTItem = null, currentChallenge = null;
+        let feedList = [];
 
         function joinRoom() {
-            const input = document.getElementById('roomInput').value.trim();
-            if(!input) return alert('Введите код комнаты!');
-            roomRef = db.ref('rooms/' + input);
+            const name = document.getElementById('usernameInput').value.trim();
+            const room = document.getElementById('roomInput').value.trim();
+            if(!name || !room) return alert('Введите имя и код комнаты!');
+            playerName = name;
+            roomRef = db.ref('rooms/' + room);
+
+            // Регистрируем игрока в комнате
+            roomRef.child('players/' + playerName).set(true);
             
+            // Удаляем при закрытии
+            window.addEventListener('beforeunload', () => {
+                roomRef.child('players/' + playerName).remove();
+            });
+
+            document.getElementById('loginScreen').classList.add('hidden');
+            document.getElementById('lobbyScreen').classList.remove('hidden');
+
+            // Слушаем состояние комнаты
             roomRef.on('value', (snapshot) => {
                 const data = snapshot.val();
                 if (data) {
@@ -228,25 +276,98 @@
                     armorCTItem = data.armorCTItem || null;
                     armorTItem = data.armorTItem || null;
                     currentChallenge = data.currentChallenge || null;
+                    feedList = data.feedList || [];
+
+                    // Проверяем игроков
+                    const players = data.players ? Object.keys(data.players) : [];
+                    document.getElementById('playersList').innerText = `Игроки в комнате: ${players.join(', ')}`;
+
+                    // Проверяем стороны
+                    const sides = data.sides || {};
+                    if(sides[playerName]) {
+                        playerSide = sides[playerName];
+                        document.getElementById('currentSideInfo').innerText = `Ваша сторона: ${playerSide === 'CT' ? 'Counter-Terrorists (CT)' : 'Terrorists (T)'}`;
+                        document.getElementById('lobbyScreen').classList.add('hidden');
+                        document.getElementById('gameScreen').classList.remove('hidden');
+                    }
+
                     renderState();
+                    renderFeed();
                 }
             });
 
-            // Слушаем новые действия прокрутки из базы
             roomRef.child('action').on('value', (snapshot) => {
                 const action = snapshot.val();
                 if (action && !isSpinning) {
                     runAnimation(action);
                 }
             });
+        }
 
-            alert(`Подключено к комнате: ${input}`);
+        // Логика мини-игры Камень-Ножницы-Бумага
+        function playRPS(choice) {
+            if(!roomRef) return;
+            roomRef.child('rps/' + playerName).set(choice);
+            document.getElementById('rpsStatus').innerText = `Вы выбрали: ${choice}. Ожидание оппонента...`;
+
+            roomRef.child('rps').once('value', snapshot => {
+                const rpsData = snapshot.val() || {};
+                const players = Object.keys(rpsData);
+                if(players.length >= 2) {
+                    const p1 = players[0], p2 = players[1];
+                    const c1 = rpsData[p1], c2 = rpsData[p2];
+                    let winner = null;
+                    if(c1 === c2) winner = "Ничья! Переиграйте.";
+                    else if((c1==='Камень'&&c2==='Ножницы')||(c1==='Ножницы'&&c2==='Бумага')||(c1==='Бумага'&&c2==='Камень')) winner = p1;
+                    else winner = p2;
+
+                    roomRef.child('rpsWinner').set(winner);
+                }
+            });
+        }
+
+        // Слушаем результат КНБ
+        setTimeout(() => {
+            if(!roomRef) return;
+            roomRef.child('rpsWinner').on('value', snapshot => {
+                const winner = snapshot.val();
+                if(winner) {
+                    document.getElementById('rpsResult').innerText = winner.includes('Ничья') ? winner : `Победитель мини-игры: ${winner}!`;
+                    if(winner === playerName) {
+                        document.getElementById('sideChoiceSection').classList.remove('hidden');
+                    }
+                }
+            });
+        }, 1000);
+
+        function chooseSide(side) {
+            // Назначаем стороны
+            roomRef.child('sides').once('value', snapshot => {
+                const sides = snapshot.val() || {};
+                const assignedSides = Object.values(sides);
+                const otherPlayer = assignedSides.length > 0 ? Object.keys(sides)[0] : null;
+
+                let updates = {};
+                updates[playerName] = side;
+                if(otherPlayer && otherPlayer !== playerName) {
+                    updates[otherPlayer] = side === 'CT' ? 'T' : 'CT';
+                }
+                roomRef.child('sides').update(updates);
+            });
         }
 
         function triggerSpin(type) {
             if (isSpinning) return;
             
-            let payload = { type, timestamp: Date.now() };
+            // Проверка: может ли игрок крутить эту сторону
+            if((type === 'CT' && playerSide !== 'CT') || (type === 'T' && playerSide !== 'T')) {
+                if(type === 'CT' || type === 'T') {
+                    alert('Вы можете крутить рулетку только за свою выбранную сторону!');
+                    return;
+                }
+            }
+
+            let payload = { type, player: playerName, timestamp: Date.now() };
             if (type === 'CT' || type === 'T') {
                 const pool = type === 'CT' ? WEAPONS_CT : WEAPONS_T;
                 payload.winner = pool[Math.floor(Math.random() * pool.length)];
@@ -257,11 +378,7 @@
                 payload.winner = CHALLENGES[Math.floor(Math.random() * CHALLENGES.length)];
             }
 
-            if(roomRef) {
-                roomRef.child('action').set(payload);
-            } else {
-                runAnimation(payload);
-            }
+            roomRef.child('action').set(payload);
         }
 
         function setButtonsDisabled(state) {
@@ -311,7 +428,6 @@
                     const pool = side === 'CT' ? WEAPONS_CT : WEAPONS_T;
                     await animateTrackWithWinner(`trackWeapon${side}`, pool, action.winner);
 
-                    // Меняем локальное состояние строго после прокрутки
                     let count = side === 'CT' ? spinCountCT : spinCountT;
                     if(count >= 3) {
                         count = 0;
@@ -323,7 +439,10 @@
                     count++;
                     if(side==='CT') spinCountCT = count; else spinCountT = count;
 
-                    // Логика исключения винтовка/снайперка
+                    // Добавляем в ленту выпадений (Case Battle Feed)
+                    feedList.unshift({ player: action.player, title: action.winner.title, price: action.winner.price });
+                    if(feedList.length > 15) feedList.pop();
+
                     const currentItems = (side === 'CT') ? itemsCT : itemsT;
                     const hasRifle = currentItems.some(i => i && i.tag === 'ВИНТОВКА');
                     const hasSniper = currentItems.some(i => i && i.tag === 'СНАЙПЕРКА');
@@ -340,24 +459,38 @@
                 } else if (action.type === 'ARMOR') {
                     armorCTItem = await animateTrackWithWinner('trackArmorCT', ARMOR_ITEMS, action.winnerCT);
                     armorTItem = await animateTrackWithWinner('trackArmorT', ARMOR_ITEMS, action.winnerT);
+                    feedList.unshift({ player: action.player, title: `Броня: ${action.winnerCT.title} / ${action.winnerT.title}`, price: action.winnerCT.price + action.winnerT.price });
                 } else if (action.type === 'CHALLENGE') {
                     currentChallenge = await animateTrackWithWinner('trackChallenge', CHALLENGES, action.winner, true);
+                    feedList.unshift({ player: action.player, title: `Челлендж: ${action.winner.title}`, price: 0 });
                 }
 
-                // Сохраняем в базу (если хост) либо просто обновляем интерфейс
                 if (roomRef) {
                     roomRef.update({
                         spinCountCT, spinCountT,
                         itemsCT, itemsT,
                         selectedCTIndexes, selectedTIndexes,
                         armorCTItem, armorTItem,
-                        currentChallenge
+                        currentChallenge,
+                        feedList
                     });
                 }
                 renderState();
+                renderFeed();
             } finally {
                 setButtonsDisabled(false);
             }
+        }
+
+        function renderFeed() {
+            const feedContainer = document.getElementById('feedItems');
+            feedContainer.innerHTML = feedList.map(f => `
+                <div class="bg-slate-800 px-2 py-1 rounded border border-slate-700 flex items-center gap-1 whitespace-nowrap">
+                    <span class="text-cyan-400 font-bold">${f.player}:</span>
+                    <span class="text-white">${f.title}</span>
+                    <span class="text-emerald-400">($${f.price})</span>
+                </div>
+            `).join('');
         }
 
         function renderState() {
