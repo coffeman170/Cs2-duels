@@ -309,16 +309,19 @@
                 slotToClear.className = "item-slot h-16 border border-dashed border-slate-700 rounded-lg flex items-center justify-center text-xs text-slate-500 font-bold";
                 slotToClear.onclick = null;
             }
-        }
     }
- else if (action.type === 'ARMOR') {
+}
+
+else if (action.type === 'ARMOR') {
     const resCT = await animateTrack('trackArmorCT', ARMOR_ITEMS);
     const resT = await animateTrack('trackArmorT', ARMOR_ITEMS);
     armorCTItem = resCT; armorTItem = resT;
     document.getElementById('resArmorCT').innerText = ${resCT.title} (${resCT.price});
     document.getElementById('resArmorT').innerText = ${resT.title} (${resT.price});
-    updateSummary();
-} else if (action.type === 'CHALLENGE') {
+updateSummary();
+}
+
+else if (action.type === 'CHALLENGE') {
     const winner = await animateTrack('trackChallenge', CHALLENGES, true);
     currentChallenge = winner;
     document.getElementById('summaryChallenge').innerText = Модификатор: ${winner.title} (${winner.desc});
