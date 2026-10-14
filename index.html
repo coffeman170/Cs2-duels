@@ -219,7 +219,6 @@
             roomRef.on('value', (snapshot) => {
                 const data = snapshot.val();
                 if (data) {
-                    // Восстанавливаем полное состояние из базы данных
                     spinCountCT = data.spinCountCT || 0;
                     spinCountT = data.spinCountT || 0;
                     itemsCT = data.itemsCT || [null, null, null];
@@ -229,32 +228,25 @@
                     armorCTItem = data.armorCTItem || null;
                     armorTItem = data.armorTItem || null;
                     currentChallenge = data.currentChallenge || null;
-
                     renderState();
-
-                    // Если в базе есть активное действие прокрутки — запускаем анимацию
-                    if (data.action) {
-                        animateAction(data.action);
-                    }
                 }
             });
-            alert(`Подключено к комнате: ${input}`);
-        }
 
-        function saveStateToFirebase() {
-            if (!roomRef) return;
-            roomRef.update({
-                spinCountCT, spinCountT,
-                itemsCT, itemsT,
-                selectedCTIndexes, selectedTIndexes,
-                armorCTItem, armorTItem,
-                currentChallenge
+            // Слушаем новые действия прокрутки из базы
+            roomRef.child('action').on('value', (snapshot) => {
+                const action = snapshot.val();
+                if (action && !isSpinning) {
+                    runAnimation(action);
+                }
             });
+
+            alert(`Подключено к комнате: ${input}`);
         }
 
         function triggerSpin(type) {
             if (isSpinning) return;
-            let payload = { type };
+            
+            let payload = { type, timestamp: Date.now() };
             if (type === 'CT' || type === 'T') {
                 const pool = type === 'CT' ? WEAPONS_CT : WEAPONS_T;
                 payload.winner = pool[Math.floor(Math.random() * pool.length)];
@@ -268,7 +260,7 @@
             if(roomRef) {
                 roomRef.child('action').set(payload);
             } else {
-                executeActionLocally(payload);
+                runAnimation(payload);
             }
         }
 
@@ -311,42 +303,27 @@
             });
         }
 
-        async function animateAction(action) {
+        async function runAnimation(action) {
             setButtonsDisabled(true);
             try {
                 if (action.type === 'CT' || action.type === 'T') {
                     const side = action.type;
                     const pool = side === 'CT' ? WEAPONS_CT : WEAPONS_T;
                     await animateTrackWithWinner(`trackWeapon${side}`, pool, action.winner);
-                } else if (action.type === 'ARMOR') {
-                    await animateTrackWithWinner('trackArmorCT', ARMOR_ITEMS, action.winnerCT);
-                    await animateTrackWithWinner('trackArmorT', ARMOR_ITEMS, action.winnerT);
-                } else if (action.type === 'CHALLENGE') {
-                    await animateTrackWithWinner('trackChallenge', CHALLENGES, action.winner, true);
-                }
-            } finally {
-                setButtonsDisabled(false);
-            }
-        }
 
-        async function executeActionLocally(action) {
-            setButtonsDisabled(true);
-            try {
-                if (action.type === 'CT' || action.type === 'T') {
-                    const side = action.type;
+                    // Меняем локальное состояние строго после прокрутки
                     let count = side === 'CT' ? spinCountCT : spinCountT;
                     if(count >= 3) {
                         count = 0;
                         if(side==='CT') { spinCountCT=0; itemsCT=[null,null,null]; selectedCTIndexes=[]; }
                         else { spinCountT=0; itemsT=[null,null,null]; selectedTIndexes=[]; }
                     }
-                    const pool = side === 'CT' ? WEAPONS_CT : WEAPONS_T;
-                    const item = await animateTrackWithWinner(`trackWeapon${side}`, pool, action.winner);
-                    
-                    if(side==='CT') itemsCT[count] = item; else itemsT[count] = item;
+
+                    if(side==='CT') itemsCT[count] = action.winner; else itemsT[count] = action.winner;
                     count++;
                     if(side==='CT') spinCountCT = count; else spinCountT = count;
 
+                    // Логика исключения винтовка/снайперка
                     const currentItems = (side === 'CT') ? itemsCT : itemsT;
                     const hasRifle = currentItems.some(i => i && i.tag === 'ВИНТОВКА');
                     const hasSniper = currentItems.some(i => i && i.tag === 'СНАЙПЕРКА');
@@ -359,22 +336,31 @@
                             if(selIdx !== -1) sel.splice(selIdx, 1);
                         }
                     }
+
                 } else if (action.type === 'ARMOR') {
                     armorCTItem = await animateTrackWithWinner('trackArmorCT', ARMOR_ITEMS, action.winnerCT);
                     armorTItem = await animateTrackWithWinner('trackArmorT', ARMOR_ITEMS, action.winnerT);
                 } else if (action.type === 'CHALLENGE') {
                     currentChallenge = await animateTrackWithWinner('trackChallenge', CHALLENGES, action.winner, true);
                 }
-                saveStateToFirebase();
+
+                // Сохраняем в базу (если хост) либо просто обновляем интерфейс
+                if (roomRef) {
+                    roomRef.update({
+                        spinCountCT, spinCountT,
+                        itemsCT, itemsT,
+                        selectedCTIndexes, selectedTIndexes,
+                        armorCTItem, armorTItem,
+                        currentChallenge
+                    });
+                }
                 renderState();
             } finally {
                 setButtonsDisabled(false);
             }
         }
 
-        // Рендер текущего состояния на экране для всех игроков
         function renderState() {
-            // Оружие CT
             for(let i=0; i<3; i++) {
                 const slot = document.getElementById(`slotCT_${i}`);
                 const item = itemsCT[i];
@@ -389,7 +375,6 @@
             }
             document.getElementById('spinBtnCT').innerText = spinCountCT < 3 ? `🎰 Крутить Оружие CT (${spinCountCT+1}/3)` : `🔄 Сбросить заново`;
 
-            // Оружие T
             for(let i=0; i<3; i++) {
                 const slot = document.getElementById(`slotT_${i}`);
                 const item = itemsT[i];
@@ -404,11 +389,9 @@
             }
             document.getElementById('spinBtnT').innerText = spinCountT < 3 ? `🎰 Крутить Оружие T (${spinCountT+1}/3)` : `🔄 Сбросить заново`;
 
-            // Броня
             if(armorCTItem) document.getElementById('resArmorCT').innerText = `${armorCTItem.title} ($${armorCTItem.price})`;
             if(armorTItem) document.getElementById('resArmorT').innerText = `${armorTItem.title} ($${armorTItem.price})`;
 
-            // Челлендж
             if(currentChallenge) {
                 document.getElementById('summaryChallenge').innerText = `Модификатор: ${currentChallenge.title} (${currentChallenge.desc})`;
             }
@@ -426,7 +409,10 @@
             else { sel = sel.filter(i => items[i] && items[i].tag !== item.tag); sel.push(index); }
             
             if(side==='CT') selectedCTIndexes = sel; else selectedTIndexes = sel;
-            saveStateToFirebase();
+            
+            if(roomRef) {
+                roomRef.update({ selectedCTIndexes, selectedTIndexes });
+            }
             renderState();
         }
 
@@ -445,68 +431,6 @@
         fillTrack('trackArmorCT', ARMOR_ITEMS);
         fillTrack('trackArmorT', ARMOR_ITEMS);
         fillTrack('trackChallenge', CHALLENGES, true);
-
-        // Слушаем изменения действий в Firebase в реальном времени
-        db.ref().child('rooms').on('value', snapshot => {
-            // Для слушателя комнаты
-        });
-        
-        // Подключаем прослушку действий, если уже в комнате
-        function listenRoom(roomCode) {
-            db.ref('rooms/' + roomCode).on('value', snapshot => {
-                const data = snapshot.val();
-                if (data) {
-                    spinCountCT = data.spinCountCT || 0;
-                    spinCountT = data.spinCountT || 0;
-                    itemsCT = data.itemsCT || [null, null, null];
-                    itemsT = data.itemsT || [null, null, null];
-                    selectedCTIndexes = data.selectedCTIndexes || [];
-                    selectedTIndexes = data.selectedTIndexes || [];
-                    armorCTItem = data.armorCTItem || null;
-                    armorTItem = data.armorTItem || null;
-                    currentChallenge = data.currentChallenge || null;
-                    renderState();
-                }
-            });
-
-            // Отдельно слушаем событие прокрутки
-            db.ref('rooms/' + roomCode + '/action').on('child_added', snapshot => {
-                // срабатывает при новом действии
-            });
-        }
-        
-        // Перепишем joinRoom для точной синхронизации действий
-        window.joinRoom = function() {
-            const input = document.getElementById('roomInput').value.trim();
-            if(!input) return alert('Введите код комнаты!');
-            roomRef = db.ref('rooms/' + input);
-            
-            roomRef.on('value', (snapshot) => {
-                const data = snapshot.val();
-                if (data) {
-                    spinCountCT = data.spinCountCT || 0;
-                    spinCountT = data.spinCountT || 0;
-                    itemsCT = data.itemsCT || [null, null, null];
-                    itemsT = data.itemsT || [null, null, null];
-                    selectedCTIndexes = data.selectedCTIndexes || [];
-                    selectedTIndexes = data.selectedTIndexes || [];
-                    armorCTItem = data.armorCTItem || null;
-                    armorTItem = data.armorTItem || null;
-                    currentChallenge = data.currentChallenge || null;
-                    renderState();
-                }
-            });
-
-            // Отслеживаем момент, когда кто-то запускает анимацию
-            db.ref('rooms/' + input + '/action').on('value', (snapshot) => {
-                const action = snapshot.val();
-                if (action && !isSpinning) {
-                    animateAction(action);
-                }
-            });
-
-            alert(`Подключено к комнате: ${input}`);
-        };
     </script>
 </body>
 </html>
