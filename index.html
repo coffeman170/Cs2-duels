@@ -58,16 +58,10 @@
 </head>
 <body class="p-3 md:p-6 flex flex-col items-center min-h-screen justify-center">
 
-    <!-- ЛЕНТА ВЫПАВШИХ ПРЕДМЕТОВ СВЕРХУ (CASE BATTLE FEED) -->
-    <div id="caseFeed" class="max-w-4xl w-full bg-slate-900/80 border border-slate-800 rounded-xl p-2 mb-4 flex items-center gap-3 overflow-x-auto h-14 text-xs">
-        <span class="text-slate-500 font-bold whitespace-nowrap">📜 Лента выпадений:</span>
-        <div id="feedItems" class="flex gap-2"></div>
-    </div>
-
     <div class="max-w-4xl w-full space-y-5">
         
         <!-- HEADER -->
-        <header class="text-center space-y-1">
+        <header id="mainHeader" class="text-center space-y-1">
             <h1 class="text-2xl md:text-4xl font-black text-cyan-400 tracking-wider uppercase">CS2 DUEL GENERATOR ONLINE</h1>
             <p class="text-xs text-slate-400">Мультиплеер рулетка с выбором сторон через мини-игру!</p>
         </header>
@@ -76,8 +70,8 @@
         <div id="loginScreen" class="bg-slate-900/90 p-5 rounded-xl border border-emerald-500/40 space-y-4 text-center">
             <h2 class="text-lg font-bold text-emerald-400">Вход в лобби</h2>
             <div class="flex flex-col md:flex-row gap-3 justify-center">
-                <input id="usernameInput" type="text" placeholder="Ваше имя (например, Maxim)" class="px-3 py-2 bg-slate-800 border border-slate-700 rounded-lg text-xs font-bold text-white outline-none focus:border-emerald-500" />
-                <input id="roomInput" type="text" placeholder="Код комнаты (например, duel77)" class="px-3 py-2 bg-slate-800 border border-slate-700 rounded-lg text-xs font-bold text-white outline-none focus:border-emerald-500" />
+                <input id="usernameInput" type="text" placeholder="например, uzer67" class="px-3 py-2 bg-slate-800 border border-slate-700 rounded-lg text-xs font-bold text-white outline-none focus:border-emerald-500" />
+                <input id="roomInput" type="text" placeholder="например, 67" class="px-3 py-2 bg-slate-800 border border-slate-700 rounded-lg text-xs font-bold text-white outline-none focus:border-emerald-500" />
                 <button onclick="joinRoom()" class="px-6 py-2 bg-emerald-600 hover:bg-emerald-500 rounded-lg text-xs font-bold uppercase transition">Войти в лобби</button>
             </div>
         </div>
@@ -109,9 +103,15 @@
             <div id="currentSideInfo" class="text-xs font-bold text-slate-400"></div>
         </div>
 
-        <!-- ОСНОВНОЙ ИГРОВОЙ ИНТЕРФЕЙС -->
+        <!-- ОСНОВНОЙ ИГРОВОЙ ИНТЕРФЕЙС (СКРЫТ ДО ВХОДА) -->
         <div id="gameScreen" class="hidden space-y-5">
             
+            <!-- ЛЕНТА ВЫПАВШИХ ПРЕДМЕТОВ СВЕРХУ (CASE BATTLE FEED) -->
+            <div id="caseFeed" class="bg-slate-900/80 border border-slate-800 rounded-xl p-2 flex items-center gap-3 overflow-x-auto h-14 text-xs">
+                <span class="text-slate-500 font-bold whitespace-nowrap">📜 Лента выпадений:</span>
+                <div id="feedItems" class="flex gap-2"></div>
+            </div>
+
             <!-- WEAPON CT -->
             <div class="space-y-2 bg-slate-900/90 p-3 rounded-xl border border-cyan-500/30">
                 <div class="flex justify-between items-center">
@@ -201,7 +201,7 @@
         const db = firebase.database();
         let roomRef = null;
         let playerName = "";
-        let playerSide = null; // 'CT' или 'T' или null если наблюдатель/не выбрал
+        let playerSide = null;
         let isSpinning = false;
 
         const svgAK = `<svg class="w-16 h-10 my-auto" viewBox="0 0 100 40" fill="none"><path d="M5 18 L25 18 L28 12 L38 12 L40 18 L82 18 L88 20 L82 22 L40 22 L36 32 L30 32 L34 22 L20 22 L15 30 L8 30 L12 20 Z" fill="#78350f" stroke="#d97706" stroke-width="0.8"/><rect x="38" y="15" width="28" height="6" fill="#1e293b" stroke="#94a3b8" stroke-width="0.8"/><line x1="82" y1="19" x2="96" y2="19" stroke="#cbd5e1" stroke-width="2.5"/></svg>`;
@@ -252,10 +252,8 @@
             playerName = name;
             roomRef = db.ref('rooms/' + room);
 
-            // Регистрируем игрока в комнате
             roomRef.child('players/' + playerName).set(true);
             
-            // Удаляем при закрытии
             window.addEventListener('beforeunload', () => {
                 roomRef.child('players/' + playerName).remove();
             });
@@ -263,7 +261,6 @@
             document.getElementById('loginScreen').classList.add('hidden');
             document.getElementById('lobbyScreen').classList.remove('hidden');
 
-            // Слушаем состояние комнаты
             roomRef.on('value', (snapshot) => {
                 const data = snapshot.val();
                 if (data) {
@@ -278,11 +275,9 @@
                     currentChallenge = data.currentChallenge || null;
                     feedList = data.feedList || [];
 
-                    // Проверяем игроков
                     const players = data.players ? Object.keys(data.players) : [];
                     document.getElementById('playersList').innerText = `Игроки в комнате: ${players.join(', ')}`;
 
-                    // Проверяем стороны
                     const sides = data.sides || {};
                     if(sides[playerName]) {
                         playerSide = sides[playerName];
@@ -304,7 +299,6 @@
             });
         }
 
-        // Логика мини-игры Камень-Ножницы-Бумага
         function playRPS(choice) {
             if(!roomRef) return;
             roomRef.child('rps/' + playerName).set(choice);
@@ -326,7 +320,6 @@
             });
         }
 
-        // Слушаем результат КНБ
         setTimeout(() => {
             if(!roomRef) return;
             roomRef.child('rpsWinner').on('value', snapshot => {
@@ -341,7 +334,6 @@
         }, 1000);
 
         function chooseSide(side) {
-            // Назначаем стороны
             roomRef.child('sides').once('value', snapshot => {
                 const sides = snapshot.val() || {};
                 const assignedSides = Object.values(sides);
@@ -359,7 +351,6 @@
         function triggerSpin(type) {
             if (isSpinning) return;
             
-            // Проверка: может ли игрок крутить эту сторону
             if((type === 'CT' && playerSide !== 'CT') || (type === 'T' && playerSide !== 'T')) {
                 if(type === 'CT' || type === 'T') {
                     alert('Вы можете крутить рулетку только за свою выбранную сторону!');
@@ -439,7 +430,6 @@
                     count++;
                     if(side==='CT') spinCountCT = count; else spinCountT = count;
 
-                    // Добавляем в ленту выпадений (Case Battle Feed)
                     feedList.unshift({ player: action.player, title: action.winner.title, price: action.winner.price });
                     if(feedList.length > 15) feedList.pop();
 
