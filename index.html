@@ -37,7 +37,7 @@
             transform: translateX(-50%);
             box-shadow: 0 0 10px #f59e0b;
         }
-        .spin-btn:disabled {
+        .spin-btn:disabled, .action-btn:disabled {
             opacity: 0.5;
             cursor: not-allowed !important;
         }
@@ -137,7 +137,20 @@
             <button onclick="backToMenu()" class="px-3 py-1 bg-slate-800 hover:bg-slate-700 rounded-lg text-xs font-bold transition">Выйти</button>
         </div>
 
+        <!-- БЛОК УСЛОВИЙ (РАНДОМ УСЛОВИЙ) -->
+        <div class="bg-slate-900 p-4 rounded-2xl border border-slate-800 space-y-3">
+            <h3 class="text-xs font-black uppercase text-amber-400">⚡ Система усложнений раунда</h3>
+            <div id="complicationArea" class="flex flex-col items-center gap-3">
+                <div id="complicationStatusText" class="text-xs text-slate-300 font-bold">Нажмите кнопку «Рандом», чтобы выбрать тип усложнения:</div>
+                <div id="complicationButtonsContainer" class="flex gap-3 w-full justify-center">
+                    <button id="randomComplicationBtn" onclick="voteComplication('RANDOM')" class="px-6 py-2.5 bg-purple-600 hover:bg-purple-500 rounded-xl text-xs font-bold uppercase transition text-white">🎲 Рандом (0/2)</button>
+                </div>
+            </div>
+            <div id="complicationResultDisplay" class="text-xs text-cyan-400 font-bold text-center"></div>
+        </div>
+
         <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
+            <!-- CT СТОРОНА -->
             <div class="bg-slate-900 p-5 rounded-2xl border border-blue-900/50 space-y-4">
                 <div class="flex justify-between items-center border-b border-slate-800 pb-3">
                     <h2 class="text-blue-400 font-black text-sm uppercase">💙 CT (Контр-террористы)</h2>
@@ -161,6 +174,7 @@
                 </div>
             </div>
 
+            <!-- T СТОРОНА -->
             <div class="bg-slate-900 p-5 rounded-2xl border border-amber-900/50 space-y-4">
                 <div class="flex justify-between items-center border-b border-slate-800 pb-3">
                     <h2 class="text-amber-400 font-black text-sm uppercase">💛 T (Террористы)</h2>
@@ -186,10 +200,22 @@
         </div>
 
         <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <div class="md:col-span-1 bg-slate-900 p-4 rounded-2xl border border-slate-800 space-y-2">
-                <h4 class="text-xs font-black uppercase text-slate-400">📋 Выбор игрока</h4>
-                <div id="summaryChallenge" class="text-xs text-slate-300 font-bold">Кликните на слот оружия для выбора.</div>
+            <!-- ВЫБОР ИГРОКА (ОТОБРАЖЕНИЕ КТ И Т) -->
+            <div class="md:col-span-1 bg-slate-900 p-4 rounded-2xl border border-slate-800 space-y-3">
+                <h4 class="text-xs font-black uppercase text-slate-400">📋 Выбор игроков</h4>
+                <div id="summaryChallenge" class="space-y-2 text-xs">
+                    <div class="p-2 bg-slate-950 rounded-xl border border-blue-900/40">
+                        <span class="font-bold text-blue-400">Выбор CT:</span>
+                        <div id="summaryCTText" class="text-slate-300 mt-0.5">Предметы не выбраны</div>
+                    </div>
+                    <div class="p-2 bg-slate-950 rounded-xl border border-amber-900/40">
+                        <span class="font-bold text-amber-400">Выбор T:</span>
+                        <div id="summaryTText" class="text-slate-300 mt-0.5">Предметы не выбраны</div>
+                    </div>
+                </div>
             </div>
+
+            <!-- ЛЕНТА СОБЫТИЙ -->
             <div class="md:col-span-2 bg-slate-900 p-4 rounded-2xl border border-slate-800 space-y-2">
                 <h4 class="text-xs font-black uppercase text-slate-400">📢 Лента событий (Синхронно)</h4>
                 <div id="feedContainer" class="space-y-1 max-h-24 overflow-y-auto hide-scrollbar text-xs">
@@ -207,7 +233,7 @@
         </div>
         <div class="space-y-4 text-xs text-slate-300">
             <p class="bg-slate-950 p-3 rounded-xl border border-slate-800">
-                <b>Правила:</b> У каждого по $20. Предметы серверные. Тратьте деньги только на ставки. При отдаче лота оппоненту вам возвращаются ваши собственные ставки за этот лот, а ставки оппонента сгорают.
+                <b>Правила:</b> У каждого по $20. Первый поставивший крутит рулетку. Владелец обязан поставить ставку за 10 секунд, иначе предмет автоматически отдается оппоненту!
             </p>
             <div>
                 <label class="block text-slate-400 mb-1">Ваш никнейм:</label>
@@ -299,7 +325,7 @@
 
             <div class="bg-slate-900 p-5 rounded-2xl border border-slate-800 flex flex-col justify-between space-y-4">
                 <div>
-                    <h3 class="text-xs font-black uppercase text-slate-400 mb-2">🏷️ Аукцион</h3>
+                    <h3 class="text-xs font-black uppercase text-slate-400 mb-2">🏷️ Аукцион <span id="timerDisplay" class="text-amber-400 font-bold"></span></h3>
                     <div id="currentAuctionItem" class="p-3 bg-slate-950 rounded-xl border border-slate-800 text-center text-xs text-slate-300">
                         Предмет не выбран
                     </div>
@@ -307,9 +333,9 @@
                 <div class="space-y-2">
                     <div class="flex gap-2">
                         <input type="number" id="bidInput" placeholder="Ставка ($)" min="1" max="20" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-emerald-500">
-                        <button onclick="placeBid()" class="px-4 py-2 bg-emerald-600 hover:bg-emerald-500 rounded-xl text-xs font-bold uppercase transition">Ставка</button>
+                        <button id="placeBidBtn" onclick="placeBid()" class="px-4 py-2 bg-emerald-600 hover:bg-emerald-500 rounded-xl text-xs font-bold uppercase transition action-btn">Ставка</button>
                     </div>
-                    <button onclick="giveItem()" class="w-full py-2 bg-rose-600 hover:bg-rose-500 rounded-xl text-xs font-bold uppercase transition">🤝 Отдать оппоненту</button>
+                    <button id="giveItemBtn" onclick="giveItem()" class="w-full py-2 bg-rose-600 hover:bg-rose-500 rounded-xl text-xs font-bold uppercase transition action-btn">🤝 Отдать оппоненту</button>
                 </div>
                 <div id="mgChat" class="bg-slate-950 p-2 rounded-xl border border-slate-800 h-28 overflow-y-auto hide-scrollbar text-[11px] space-y-1">
                     <div class="text-slate-500">Аукцион начался...</div>
@@ -329,6 +355,7 @@
 
         let currentRoomCode = '', playerName = '', playerSide = '', roomRef = null, isSpinning = false, lastProcessedTimestamp = 0;
         let mgCode = '', mgName = 'Player', mgAvatar = '👨', mgRef = null, isMgSpinning = false, mgLastTs = 0;
+        let timerInterval = null;
 
         const WEAPONS_CT = [
             { title: 'M4A1-S', price: 2900, color: 'border-cyan-500/50 bg-cyan-950/30' },
@@ -359,10 +386,15 @@
             { title: 'HE Grenade', price: 300, color: 'border-red-500/50 bg-red-950/30' }
         ];
 
+        const GENERAL_COMPLICATIONS = [
+            "Без шифта", "Без прыжков", "Без звука", "Ноу-скопом", "Свап на нож при выстреле", "Только ван-тапы", "Без перезарядки"
+        ];
+
         let spinCountCT = 0, spinCountT = 0;
         let itemsCT = [null, null, null], itemsT = [null, null, null];
-        let selectedCTIndex = null, selectedTIndex = null;
+        let selectedCTIndices = [], selectedTIndices = [];
         let armorCTItem = null, armorTItem = null;
+        let hasSpunArmorCT = false, hasSpunArmorT = false; // Блокировка повторного кручения брони
         let feedList = [];
 
         function openGame(type) {
@@ -383,294 +415,7 @@
             document.getElementById('mainMenu').classList.remove('hidden');
             if (roomRef) { roomRef.off(); roomRef = null; currentRoomCode = ''; }
             if (mgRef) { mgRef.off(); mgRef = null; mgCode = ''; }
-        }
-
-        /* --- MINI GAME 20$ ЛОГИКА --- */
-        function setAvatar(av) {
-            mgAvatar = av;
-            if(av === '👨') {
-                document.getElementById('btnAvatarMan').className = 'p-3 bg-emerald-600 rounded-xl text-xl border border-emerald-400';
-                document.getElementById('btnAvatarWoman').className = 'p-3 bg-slate-800 rounded-xl text-xl border border-slate-700';
-            } else {
-                document.getElementById('btnAvatarWoman').className = 'p-3 bg-emerald-600 rounded-xl text-xl border border-emerald-400';
-                document.getElementById('btnAvatarMan').className = 'p-3 bg-slate-800 rounded-xl text-xl border border-slate-700';
-            }
-        }
-
-        function createMgRoom() {
-            mgName = document.getElementById('mgUsername').value.trim() || 'Player';
-            mgCode = Math.random().toString(36).substring(2, 8).toUpperCase();
-            mgRef = db.ref('mgRooms/' + mgCode);
-
-            const roomData = {
-                players: { [mgName]: { name: mgName, avatar: mgAvatar, balance: 20, dice: 0, inventory: [] } },
-                turn: '',
-                phase: 'waiting',
-                currentAuctionItem: null,
-                bidsOnCurrentItem: {},
-                chat: [{ user: 'Система', text: 'Комната аукциона создана. Ожидание соперника...' }]
-            };
-
-            mgRef.set(roomData).then(() => {
-                showMgScreen(mgCode);
-                listenMg();
-            });
-        }
-
-        function joinMgRoom() {
-            mgName = document.getElementById('mgUsername').value.trim() || 'Player';
-            mgCode = document.getElementById('mgRoomCodeInput').value.trim().toUpperCase();
-            if(!mgCode) { alert('Введите код комнаты!'); return; }
-
-            mgRef = db.ref('mgRooms/' + mgCode);
-            mgRef.once('value').then(snapshot => {
-                if(snapshot.exists()) {
-                    const data = snapshot.val();
-                    const players = data.players || {};
-                    players[mgName] = { name: mgName, avatar: mgAvatar, balance: 20, dice: 0, inventory: [] };
-                    mgRef.child('players').set(players).then(() => {
-                        showMgScreen(mgCode);
-                        listenMg();
-                    });
-                } else {
-                    alert('Комната не найдена!');
-                }
-            });
-        }
-
-        function showMgScreen(code) {
-            document.getElementById('miniGameMenu').classList.add('hidden');
-            document.getElementById('miniGameScreen').classList.remove('hidden');
-            document.getElementById('mgDisplayCode').innerText = code;
-            fillMgTrack();
-        }
-
-        function listenMg() {
-            mgRef.on('value', snapshot => {
-                if(!snapshot.exists()) return;
-                const data = snapshot.val();
-                const players = data.players || {};
-                const pKeys = Object.keys(players);
-
-                if(pKeys.length > 0) {
-                    const p1 = players[pKeys[0]];
-                    document.getElementById('mgP1Name').innerText = p1.name;
-                    document.getElementById('mgP1Avatar').innerText = p1.avatar;
-                    document.getElementById('mgP1Balance').innerText = '$' + p1.balance;
-                    document.getElementById('mgP1Balance').className = p1.balance > 0 ? 'text-lg font-black text-emerald-400' : 'text-lg font-black text-rose-500';
-                    renderInventory('mgP1Inventory', p1.inventory);
-                }
-                if(pKeys.length > 1) {
-                    const p2 = players[pKeys[1]];
-                    document.getElementById('mgP2Name').innerText = p2.name;
-                    document.getElementById('mgP2Avatar').innerText = p2.avatar;
-                    document.getElementById('mgP2Balance').innerText = '$' + p2.balance;
-                    document.getElementById('mgP2Balance').className = p2.balance > 0 ? 'text-lg font-black text-emerald-400' : 'text-lg font-black text-rose-500';
-                    renderInventory('mgP2Inventory', p2.inventory);
-                }
-
-                if(pKeys.length === 2 && data.phase === 'waiting') {
-                    document.getElementById('diceSection').classList.remove('hidden');
-                }
-
-                if(data.phase === 'auction') {
-                    document.getElementById('diceSection').classList.add('hidden');
-                    document.getElementById('auctionSection').classList.remove('hidden');
-                    document.getElementById('turnIndicator').innerText = `Ход: ${data.turn}`;
-                    
-                    const spinBtn = document.getElementById('mgSpinBtn');
-                    if(data.currentAuctionItem) {
-                        document.getElementById('currentAuctionItem').innerHTML = `<b>${data.currentAuctionItem.title}</b> ($${data.currentAuctionItem.price}) выставил ${data.currentAuctionItem.owner}`;
-                        spinBtn.disabled = true;
-                    } else {
-                        document.getElementById('currentAuctionItem').innerText = 'Предмет не выбран';
-                        spinBtn.disabled = (data.turn !== mgName);
-                    }
-                }
-
-                const chatEl = document.getElementById('mgChat');
-                if(data.chat) {
-                    chatEl.innerHTML = data.chat.map(c => `<div><b>${c.user}:</b> ${c.text}</div>`).join('');
-                    chatEl.scrollTop = chatEl.scrollHeight;
-                }
-            });
-
-            mgRef.child('action').on('value', snap => {
-                const act = snap.val();
-                if(act && act.timestamp > mgLastTs && !isMgSpinning) {
-                    mgLastTs = act.timestamp;
-                    runMgAnimation(act);
-                }
-            });
-        }
-
-        function renderInventory(containerId, inventory) {
-            const container = document.getElementById(containerId);
-            if(!container) return;
-            if(!inventory || inventory.length === 0) {
-                container.innerHTML = '<div class="text-[10px] text-slate-600">Пусто</div>';
-                return;
-            }
-            container.innerHTML = inventory.map(item => `
-                <div class="px-2 py-1 rounded bg-slate-950 border ${item.color} text-[10px] flex flex-col items-center">
-                    <span class="font-bold text-white">${item.title}</span>
-                    <span class="text-emerald-400 font-black">$${item.price}</span>
-                </div>
-            `).join('');
-        }
-
-        function rollDice() {
-            const myDice = Math.floor(Math.random() * 6) + 1;
-            mgRef.child(`players/${mgName}/dice`).set(myDice).then(() => {
-                document.getElementById('diceResultDisplay').innerText = `Вы выбросили: ${myDice}`;
-                mgRef.once('value', snap => {
-                    const players = snap.val().players || {};
-                    const pKeys = Object.keys(players);
-                    if(pKeys.length === 2 && players[pKeys[0]].dice > 0 && players[pKeys[1]].dice > 0) {
-                        const firstTurn = players[pKeys[0]].dice >= players[pKeys[1]].dice ? pKeys[0] : pKeys[1];
-                        mgRef.update({ phase: 'auction', turn: firstTurn });
-                        mgRef.child('chat').once('value', s => {
-                            const chat = s.val() || [];
-                            chat.push({ user: 'Система', text: `Кубики брошены! Первый ходит ${firstTurn}` });
-                            mgRef.child('chat').set(chat);
-                        });
-                    }
-                });
-            });
-        }
-
-        function mgSpinWheel() {
-            if(isMgSpinning) return;
-            mgRef.once('value', snap => {
-                const data = snap.val();
-                if(data.turn !== mgName) { alert('Сейчас не ваш ход!'); return; }
-                if(data.currentAuctionItem) { alert('Сначала продайте или отдайте текущий предмет!'); return; }
-                const winnerItem = ALL_CS2_ITEMS[Math.floor(Math.random() * ALL_CS2_ITEMS.length)];
-                mgRef.child('action').set({ type: 'SPIN', item: winnerItem, player: mgName, timestamp: Date.now() });
-            });
-        }
-
-        async function runMgAnimation(act) {
-            isMgSpinning = true;
-            if(act.type === 'SPIN') {
-                const track = document.getElementById('mgTrack');
-                fillMgTrack();
-                const targetIdx = 30;
-                if(track.children[targetIdx]) {
-                    const winDiv = document.createElement('div');
-                    winDiv.className = `flex-shrink-0 flex flex-col items-center justify-center p-2 rounded-xl border ${act.item.color} text-center`;
-                    winDiv.style.width = '120px';
-                    winDiv.innerHTML = `<div class="text-xs font-bold text-white truncate w-full">${act.item.title}</div><div class="text-[10px] text-emerald-400 font-black">$${act.item.price}</div>`;
-                    track.children[targetIdx].replaceWith(winDiv);
-                }
-
-                const cardWidth = 120;
-                const offset = (targetIdx * cardWidth) - (track.parentElement.clientWidth / 2) + (cardWidth / 2);
-                track.style.transition = 'none';
-                track.style.transform = 'translateX(0px)';
-                void track.offsetWidth;
-                track.style.transition = 'transform 4s cubic-bezier(0.15, 0.85, 0.15, 1)';
-                track.style.transform = `translateX(-${offset}px)`;
-
-                setTimeout(() => {
-                    const itemWithOwner = { ...act.item, owner: act.player };
-                    mgRef.update({ 
-                        currentAuctionItem: itemWithOwner,
-                        bidsOnCurrentItem: {} 
-                    });
-                    mgRef.child('chat').once('value', s => {
-                        const chat = s.val() || [];
-                        chat.push({ user: 'Аукцион', text: `${act.player} выбил предмет: ${act.item.title}` });
-                        mgRef.child('chat').set(chat);
-                    });
-                    isMgSpinning = false;
-                }, 4100);
-            }
-        }
-
-        function placeBid() {
-            const val = parseInt(document.getElementById('bidInput').value);
-            if(isNaN(val) || val <= 0) { alert('Введите корректную ставку!'); return; }
-            
-            mgRef.once('value', snap => {
-                const data = snap.val();
-                if(!data.currentAuctionItem) { alert('Нет активного лота для ставки!'); return; }
-                const players = data.players || {};
-                const currentBalance = players[mgName].balance || 0;
-
-                if(currentBalance < val) {
-                    alert('У вас недостаточно средств для такой ставки!');
-                    return;
-                }
-
-                const newBalance = currentBalance - val; // Ставка сгорает
-                
-                const bids = data.bidsOnCurrentItem || {};
-                const playerBidsTotal = (bids[mgName] || 0) + val;
-                bids[mgName] = playerBidsTotal;
-
-                const chat = data.chat || [];
-                chat.push({ user: mgName, text: `Ставка: $${val} (сгорело)` });
-
-                mgRef.update({
-                    [`players/${mgName}/balance`]: newBalance,
-                    bidsOnCurrentItem: bids,
-                    chat: chat
-                });
-                document.getElementById('bidInput').value = '';
-            });
-        }
-
-        function giveItem() {
-            mgRef.once('value', snap => {
-                const data = snap.val();
-                const auctionItem = data.currentAuctionItem;
-                if(!auctionItem) { alert('Нет активного лота!'); return; }
-                if(auctionItem.owner !== mgName) { alert('Вы не являетесь владельцем этого предмета!'); return; }
-
-                const players = data.players || {};
-                const pKeys = Object.keys(players);
-                const opponentName = pKeys.find(p => p !== mgName);
-                if(!opponentName) return;
-
-                // Возвращаем владельцу ТОЛЬКО его собственные ставки за этот лот (предмет был серверный)
-                const currentBalance = players[mgName].balance || 0;
-                const bids = data.bidsOnCurrentItem || {};
-                const playerBids = bids[mgName] || 0;
-                const refundedBalance = currentBalance + playerBids;
-
-                // Отдаем предмет оппоненту в инвентарь (ставки оппонента просто сгорают)
-                const oppInventory = players[opponentName].inventory || [];
-                oppInventory.push({ title: auctionItem.title, price: auctionItem.price, color: auctionItem.color });
-
-                const chat = data.chat || [];
-                chat.push({ user: mgName, text: `отдал(а) серверный предмет оппоненту! Возврат игроку только за его ставки: +$${playerBids}` });
-
-                const nextTurn = opponentName;
-
-                mgRef.update({
-                    [`players/${mgName}/balance`]: refundedBalance,
-                    [`players/${opponentName}/inventory`]: oppInventory,
-                    currentAuctionItem: null,
-                    bidsOnCurrentItem: {},
-                    turn: nextTurn,
-                    chat: chat
-                });
-            });
-        }
-
-        function fillMgTrack() {
-            const track = document.getElementById('mgTrack');
-            if(!track) return;
-            track.innerHTML = '';
-            for(let i=0; i<60; i++) {
-                const item = ALL_CS2_ITEMS[i % ALL_CS2_ITEMS.length];
-                const div = document.createElement('div');
-                div.className = `flex-shrink-0 flex flex-col items-center justify-center p-2 rounded-xl border ${item.color} text-center`;
-                div.style.width = '120px';
-                div.innerHTML = `<div class="text-xs font-bold text-white truncate w-full">${item.title}</div><div class="text-[10px] text-emerald-400 font-black">$${item.price}</div>`;
-                track.appendChild(div);
-            }
+            if (timerInterval) clearInterval(timerInterval);
         }
 
         /* --- ТАКТИЧЕСКАЯ ДУЭЛЬ ЛОГИКА --- */
@@ -682,7 +427,10 @@
                 players: { [playerName]: true },
                 sides: {}, spinCountCT: 0, spinCountT: 0,
                 itemsCT: [null, null, null], itemsT: [null, null, null],
-                feedList: [], status: 'waiting'
+                selectedCTIndices: [], selectedTIndices: [],
+                hasSpunArmorCT: false, hasSpunArmorT: false,
+                feedList: [], status: 'waiting',
+                complicationState: 'RANDOM', complicationVotes: {}, complicationResult: ''
             }).then(() => { showLobby(currentRoomCode, 'Ожидание второго игрока...'); listenRoom(); });
         }
 
@@ -804,6 +552,78 @@
             }, 5000);
         }
 
+        function voteComplication(type) {
+            if(!roomRef) return;
+            roomRef.once('value', snap => {
+                const data = snap.val() || {};
+                const votes = data.complicationVotes || {};
+                votes[playerName] = type;
+                
+                const players = Object.keys(data.players || {});
+                if(players.length === 2 && players.every(p => votes[p])) {
+                    const randType = Math.random();
+                    let newState = '';
+                    let resultText = '';
+
+                    if(randType < 0.4) {
+                        newState = 'NONE';
+                        resultText = '🎲 Выпало: Без усложнений!';
+                    } else if(randType < 0.75) {
+                        newState = 'GENERAL_WAIT';
+                        resultText = '🎲 Выпало: Общее усложнение! Нажмите кнопку ниже.';
+                    } else {
+                        newState = 'PERSONAL_WAIT';
+                        resultText = '🎲 Выпало: Личные усложнения! Выберите усложнение для своей стороны.';
+                    }
+
+                    roomRef.update({
+                        complicationState: newState,
+                        complicationVotes: {},
+                        complicationResult: resultText
+                    });
+                } else {
+                    roomRef.update({ complicationVotes: votes });
+                }
+            });
+        }
+
+        function voteGeneralComplication() {
+            if(!roomRef) return;
+            roomRef.once('value', snap => {
+                const data = snap.val() || {};
+                const votes = data.complicationVotes || {};
+                votes[playerName] = 'GENERAL_READY';
+                const players = Object.keys(data.players || {});
+
+                if(players.length === 2 && players.every(p => votes[p])) {
+                    const picked = GENERAL_COMPLICATIONS[Math.floor(Math.random() * GENERAL_COMPLICATIONS.length)];
+                    roomRef.update({
+                        complicationState: 'DONE',
+                        complicationVotes: {},
+                        complicationResult: `⚡ Общее усложнение раунда: ${picked}`
+                    });
+                } else {
+                    roomRef.update({ complicationVotes: votes });
+                }
+            });
+        }
+
+        function choosePersonalComplication(side) {
+            if(side !== playerSide) { alert('Вы не можете крутить усложнение чужой стороны!'); return; }
+            const picked = GENERAL_COMPLICATIONS[Math.floor(Math.random() * GENERAL_COMPLICATIONS.length)];
+            roomRef.child(`personalComplications/${side}`).set(picked);
+            roomRef.once('value', snap => {
+                const data = snap.val() || {};
+                const pers = data.personalComplications || {};
+                if(pers.CT && pers.T) {
+                    roomRef.update({
+                        complicationState: 'DONE',
+                        complicationResult: `⚡ Усложнения: CT (${pers.CT}) | T (${pers.T})`
+                    });
+                }
+            });
+        }
+
         function listenRoom() {
             roomRef.on('value', (snapshot) => {
                 if(!snapshot.exists()) return;
@@ -812,10 +632,12 @@
                 spinCountT = data.spinCountT || 0;
                 itemsCT = data.itemsCT || [null, null, null];
                 itemsT = data.itemsT || [null, null, null];
-                selectedCTIndex = data.selectedCTIndex !== undefined ? data.selectedCTIndex : null;
-                selectedTIndex = data.selectedTIndex !== undefined ? data.selectedTIndex : null;
+                selectedCTIndices = data.selectedCTIndices || [];
+                selectedTIndices = data.selectedTIndices || [];
                 armorCTItem = data.armorCTItem || null;
                 armorTItem = data.armorTItem || null;
+                hasSpunArmorCT = data.hasSpunArmorCT || false;
+                hasSpunArmorT = data.hasSpunArmorT || false;
                 feedList = data.feedList || [];
 
                 const sides = data.sides || {};
@@ -842,6 +664,8 @@
                     document.getElementById('mySideDisplay').className = playerSide === 'CT' ? 'font-bold text-blue-400' : 'font-bold text-amber-400';
                     document.getElementById('playerCTName').innerText = players.find(p => sides[p] === 'CT') || '-';
                     document.getElementById('playerTName').innerText = players.find(p => sides[p] === 'T') || '-';
+
+                    renderComplicationsUI(data);
                 }
                 renderState();
                 renderFeed();
@@ -856,12 +680,44 @@
             });
         }
 
+        function renderComplicationsUI(data) {
+            const container = document.getElementById('complicationButtonsContainer');
+            const statusText = document.getElementById('complicationStatusText');
+            const resultDisplay = document.getElementById('complicationResultDisplay');
+            const votes = data.complicationVotes || {};
+            const state = data.complicationState || 'RANDOM';
+            const votedCount = Object.keys(votes).length;
+
+            resultDisplay.innerText = data.complicationResult || '';
+
+            if(state === 'RANDOM') {
+                statusText.innerText = 'Нажмите кнопку «Рандом», чтобы выбрать тип усложнения:';
+                container.innerHTML = `<button onclick="voteComplication('RANDOM')" class="px-6 py-2.5 bg-purple-600 hover:bg-purple-500 rounded-xl text-xs font-bold uppercase transition text-white">🎲 Рандом (${votedCount}/2)</button>`;
+            } else if(state === 'GENERAL_WAIT') {
+                statusText.innerText = 'Общее усложнение! Оба игрока должны подтвердить:';
+                container.innerHTML = `<button onclick="voteGeneralComplication()" class="px-6 py-2.5 bg-blue-600 hover:bg-blue-500 rounded-xl text-xs font-bold uppercase transition text-white">⚡ Общее усложнение (${votedCount}/2)</button>`;
+            } else if(state === 'PERSONAL_WAIT') {
+                statusText.innerText = 'Личные усложнения! Выберите усложнение для своей стороны:';
+                container.innerHTML = `
+                    <button onclick="choosePersonalComplication('CT')" class="px-4 py-2 bg-blue-600 hover:bg-blue-500 rounded-xl text-xs font-bold uppercase transition text-white">🛡️ Усложнение КТ</button>
+                    <button onclick="choosePersonalComplication('T')" class="px-4 py-2 bg-amber-600 hover:bg-amber-500 rounded-xl text-xs font-bold uppercase transition text-white">⚔️ Усложнение Т</button>
+                `;
+            } else if(state === 'NONE' || state === 'DONE') {
+                statusText.innerText = 'Усложнения раунда зафиксированы!';
+                container.innerHTML = '';
+            }
+        }
+
         function triggerSpin(type) {
             if (isSpinning) return;
             if(type === 'CT' && playerSide !== 'CT') { alert('Вы играете за Т!'); return; }
             if(type === 'T' && playerSide !== 'T') { alert('Вы играете за CT!'); return; }
             if(type === 'ARMOR_CT' && playerSide !== 'CT') { alert('Вы играете за Т!'); return; }
             if(type === 'ARMOR_T' && playerSide !== 'T') { alert('Вы играете за CT!'); return; }
+
+            // Ограничение: броню можно крутить только 1 раз!
+            if(type === 'ARMOR_CT' && hasSpunArmorCT) { alert('Броню за CT можно крутить только 1 раз!'); return; }
+            if(type === 'ARMOR_T' && hasSpunArmorT) { alert('Броню за T можно крутить только 1 раз!'); return; }
 
             const pool = (type === 'CT') ? WEAPONS_CT : (type === 'T') ? WEAPONS_T : ARMOR_ITEMS;
             
@@ -882,9 +738,17 @@
 
         function selectSlot(side, index) {
             if (side !== playerSide) return;
+            let currentList = (side === 'CT') ? [...selectedCTIndices] : [...selectedTIndices];
+            
+            if(currentList.includes(index)) {
+                currentList = currentList.filter(i => i !== index);
+            } else {
+                currentList.push(index);
+            }
+
             const updates = {};
-            if (side === 'CT') updates.selectedCTIndex = (selectedCTIndex === index) ? null : index;
-            else updates.selectedTIndex = (selectedTIndex === index) ? null : index;
+            if (side === 'CT') updates.selectedCTIndices = currentList;
+            else updates.selectedTIndices = currentList;
             roomRef.update(updates);
         }
 
@@ -939,28 +803,40 @@
             } else if (action.type === 'ARMOR_CT') {
                 await animateTrackWithWinner('trackArmorCT', ARMOR_ITEMS, item);
                 armorCTItem = item;
+                hasSpunArmorCT = true;
                 feedList.unshift({ player: action.player, title: `Снаряжение: ${item.title}`, price: item.price });
             } else if (action.type === 'ARMOR_T') {
                 await animateTrackWithWinner('trackArmorT', ARMOR_ITEMS, item);
                 armorTItem = item;
+                hasSpunArmorT = true;
                 feedList.unshift({ player: action.player, title: `Снаряжение: ${item.title}`, price: item.price });
             }
-            if (roomRef) { roomRef.update({ spinCountCT, spinCountT, itemsCT, itemsT, armorCTItem, armorTItem, feedList }); }
+            if (roomRef) { 
+                roomRef.update({ 
+                    spinCountCT, spinCountT, itemsCT, itemsT, 
+                    armorCTItem, armorTItem, hasSpunArmorCT, hasSpunArmorT, feedList 
+                }); 
+            }
             isSpinning = false;
         }
 
         function renderState() {
             document.getElementById('countCT').innerText = spinCountCT;
             document.getElementById('countT').innerText = spinCountT;
-            const renderSlots = (items, containerId, side, selectedIdx) => {
+
+            // Блокировка кнопок прокрутки брони после 1 кручения
+            document.getElementById('spinArmorCTBtn').disabled = hasSpunArmorCT;
+            document.getElementById('spinArmorTBtn').disabled = hasSpunArmorT;
+
+            const renderSlots = (items, containerId, side, selectedList) => {
                 const container = document.getElementById(containerId);
                 container.innerHTML = '';
                 for(let i=0; i<3; i++) {
                     const item = items[i];
                     const div = document.createElement('div');
-                    const isSelected = (selectedIdx === i);
+                    const isSelected = selectedList.includes(i);
                     if(item) {
-                        div.className = `h-14 rounded-xl border ${item.color} p-1 flex flex-col justify-center text-center cursor-pointer transition ${isSelected ? 'ring-2 ring-amber-400 scale-105' : 'opacity-80 hover:opacity-100'}`;
+                        div.className = `h-14 rounded-xl border ${item.color} p-1 flex flex-col justify-center text-center cursor-pointer transition ${isSelected ? 'ring-2 ring-amber-400 scale-105 shadow-lg shadow-amber-500/20' : 'opacity-80 hover:opacity-100'}`;
                         div.innerHTML = `<div class="text-xs font-bold text-white truncate w-full">${item.title}</div><div class="text-[10px] text-emerald-400 font-bold">$${item.price}</div>`;
                         div.onclick = () => selectSlot(side, i);
                     } else {
@@ -970,8 +846,20 @@
                     container.appendChild(div);
                 }
             };
-            renderSlots(itemsCT, 'slotsCT', 'CT', selectedCTIndex);
-            renderSlots(itemsT, 'slotsT', 'T', selectedTIndex);
+            renderSlots(itemsCT, 'slotsCT', 'CT', selectedCTIndices);
+            renderSlots(itemsT, 'slotsT', 'T', selectedTIndices);
+
+            // Отрисовка выборки в блоке "ВЫБОР ИГРОКА"
+            const ctSelectedNames = selectedCTIndices.map(idx => itemsCT[idx]).filter(Boolean).map(it => it.title);
+            const tSelectedNames = selectedTIndices.map(idx => itemsT[idx]).filter(Boolean).map(it => it.title);
+
+            let ctSummaryText = ctSelectedNames.length > 0 ? ctSelectedNames.join(' + ') : 'Предметы не выбраны';
+            if(armorCTItem) ctSummaryText += ` | 🛡️ ${armorCTItem.title}`;
+            document.getElementById('summaryCTText').innerHTML = `<span class="font-bold text-white">${ctSummaryText}</span>`;
+
+            let tSummaryText = tSelectedNames.length > 0 ? tSelectedNames.join(' + ') : 'Предметы не выбраны';
+            if(armorTItem) tSummaryText += ` | 🛡️ ${armorTItem.title}`;
+            document.getElementById('summaryTText').innerHTML = `<span class="font-bold text-white">${tSummaryText}</span>`;
 
             const armorSlotCT = document.getElementById('armorSlotCT');
             if(armorCTItem) {
@@ -1004,6 +892,382 @@
                     ${f.price > 0 ? `<span class="text-emerald-400 font-bold">($${f.price})</span>` : ''}
                 </div>
             `).join('');
+        }
+
+        /* --- MINI GAME 20$ ЛОГИКА --- */
+        function setAvatar(av) {
+            mgAvatar = av;
+            if(av === '👨') {
+                document.getElementById('btnAvatarMan').className = 'p-3 bg-emerald-600 rounded-xl text-xl border border-emerald-400';
+                document.getElementById('btnAvatarWoman').className = 'p-3 bg-slate-800 rounded-xl text-xl border border-slate-700';
+            } else {
+                document.getElementById('btnAvatarWoman').className = 'p-3 bg-emerald-600 rounded-xl text-xl border border-emerald-400';
+                document.getElementById('btnAvatarMan').className = 'p-3 bg-slate-800 rounded-xl text-xl border border-slate-700';
+            }
+        }
+
+        function createMgRoom() {
+            mgName = document.getElementById('mgUsername').value.trim() || 'Player';
+            mgCode = Math.random().toString(36).substring(2, 8).toUpperCase();
+            mgRef = db.ref('mgRooms/' + mgCode);
+
+            const roomData = {
+                players: { [mgName]: { name: mgName, avatar: mgAvatar, balance: 20, dice: 0, inventory: [] } },
+                turn: '',
+                phase: 'waiting',
+                currentAuctionItem: null,
+                bidsOnCurrentItem: {},
+                firstBidDone: false,
+                itemEndTime: 0,
+                chat: [{ user: 'Система', text: 'Комната аукциона создана. Ожидание соперника...' }]
+            };
+
+            mgRef.set(roomData).then(() => {
+                showMgScreen(mgCode);
+                listenMg();
+            });
+        }
+
+        function joinMgRoom() {
+            mgName = document.getElementById('mgUsername').value.trim() || 'Player';
+            mgCode = document.getElementById('mgRoomCodeInput').value.trim().toUpperCase();
+            if(!mgCode) { alert('Введите код комнаты!'); return; }
+
+            mgRef = db.ref('mgRooms/' + mgCode);
+            mgRef.once('value').then(snapshot => {
+                if(snapshot.exists()) {
+                    const data = snapshot.val();
+                    const players = data.players || {};
+                    players[mgName] = { name: mgName, avatar: mgAvatar, balance: 20, dice: 0, inventory: [] };
+                    mgRef.child('players').set(players).then(() => {
+                        showMgScreen(mgCode);
+                        listenMg();
+                    });
+                } else {
+                    alert('Комната не найдена!');
+                }
+            });
+        }
+
+        function showMgScreen(code) {
+            document.getElementById('miniGameMenu').classList.add('hidden');
+            document.getElementById('miniGameScreen').classList.remove('hidden');
+            document.getElementById('mgDisplayCode').innerText = code;
+            fillMgTrack();
+        }
+
+        function listenMg() {
+            mgRef.on('value', snapshot => {
+                if(!snapshot.exists()) return;
+                const data = snapshot.val();
+                const players = data.players || {};
+                const pKeys = Object.keys(players);
+
+                if(pKeys.length > 0) {
+                    const p1 = players[pKeys[0]];
+                    document.getElementById('mgP1Name').innerText = p1.name;
+                    document.getElementById('mgP1Avatar').innerText = p1.avatar;
+                    document.getElementById('mgP1Balance').innerText = '$' + p1.balance;
+                    document.getElementById('mgP1Balance').className = p1.balance > 0 ? 'text-lg font-black text-emerald-400' : 'text-lg font-black text-rose-500';
+                    renderInventory('mgP1Inventory', p1.inventory);
+                }
+                if(pKeys.length > 1) {
+                    const p2 = players[pKeys[1]];
+                    document.getElementById('mgP2Name').innerText = p2.name;
+                    document.getElementById('mgP2Avatar').innerText = p2.avatar;
+                    document.getElementById('mgP2Balance').innerText = '$' + p2.balance;
+                    document.getElementById('mgP2Balance').className = p2.balance > 0 ? 'text-lg font-black text-emerald-400' : 'text-lg font-black text-rose-500';
+                    renderInventory('mgP2Inventory', p2.inventory);
+                }
+
+                if(pKeys.length === 2 && data.phase === 'waiting') {
+                    document.getElementById('diceSection').classList.remove('hidden');
+                }
+
+                if(data.phase === 'auction') {
+                    document.getElementById('diceSection').classList.add('hidden');
+                    document.getElementById('auctionSection').classList.remove('hidden');
+                    document.getElementById('turnIndicator').innerText = `Ход: ${data.turn}`;
+                    
+                    const spinBtn = document.getElementById('mgSpinBtn');
+                    const placeBidBtn = document.getElementById('placeBidBtn');
+                    const giveItemBtn = document.getElementById('giveItemBtn');
+
+                    if(data.currentAuctionItem) {
+                        document.getElementById('currentAuctionItem').innerHTML = `<b>${data.currentAuctionItem.title}</b> ($${data.currentAuctionItem.price}) выставил ${data.currentAuctionItem.owner}`;
+                        spinBtn.disabled = true;
+
+                        const isOwner = (data.currentAuctionItem.owner === mgName);
+                        const firstDone = data.firstBidDone;
+
+                        if(!firstDone && !isOwner) {
+                            placeBidBtn.disabled = true;
+                            giveItemBtn.disabled = true;
+                        } else {
+                            placeBidBtn.disabled = false;
+                            giveItemBtn.disabled = false;
+                        }
+
+                        manageTimer(data.itemEndTime, data.currentAuctionItem.owner);
+
+                    } else {
+                        document.getElementById('currentAuctionItem').innerText = 'Предмет не выбран';
+                        spinBtn.disabled = (data.turn !== mgName);
+                        placeBidBtn.disabled = false;
+                        giveItemBtn.disabled = false;
+                        document.getElementById('timerDisplay').innerText = '';
+                        if(timerInterval) clearInterval(timerInterval);
+                    }
+                }
+
+                const chatEl = document.getElementById('mgChat');
+                if(data.chat) {
+                    chatEl.innerHTML = data.chat.map(c => `<div><b>${c.user}:</b> ${c.text}</div>`).join('');
+                    chatEl.scrollTop = chatEl.scrollHeight;
+                }
+            });
+
+            mgRef.child('action').on('value', snap => {
+                const act = snap.val();
+                if(act && act.timestamp > mgLastTs && !isMgSpinning) {
+                    mgLastTs = act.timestamp;
+                    runMgAnimation(act);
+                }
+            });
+        }
+
+        function manageTimer(endTime, ownerName) {
+            if(timerInterval) clearInterval(timerInterval);
+            if(!endTime) return;
+
+            timerInterval = setInterval(() => {
+                const now = Date.now();
+                const timeLeft = Math.max(0, Math.ceil((endTime - now) / 1000));
+                document.getElementById('timerDisplay').innerText = `(${timeLeft}с)`;
+
+                if(timeLeft <= 0) {
+                    clearInterval(timerInterval);
+                    if(ownerName === mgName) {
+                        autoGiveItemTimeout();
+                    }
+                }
+            }, 1000);
+        }
+
+        function autoGiveItemTimeout() {
+            mgRef.once('value', snap => {
+                const data = snap.val();
+                if(!data || !data.currentAuctionItem) return;
+                const auctionItem = data.currentAuctionItem;
+                if(auctionItem.owner !== mgName) return;
+
+                const players = data.players || {};
+                const pKeys = Object.keys(players);
+                const opponentName = pKeys.find(p => p !== mgName);
+                if(!opponentName) return;
+
+                const currentBalance = players[mgName].balance || 0;
+                const bids = data.bidsOnCurrentItem || {};
+                const playerBids = bids[mgName] || 0;
+                const refundedBalance = currentBalance + playerBids;
+
+                const oppInventory = players[opponentName].inventory || [];
+                oppInventory.push({ title: auctionItem.title, price: auctionItem.price, color: auctionItem.color });
+
+                const chat = data.chat || [];
+                chat.push({ user: 'Система', text: `⏰ Время истекло (10 сек)! Предмет автоматически отдан оппоненту.` });
+
+                mgRef.update({
+                    [`players/${mgName}/balance`]: refundedBalance,
+                    [`players/${opponentName}/inventory`]: oppInventory,
+                    currentAuctionItem: null,
+                    bidsOnCurrentItem: {},
+                    firstBidDone: false,
+                    itemEndTime: 0,
+                    turn: opponentName,
+                    chat: chat
+                });
+            });
+        }
+
+        function renderInventory(containerId, inventory) {
+            const container = document.getElementById(containerId);
+            if(!container) return;
+            if(!inventory || inventory.length === 0) {
+                container.innerHTML = '<div class="text-[10px] text-slate-600">Пусто</div>';
+                return;
+            }
+            container.innerHTML = inventory.map(item => `
+                <div class="px-2 py-1 rounded bg-slate-950 border ${item.color} text-[10px] flex flex-col items-center">
+                    <span class="font-bold text-white">${item.title}</span>
+                    <span class="text-emerald-400 font-black">$${item.price}</span>
+                </div>
+            `).join('');
+        }
+
+        function rollDice() {
+            const myDice = Math.floor(Math.random() * 6) + 1;
+            mgRef.child(`players/${mgName}/dice`).set(myDice).then(() => {
+                document.getElementById('diceResultDisplay').innerText = `Вы выбросили: ${myDice}`;
+                mgRef.once('value', snap => {
+                    const players = snap.val().players || {};
+                    const pKeys = Object.keys(players);
+                    if(pKeys.length === 2 && players[pKeys[0]].dice > 0 && players[pKeys[1]].dice > 0) {
+                        const firstTurn = players[pKeys[0]].dice >= players[pKeys[1]].dice ? pKeys[0] : pKeys[1];
+                        mgRef.update({ phase: 'auction', turn: firstTurn });
+                        mgRef.child('chat').once('value', s => {
+                            const chat = s.val() || [];
+                            chat.push({ user: 'Система', text: `Кубики брошены! Первый ходит ${firstTurn}` });
+                            mgRef.child('chat').set(chat);
+                        });
+                    }
+                });
+            });
+        }
+
+        function mgSpinWheel() {
+            if(isMgSpinning) return;
+            mgRef.once('value', snap => {
+                const data = snap.val();
+                if(data.turn !== mgName) { alert('Сейчас не ваш ход!'); return; }
+                if(data.currentAuctionItem) { alert('Сначала продайте или отдайте текущий предмет!'); return; }
+                const winnerItem = ALL_CS2_ITEMS[Math.floor(Math.random() * ALL_CS2_ITEMS.length)];
+                mgRef.child('action').set({ type: 'SPIN', item: winnerItem, player: mgName, timestamp: Date.now() });
+            });
+        }
+
+        async function runMgAnimation(act) {
+            isMgSpinning = true;
+            if(act.type === 'SPIN') {
+                const track = document.getElementById('mgTrack');
+                fillMgTrack();
+                const targetIdx = 30;
+                if(track.children[targetIdx]) {
+                    const winDiv = document.createElement('div');
+                    winDiv.className = `flex-shrink-0 flex flex-col items-center justify-center p-2 rounded-xl border ${act.item.color} text-center`;
+                    winDiv.style.width = '120px';
+                    winDiv.innerHTML = `<div class="text-xs font-bold text-white truncate w-full">${act.item.title}</div><div class="text-[10px] text-emerald-400 font-black">$${act.item.price}</div>`;
+                    track.children[targetIdx].replaceWith(winDiv);
+                }
+
+                const cardWidth = 120;
+                const offset = (targetIdx * cardWidth) - (track.parentElement.clientWidth / 2) + (cardWidth / 2);
+                track.style.transition = 'none';
+                track.style.transform = 'translateX(0px)';
+                void track.offsetWidth;
+                track.style.transition = 'transform 4s cubic-bezier(0.15, 0.85, 0.15, 1)';
+                track.style.transform = `translateX(-${offset}px)`;
+
+                setTimeout(() => {
+                    const itemWithOwner = { ...act.item, owner: act.player };
+                    const endTime = Date.now() + 10000;
+                    mgRef.update({ 
+                        currentAuctionItem: itemWithOwner,
+                        bidsOnCurrentItem: {},
+                        firstBidDone: false,
+                        itemEndTime: endTime
+                    });
+                    mgRef.child('chat').once('value', s => {
+                        const chat = s.val() || [];
+                        chat.push({ user: 'Аукцион', text: `${act.player} выбил предмет: ${act.item.title}. У него 10 секунд на ставку!` });
+                        mgRef.child('chat').set(chat);
+                    });
+                    isMgSpinning = false;
+                }, 4100);
+            }
+        }
+
+        function placeBid() {
+            const val = parseInt(document.getElementById('bidInput').value);
+            if(isNaN(val) || val <= 0) { alert('Введите корректную ставку!'); return; }
+            
+            mgRef.once('value', snap => {
+                const data = snap.val();
+                if(!data.currentAuctionItem) { alert('Нет активного лота для ставки!'); return; }
+
+                const isOwner = (data.currentAuctionItem.owner === mgName);
+                if(!data.firstBidDone && !isOwner) {
+                    alert('Владелец предмета еще не сделал первую ставку!');
+                    return;
+                }
+
+                const players = data.players || {};
+                const currentBalance = players[mgName].balance || 0;
+
+                if(currentBalance < val) {
+                    alert('У вас недостаточно средств для такой ставки!');
+                    return;
+                }
+
+                const newBalance = currentBalance - val;
+                const bids = data.bidsOnCurrentItem || {};
+                const playerBidsTotal = (bids[mgName] || 0) + val;
+                bids[mgName] = playerBidsTotal;
+
+                const chat = data.chat || [];
+                chat.push({ user: mgName, text: `Ставка: $${val} (сгорело)` });
+
+                mgRef.update({
+                    [`players/${mgName}/balance`]: newBalance,
+                    bidsOnCurrentItem: bids,
+                    firstBidDone: true,
+                    itemEndTime: 0,
+                    chat: chat
+                });
+                document.getElementById('bidInput').value = '';
+            });
+        }
+
+        function giveItem() {
+            mgRef.once('value', snap => {
+                const data = snap.val();
+                const auctionItem = data.currentAuctionItem;
+                if(!auctionItem) { alert('Нет активного лота!'); return; }
+                if(auctionItem.owner !== mgName) { alert('Вы не являетесь владельцем этого предмета!'); return; }
+
+                const players = data.players || {};
+                const pKeys = Object.keys(players);
+                const opponentName = pKeys.find(p => p !== mgName);
+                if(!opponentName) return;
+
+                const currentBalance = players[mgName].balance || 0;
+                const bids = data.bidsOnCurrentItem || {};
+                const playerBids = bids[mgName] || 0;
+                const refundedBalance = currentBalance + playerBids;
+
+                const oppInventory = players[opponentName].inventory || [];
+                oppInventory.push({ title: auctionItem.title, price: auctionItem.price, color: auctionItem.color });
+
+                const chat = data.chat || [];
+                chat.push({ user: mgName, text: `отдал(а) предмет оппоненту! Возврат за ставки: +$${playerBids}` });
+
+                const nextTurn = opponentName;
+
+                mgRef.update({
+                    [`players/${mgName}/balance`]: refundedBalance,
+                    [`players/${opponentName}/inventory`]: oppInventory,
+                    currentAuctionItem: null,
+                    bidsOnCurrentItem: {},
+                    firstBidDone: false,
+                    itemEndTime: 0,
+                    turn: nextTurn,
+                    chat: chat
+                });
+            });
+        }
+
+        function fillMgTrack() {
+            const track = document.getElementById('mgTrack');
+            if(!track) return;
+            track.innerHTML = '';
+            for(let i=0; i<60; i++) {
+                const item = ALL_CS2_ITEMS[i % ALL_CS2_ITEMS.length];
+                const div = document.createElement('div');
+                div.className = `flex-shrink-0 flex flex-col items-center justify-center p-2 rounded-xl border ${item.color} text-center`;
+                div.style.width = '120px';
+                div.innerHTML = `<div class="text-xs font-bold text-white truncate w-full">${item.title}</div><div class="text-[10px] text-emerald-400 font-black">$${item.price}</div>`;
+                track.appendChild(div);
+            }
         }
 
         fillTrack('trackWeaponCT', WEAPONS_CT);
