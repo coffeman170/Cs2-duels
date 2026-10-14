@@ -207,7 +207,7 @@
         </div>
         <div class="space-y-4 text-xs text-slate-300">
             <p class="bg-slate-950 p-3 rounded-xl border border-slate-800">
-                <b>Правила:</b> У каждого по $20. Бросайте кубик (1-6) для очередности. Победитель крутит рулетку со всеми предметами CS2 и выставляет лот на аукцион. Ставки сгорают!
+                <b>Правила:</b> У каждого по $20. Предметы серверные. Тратьте деньги только на ставки. При отдаче лота оппоненту вам возвращаются ваши собственные ставки за этот лот, а ставки оппонента сгорают.
             </p>
             <div>
                 <label class="block text-slate-400 mb-1">Ваш никнейм:</label>
@@ -240,25 +240,39 @@
         </div>
 
         <div class="grid grid-cols-2 gap-4">
-            <div class="bg-slate-900 p-4 rounded-2xl border border-slate-800 flex items-center justify-between">
-                <div class="flex items-center gap-3">
-                    <div id="mgP1Avatar" class="text-3xl">👨</div>
-                    <div>
-                        <div id="mgP1Name" class="text-xs font-bold text-slate-300">Игрок 1</div>
-                        <div class="text-[10px] text-slate-500">Баланс:</div>
+            <!-- Игрок 1 -->
+            <div class="bg-slate-900 p-4 rounded-2xl border border-slate-800 space-y-3">
+                <div class="flex items-center justify-between">
+                    <div class="flex items-center gap-3">
+                        <div id="mgP1Avatar" class="text-3xl">👨</div>
+                        <div>
+                            <div id="mgP1Name" class="text-xs font-bold text-slate-300">Игрок 1</div>
+                            <div class="text-[10px] text-slate-500">Баланс:</div>
+                        </div>
                     </div>
+                    <div id="mgP1Balance" class="text-lg font-black text-emerald-400">$20</div>
                 </div>
-                <div id="mgP1Balance" class="text-lg font-black text-emerald-400">$20</div>
+                <div class="border-t border-slate-800 pt-2">
+                    <div class="text-[10px] font-bold text-slate-400 mb-1">Инвентарь:</div>
+                    <div id="mgP1Inventory" class="flex flex-wrap gap-1.5 min-h-[32px]"></div>
+                </div>
             </div>
-            <div class="bg-slate-900 p-4 rounded-2xl border border-slate-800 flex items-center justify-between">
-                <div class="flex items-center gap-3">
-                    <div id="mgP2Avatar" class="text-3xl">👩</div>
-                    <div>
-                        <div id="mgP2Name" class="text-xs font-bold text-slate-300">Ожидание...</div>
-                        <div class="text-[10px] text-slate-500">Баланс:</div>
+            <!-- Игрок 2 -->
+            <div class="bg-slate-900 p-4 rounded-2xl border border-slate-800 space-y-3">
+                <div class="flex items-center justify-between">
+                    <div class="flex items-center gap-3">
+                        <div id="mgP2Avatar" class="text-3xl">👩</div>
+                        <div>
+                            <div id="mgP2Name" class="text-xs font-bold text-slate-300">Ожидание...</div>
+                            <div class="text-[10px] text-slate-500">Баланс:</div>
+                        </div>
                     </div>
+                    <div id="mgP2Balance" class="text-lg font-black text-emerald-400">$20</div>
                 </div>
-                <div id="mgP2Balance" class="text-lg font-black text-emerald-400">$20</div>
+                <div class="border-t border-slate-800 pt-2">
+                    <div class="text-[10px] font-bold text-slate-400 mb-1">Инвентарь:</div>
+                    <div id="mgP2Inventory" class="flex flex-wrap gap-1.5 min-h-[32px]"></div>
+                </div>
             </div>
         </div>
 
@@ -278,7 +292,7 @@
                     <span id="turnIndicator" class="text-xs font-bold text-amber-400">Ход: -</span>
                 </div>
                 <div class="roulette-container h-28"><div class="pointer"></div><div id="mgTrack" class="roulette-track h-full"></div></div>
-                <button id="mgSpinBtn" onclick="mgSpinWheel()" class="w-full py-3 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 rounded-xl font-black text-sm uppercase transition text-white shadow-lg">
+                <button id="mgSpinBtn" onclick="mgSpinWheel()" class="w-full py-3 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 rounded-xl font-black text-sm uppercase transition text-white shadow-lg spin-btn">
                     🎲 Крутить рулетку предмета
                 </button>
             </div>
@@ -389,9 +403,11 @@
             mgRef = db.ref('mgRooms/' + mgCode);
 
             const roomData = {
-                players: { [mgName]: { name: mgName, avatar: mgAvatar, balance: 20, dice: 0 } },
+                players: { [mgName]: { name: mgName, avatar: mgAvatar, balance: 20, dice: 0, inventory: [] } },
                 turn: '',
                 phase: 'waiting',
+                currentAuctionItem: null,
+                bidsOnCurrentItem: {},
                 chat: [{ user: 'Система', text: 'Комната аукциона создана. Ожидание соперника...' }]
             };
 
@@ -411,7 +427,7 @@
                 if(snapshot.exists()) {
                     const data = snapshot.val();
                     const players = data.players || {};
-                    players[mgName] = { name: mgName, avatar: mgAvatar, balance: 20, dice: 0 };
+                    players[mgName] = { name: mgName, avatar: mgAvatar, balance: 20, dice: 0, inventory: [] };
                     mgRef.child('players').set(players).then(() => {
                         showMgScreen(mgCode);
                         listenMg();
@@ -442,6 +458,7 @@
                     document.getElementById('mgP1Avatar').innerText = p1.avatar;
                     document.getElementById('mgP1Balance').innerText = '$' + p1.balance;
                     document.getElementById('mgP1Balance').className = p1.balance > 0 ? 'text-lg font-black text-emerald-400' : 'text-lg font-black text-rose-500';
+                    renderInventory('mgP1Inventory', p1.inventory);
                 }
                 if(pKeys.length > 1) {
                     const p2 = players[pKeys[1]];
@@ -449,6 +466,7 @@
                     document.getElementById('mgP2Avatar').innerText = p2.avatar;
                     document.getElementById('mgP2Balance').innerText = '$' + p2.balance;
                     document.getElementById('mgP2Balance').className = p2.balance > 0 ? 'text-lg font-black text-emerald-400' : 'text-lg font-black text-rose-500';
+                    renderInventory('mgP2Inventory', p2.inventory);
                 }
 
                 if(pKeys.length === 2 && data.phase === 'waiting') {
@@ -459,6 +477,15 @@
                     document.getElementById('diceSection').classList.add('hidden');
                     document.getElementById('auctionSection').classList.remove('hidden');
                     document.getElementById('turnIndicator').innerText = `Ход: ${data.turn}`;
+                    
+                    const spinBtn = document.getElementById('mgSpinBtn');
+                    if(data.currentAuctionItem) {
+                        document.getElementById('currentAuctionItem').innerHTML = `<b>${data.currentAuctionItem.title}</b> ($${data.currentAuctionItem.price}) выставил ${data.currentAuctionItem.owner}`;
+                        spinBtn.disabled = true;
+                    } else {
+                        document.getElementById('currentAuctionItem').innerText = 'Предмет не выбран';
+                        spinBtn.disabled = (data.turn !== mgName);
+                    }
                 }
 
                 const chatEl = document.getElementById('mgChat');
@@ -475,6 +502,21 @@
                     runMgAnimation(act);
                 }
             });
+        }
+
+        function renderInventory(containerId, inventory) {
+            const container = document.getElementById(containerId);
+            if(!container) return;
+            if(!inventory || inventory.length === 0) {
+                container.innerHTML = '<div class="text-[10px] text-slate-600">Пусто</div>';
+                return;
+            }
+            container.innerHTML = inventory.map(item => `
+                <div class="px-2 py-1 rounded bg-slate-950 border ${item.color} text-[10px] flex flex-col items-center">
+                    <span class="font-bold text-white">${item.title}</span>
+                    <span class="text-emerald-400 font-black">$${item.price}</span>
+                </div>
+            `).join('');
         }
 
         function rollDice() {
@@ -502,6 +544,7 @@
             mgRef.once('value', snap => {
                 const data = snap.val();
                 if(data.turn !== mgName) { alert('Сейчас не ваш ход!'); return; }
+                if(data.currentAuctionItem) { alert('Сначала продайте или отдайте текущий предмет!'); return; }
                 const winnerItem = ALL_CS2_ITEMS[Math.floor(Math.random() * ALL_CS2_ITEMS.length)];
                 mgRef.child('action').set({ type: 'SPIN', item: winnerItem, player: mgName, timestamp: Date.now() });
             });
@@ -530,7 +573,11 @@
                 track.style.transform = `translateX(-${offset}px)`;
 
                 setTimeout(() => {
-                    document.getElementById('currentAuctionItem').innerHTML = `<b>${act.item.title}</b> ($${act.item.price}) выставил ${act.player}`;
+                    const itemWithOwner = { ...act.item, owner: act.player };
+                    mgRef.update({ 
+                        currentAuctionItem: itemWithOwner,
+                        bidsOnCurrentItem: {} 
+                    });
                     mgRef.child('chat').once('value', s => {
                         const chat = s.val() || [];
                         chat.push({ user: 'Аукцион', text: `${act.player} выбил предмет: ${act.item.title}` });
@@ -547,6 +594,7 @@
             
             mgRef.once('value', snap => {
                 const data = snap.val();
+                if(!data.currentAuctionItem) { alert('Нет активного лота для ставки!'); return; }
                 const players = data.players || {};
                 const currentBalance = players[mgName].balance || 0;
 
@@ -555,16 +603,18 @@
                     return;
                 }
 
-                const newBalance = currentBalance - val;
+                const newBalance = currentBalance - val; // Ставка сгорает
+                
+                const bids = data.bidsOnCurrentItem || {};
+                const playerBidsTotal = (bids[mgName] || 0) + val;
+                bids[mgName] = playerBidsTotal;
+
                 const chat = data.chat || [];
                 chat.push({ user: mgName, text: `Ставка: $${val} (сгорело)` });
 
-                const pKeys = Object.keys(players);
-                const nextTurn = pKeys.find(p => p !== mgName) || mgName;
-
                 mgRef.update({
                     [`players/${mgName}/balance`]: newBalance,
-                    turn: nextTurn,
+                    bidsOnCurrentItem: bids,
                     chat: chat
                 });
                 document.getElementById('bidInput').value = '';
@@ -574,14 +624,38 @@
         function giveItem() {
             mgRef.once('value', snap => {
                 const data = snap.val();
-                const chat = data.chat || [];
-                chat.push({ user: mgName, text: `отдал(а) предмет оппоненту!` });
+                const auctionItem = data.currentAuctionItem;
+                if(!auctionItem) { alert('Нет активного лота!'); return; }
+                if(auctionItem.owner !== mgName) { alert('Вы не являетесь владельцем этого предмета!'); return; }
 
                 const players = data.players || {};
                 const pKeys = Object.keys(players);
-                const nextTurn = pKeys.find(p => p !== mgName) || mgName;
+                const opponentName = pKeys.find(p => p !== mgName);
+                if(!opponentName) return;
 
-                mgRef.update({ turn: nextTurn, chat: chat });
+                // Возвращаем владельцу ТОЛЬКО его собственные ставки за этот лот (предмет был серверный)
+                const currentBalance = players[mgName].balance || 0;
+                const bids = data.bidsOnCurrentItem || {};
+                const playerBids = bids[mgName] || 0;
+                const refundedBalance = currentBalance + playerBids;
+
+                // Отдаем предмет оппоненту в инвентарь (ставки оппонента просто сгорают)
+                const oppInventory = players[opponentName].inventory || [];
+                oppInventory.push({ title: auctionItem.title, price: auctionItem.price, color: auctionItem.color });
+
+                const chat = data.chat || [];
+                chat.push({ user: mgName, text: `отдал(а) серверный предмет оппоненту! Возврат игроку только за его ставки: +$${playerBids}` });
+
+                const nextTurn = opponentName;
+
+                mgRef.update({
+                    [`players/${mgName}/balance`]: refundedBalance,
+                    [`players/${opponentName}/inventory`]: oppInventory,
+                    currentAuctionItem: null,
+                    bidsOnCurrentItem: {},
+                    turn: nextTurn,
+                    chat: chat
+                });
             });
         }
 
@@ -791,7 +865,6 @@
 
             const pool = (type === 'CT') ? WEAPONS_CT : (type === 'T') ? WEAPONS_T : ARMOR_ITEMS;
             
-            // Проверка на уникальность оружия (чтобы не выпадало дубликатов)
             let winningItem;
             let attempts = 0;
             const existingItems = (type === 'CT') ? itemsCT : itemsT;
@@ -799,9 +872,7 @@
             do {
                 winningItem = pool[Math.floor(Math.random() * pool.length)];
                 attempts++;
-                // Если броня, дубликаты разрешены
                 if(type.includes('ARMOR')) break;
-                // Проверяем, есть ли уже такое оружие в слотах
                 const alreadyExists = existingItems.some(slot => slot && slot.title === winningItem.title);
                 if (!alreadyExists || attempts > 20) break;
             } while (true);
