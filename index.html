@@ -41,9 +41,30 @@
             opacity: 0.5;
             cursor: not-allowed !important;
         }
+        @keyframes fall {
+            0% { transform: translateY(-20px) rotate(0deg); opacity: 1; }
+            100% { transform: translateY(100vh) rotate(360deg); opacity: 0; }
+        }
+        .falling-item {
+            position: fixed;
+            top: -30px;
+            font-size: 24px;
+            animation: fall 3s linear infinite;
+            z-index: 999;
+            pointer-events: none;
+        }
     </style>
 </head>
 <body class="p-3 md:p-6 flex flex-col items-center min-h-screen justify-center">
+
+    <!-- МОДАЛЬНОЕ ОКНО ИТОГОВ КНБ -->
+    <div id="rpsOverlay" class="fixed inset-0 bg-black/80 flex items-center justify-center z-50 hidden">
+        <div id="rpsOverlayBox" class="p-8 rounded-2xl border-2 text-center space-y-4 max-w-md w-full shadow-2xl transition-all">
+            <h1 id="rpsOverlayTitle" class="text-3xl font-black uppercase"></h1>
+            <p id="rpsOverlayText" class="text-sm font-bold text-slate-200"></p>
+            <div id="rpsOverlayIcons" class="text-4xl"></div>
+        </div>
+    </div>
 
     <!-- ГЛАВНОЕ МЕНЮ -->
     <div id="mainMenu" class="max-w-md w-full bg-slate-900/90 p-8 rounded-2xl border border-slate-800 text-center space-y-6 shadow-2xl">
@@ -59,7 +80,7 @@
         </div>
     </div>
 
-    <!-- ЭКРАН СОЗДАНИЯ КОМНАТЫ -->
+    <!-- ЭКРАН СОЗДАНИЯ И ВХОДА -->
     <div id="csSpinScreen" class="hidden max-w-md w-full bg-slate-900 p-6 rounded-2xl border border-slate-800 space-y-6 shadow-2xl">
         <div class="flex justify-between items-center border-b border-slate-800 pb-4">
             <h2 class="text-cyan-400 text-lg font-black uppercase">⚔️ Тактическая Дуэль</h2>
@@ -88,11 +109,35 @@
         </div>
     </div>
 
-    <!-- ИГРОВОЙ ЭКРАН ДУЭЛИ -->
+    <!-- ЛОББИ / КНБ -->
+    <div id="lobbyScreen" class="hidden max-w-md w-full bg-slate-900 p-6 rounded-2xl border border-slate-800 space-y-6 shadow-2xl text-center">
+        <h2 class="text-cyan-400 text-lg font-black uppercase">⚔️ Комната: <span id="displayRoomCode" class="text-white"></span></h2>
+        <div id="playersList" class="text-xs text-slate-300 font-bold">Ожидание игроков...</div>
+        <div id="rpsSection" class="space-y-4 pt-4 border-t border-slate-800">
+            <div id="timerDisplay" class="text-sm font-bold text-amber-400">⏱️ Время на выбор: <span id="timeLeft">15</span>с</div>
+            <p class="text-xs text-slate-400">Камень, Ножницы, Бумага для выбора стороны:</p>
+            <div class="flex justify-center gap-3">
+                <button onclick="playRPS('Камень')" class="px-4 py-3 bg-slate-800 hover:bg-slate-700 rounded-xl font-bold text-xs transition border border-slate-700">✊ Камень</button>
+                <button onclick="playRPS('Ножницы')" class="px-4 py-3 bg-slate-800 hover:bg-slate-700 rounded-xl font-bold text-xs transition border border-slate-700">✌️ Ножницы</button>
+                <button onclick="playRPS('Бумага')" class="px-4 py-3 bg-slate-800 hover:bg-slate-700 rounded-xl font-bold text-xs transition border border-slate-700">✋ Бумага</button>
+            </div>
+            <div id="rpsStatus" class="text-xs font-bold text-cyan-400"></div>
+            <div id="rpsResult" class="text-sm font-bold text-emerald-400"></div>
+        </div>
+        <div id="sideChoiceSection" class="hidden space-y-3 pt-4 border-t border-slate-800">
+            <p class="text-xs text-slate-300">Вы победили! Выберите стартовую сторону:</p>
+            <div class="flex gap-3">
+                <button onclick="resolveConflict('CT')" class="flex-1 py-2 bg-blue-600 hover:bg-blue-500 rounded-lg text-xs font-bold uppercase transition">💙 CT</button>
+                <button onclick="resolveConflict('T')" class="flex-1 py-2 bg-amber-600 hover:bg-amber-500 rounded-lg text-xs font-bold uppercase transition">💛 T</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ОСНОВНОЙ ИГРОВОЙ ЭКРАН -->
     <div id="gameScreen" class="hidden max-w-4xl w-full space-y-5">
         <div class="bg-slate-900 p-4 rounded-2xl border border-slate-800 flex justify-between items-center shadow-lg">
             <div class="text-sm font-black text-cyan-400 uppercase">⚔️ CS2 DUEL CENTER</div>
-            <div class="text-xs text-slate-400">Комната: <span id="gameRoomCode" class="text-white font-bold"></span> | Сторона: <span id="mySideDisplay" class="font-bold"></span></div>
+            <div class="text-xs text-slate-400">Комната: <span id="gameRoomCode" class="text-white font-bold"></span> | Ваша сторона: <span id="mySideDisplay" class="font-bold"></span></div>
             <button onclick="backToMenu()" class="px-3 py-1 bg-slate-800 hover:bg-slate-700 rounded-lg text-xs font-bold transition">Выйти</button>
         </div>
 
@@ -153,11 +198,11 @@
         <!-- УСЛОВИЯ / ЛЕНТА -->
         <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
             <div class="md:col-span-1 bg-slate-900 p-4 rounded-2xl border border-slate-800 space-y-2">
-                <h4 class="text-xs font-black uppercase text-slate-400">📋 Итоги раунда</h4>
-                <div id="summaryChallenge" class="text-xs text-slate-300 font-bold">Ожидание...</div>
+                <h4 class="text-xs font-black uppercase text-slate-400">📋 Выбор игрока</h4>
+                <div id="summaryChallenge" class="text-xs text-slate-300 font-bold">Кликните на слот оружия, чтобы выбрать его для раунда.</div>
             </div>
             <div class="md:col-span-2 bg-slate-900 p-4 rounded-2xl border border-slate-800 space-y-2">
-                <h4 class="text-xs font-black uppercase text-slate-400">📢 Лента событий</h4>
+                <h4 class="text-xs font-black uppercase text-slate-400">📢 Лента событий (Синхронно)</h4>
                 <div id="feedContainer" class="space-y-1 max-h-24 overflow-y-auto hide-scrollbar text-xs">
                     <div class="text-slate-500">Событий пока нет...</div>
                 </div>
@@ -199,8 +244,10 @@
         let playerSide = '';
         let roomRef = null;
         let isSpinning = false;
+        let timerInterval = null;
+        let lastProcessedTimestamp = 0;
 
-        // Реальные цены и названия оружия CS2
+        // База оружия CS2 с точными ценами
         const WEAPONS_CT = [
             { title: 'M4A1-S', price: 2900, color: 'border-cyan-500/50 bg-cyan-950/30' },
             { title: 'USP-S', price: 200, color: 'border-blue-500/50 bg-blue-950/30' },
@@ -226,6 +273,7 @@
 
         let spinCountCT = 0, spinCountT = 0;
         let itemsCT = [null, null, null], itemsT = [null, null, null];
+        let selectedCTIndex = null, selectedTIndex = null;
         let armorCTItem = null, armorTItem = null;
         let feedList = [];
 
@@ -240,9 +288,11 @@
 
         function backToMenu() {
             document.getElementById('csSpinScreen').classList.add('hidden');
+            document.getElementById('lobbyScreen').classList.add('hidden');
             document.getElementById('gameScreen').classList.add('hidden');
             document.getElementById('miniGameScreen').classList.add('hidden');
             document.getElementById('mainMenu').classList.remove('hidden');
+            if(timerInterval) clearInterval(timerInterval);
             if (roomRef) {
                 roomRef.off();
                 roomRef = null;
@@ -263,11 +313,16 @@
                 spinCountT: 0,
                 itemsCT: [null, null, null],
                 itemsT: [null, null, null],
+                selectedCTIndex: null,
+                selectedTIndex: null,
+                armorCTItem: null,
+                armorTItem: null,
+                feedList: [],
                 status: 'waiting'
             };
 
             roomRef.set(roomData).then(() => {
-                showGameScreen(currentRoomCode);
+                showLobby(currentRoomCode, 'Ожидание второго игрока...');
                 listenRoom();
             });
         }
@@ -288,11 +343,19 @@
 
                     currentRoomCode = code;
                     players[playerName] = true;
-                    sides[playerName] = chosenSide;
+                    
+                    let assignedSide = chosenSide;
+                    const existingSide = Object.values(sides)[0];
+                    if(existingSide) {
+                        assignedSide = existingSide === 'CT' ? 'T' : 'CT';
+                    }
+                    playerSide = assignedSide;
+                    sides[playerName] = assignedSide;
 
                     roomRef.update({ players, sides, status: 'ready' }).then(() => {
-                        showGameScreen(code);
+                        showLobby(code, 'Оба игрока в сборе!');
                         listenRoom();
+                        startRpsTimer(roomRef, Object.keys(players));
                     });
                 } else {
                     alert('Комната не найдена!');
@@ -300,12 +363,11 @@
             });
         }
 
-        function showGameScreen(code) {
+        function showLobby(code, statusText) {
             document.getElementById('csSpinScreen').classList.add('hidden');
-            document.getElementById('gameScreen').classList.remove('hidden');
-            document.getElementById('gameRoomCode').innerText = code;
-            document.getElementById('mySideDisplay').innerText = playerSide;
-            document.getElementById('mySideDisplay').className = playerSide === 'CT' ? 'font-bold text-blue-400' : 'font-bold text-amber-400';
+            document.getElementById('lobbyScreen').classList.remove('hidden');
+            document.getElementById('displayRoomCode').innerText = code;
+            document.getElementById('playersList').innerText = statusText;
         }
 
         function listenRoom() {
@@ -317,6 +379,8 @@
                 spinCountT = data.spinCountT || 0;
                 itemsCT = data.itemsCT || [null, null, null];
                 itemsT = data.itemsT || [null, null, null];
+                selectedCTIndex = data.selectedCTIndex !== undefined ? data.selectedCTIndex : null;
+                selectedTIndex = data.selectedTIndex !== undefined ? data.selectedTIndex : null;
                 armorCTItem = data.armorCTItem || null;
                 armorTItem = data.armorTItem || null;
                 feedList = data.feedList || [];
@@ -324,10 +388,18 @@
                 const sides = data.sides || {};
                 const players = Object.keys(data.players || {});
 
-                const ctPlayer = players.find(p => sides[p] === 'CT') || '-';
-                const tPlayer = players.find(p => sides[p] === 'T') || '-';
-                document.getElementById('playerCTName').innerText = ctPlayer;
-                document.getElementById('playerTName').innerText = tPlayer;
+                if(players.length === 2) {
+                    document.getElementById('lobbyScreen').classList.add('hidden');
+                    document.getElementById('gameScreen').classList.remove('hidden');
+                    document.getElementById('gameRoomCode').innerText = currentRoomCode;
+                    document.getElementById('mySideDisplay').innerText = playerSide;
+                    document.getElementById('mySideDisplay').className = playerSide === 'CT' ? 'font-bold text-blue-400' : 'font-bold text-amber-400';
+                    
+                    const ctPlayer = players.find(p => sides[p] === 'CT') || '-';
+                    const tPlayer = players.find(p => sides[p] === 'T') || '-';
+                    document.getElementById('playerCTName').innerText = ctPlayer;
+                    document.getElementById('playerTName').innerText = tPlayer;
+                }
 
                 renderState();
                 renderFeed();
@@ -335,9 +407,79 @@
 
             roomRef.child('action').on('value', (snapshot) => {
                 const action = snapshot.val();
-                if (action && !isSpinning) {
+                if (action && action.timestamp > lastProcessedTimestamp && !isSpinning) {
+                    lastProcessedTimestamp = action.timestamp;
                     runAnimation(action);
                 }
+            });
+        }
+
+        function playRPS(choice) {
+            if(!roomRef) return;
+            roomRef.child('rps/' + playerName).set(choice);
+            document.getElementById('rpsStatus').innerText = `Вы выбрали: ${choice}. Ожидание оппонента...`;
+
+            roomRef.once('value', snapshot => {
+                const data = snapshot.val() || {};
+                const players = Object.keys(data.players || {});
+                const rpsData = data.rps || {};
+
+                if(players.length === 2 && players.every(p => rpsData[p])) {
+                    const p1 = players[0], p2 = players[1];
+                    const c1 = rpsData[p1], c2 = rpsData[p2];
+                    let winner = p1;
+                    if(c1 !== c2) {
+                        if((c1==='Камень'&&c2==='Ножницы')||(c1==='Ножницы'&&c2==='Бумага')||(c1==='Бумага'&&c2==='Камень')) winner = p1;
+                        else winner = p2;
+                    }
+                    const sides = data.sides || {};
+                    roomRef.child('rpsWinner').set({ winner, sides });
+                }
+            });
+        }
+
+        function startRpsTimer(ref, players) {
+            if (timerInterval) return;
+            let timeLeft = 15;
+            const timerEl = document.getElementById('timeLeft');
+            timerInterval = setInterval(() => {
+                timeLeft--;
+                timerEl.innerText = timeLeft;
+                if(timeLeft <= 0) {
+                    clearInterval(timerInterval);
+                    ref.once('value', snap => {
+                        const data = snap.val() || {};
+                        const rpsChoices = data.rps || {};
+                        const missingPlayer = players.find(p => !rpsChoices[p]);
+                        if (missingPlayer && missingPlayer === playerName) {
+                            const winner = players.find(p => p !== playerName);
+                            ref.child('sides').once('value', sSnap => {
+                                const sides = sSnap.val() || {};
+                                ref.child('rpsWinner').set({ winner, sides });
+                            });
+                        }
+                    });
+                }
+            }, 1000);
+        }
+
+        function resolveConflict(newSide) {
+            roomRef.child('sides').once('value', snap => {
+                const sides = snap.val() || {};
+                const players = Object.keys(sides);
+                const otherPlayer = players.find(p => p !== playerName);
+
+                let updates = {};
+                updates[playerName] = newSide;
+                if(otherPlayer) {
+                    updates[otherPlayer] = newSide === 'CT' ? 'T' : 'CT';
+                }
+
+                roomRef.child('sides').update(updates).then(() => {
+                    roomRef.child('rpsWinner').remove();
+                    roomRef.child('rps').remove();
+                    roomRef.child('timerStarted').remove();
+                });
             });
         }
 
@@ -355,6 +497,17 @@
             else if (type === 'ARMOR_T') payload.winnerT = ARMOR_ITEMS[Math.floor(Math.random() * ARMOR_ITEMS.length)];
 
             roomRef.child('action').set(payload);
+        }
+
+        function selectSlot(side, index) {
+            if (side !== playerSide) return;
+            const updates = {};
+            if (side === 'CT') {
+                updates.selectedCTIndex = (selectedCTIndex === index) ? null : index;
+            } else {
+                updates.selectedTIndex = (selectedTIndex === index) ? null : index;
+            }
+            roomRef.update(updates);
         }
 
         function createCard(item) {
@@ -435,15 +588,18 @@
             document.getElementById('countCT').innerText = spinCountCT;
             document.getElementById('countT').innerText = spinCountT;
 
-            const renderSlots = (items, containerId) => {
+            const renderSlots = (items, containerId, side, selectedIdx) => {
                 const container = document.getElementById(containerId);
                 container.innerHTML = '';
                 for(let i=0; i<3; i++) {
                     const item = items[i];
                     const div = document.createElement('div');
+                    const isSelected = (selectedIdx === i);
+                    
                     if(item) {
-                        div.className = `h-14 rounded-xl border ${item.color} p-1 flex flex-col justify-center text-center`;
+                        div.className = `h-14 rounded-xl border ${item.color} p-1 flex flex-col justify-center text-center cursor-pointer transition ${isSelected ? 'ring-2 ring-amber-400 scale-105' : 'opacity-80 hover:opacity-100'}`;
                         div.innerHTML = `<div class="text-xs font-bold text-white truncate">${item.title}</div><div class="text-[10px] text-emerald-400 font-bold">$${item.price}</div>`;
+                        div.onclick = () => selectSlot(side, i);
                     } else {
                         div.className = 'h-14 bg-slate-950 rounded-xl border border-slate-800 flex items-center justify-center text-xs text-slate-600';
                         div.innerText = `Слот ${i+1}`;
@@ -451,10 +607,10 @@
                     container.appendChild(div);
                 }
             };
-            renderSlots(itemsCT, 'slotsCT');
-            renderSlots(itemsT, 'slotsT');
+            renderSlots(itemsCT, 'slotsCT', 'CT', selectedCTIndex);
+            renderSlots(itemsT, 'slotsT', 'T', selectedTIndex);
 
-            // Отрисовка слота брони
+            // Броня
             const armorSlotCT = document.getElementById('armorSlotCT');
             if(armorCTItem) {
                 armorSlotCT.className = `h-12 rounded-xl border ${armorCTItem.color} px-3 flex justify-between items-center text-xs`;
@@ -472,6 +628,15 @@
                 armorSlotT.className = 'h-12 bg-slate-950 rounded-xl border border-slate-800 flex items-center justify-center text-xs text-slate-600';
                 armorSlotT.innerText = 'Броня не выбрана';
             }
+
+            // Текст выбора в итогах
+            let summaryText = 'Кликните на слот оружия, чтобы выбрать его.';
+            if (playerSide === 'CT' && selectedCTIndex !== null && itemsCT[selectedCTIndex]) {
+                summaryText = `Вы выбрали за CT: ${itemsCT[selectedCTIndex].title} ($${itemsCT[selectedCTIndex].price})`;
+            } else if (playerSide === 'T' && selectedTIndex !== null && itemsT[selectedTIndex]) {
+                summaryText = `Вы выбрали за T: ${itemsT[selectedTIndex].title} ($${itemsT[selectedTIndex].price})`;
+            }
+            document.getElementById('summaryChallenge').innerText = summaryText;
         }
 
         function renderFeed() {
