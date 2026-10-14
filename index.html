@@ -89,7 +89,6 @@
                 <div id="rpsResult" class="text-xs font-bold text-cyan-300"></div>
             </div>
 
-            <!-- ПЕРЕХОД ДЛЯ ПОБЕДИТЕЛЯ КНБ -->
             <div id="sideChoiceSection" class="hidden border-t border-slate-800 pt-4 space-y-3">
                 <div class="text-xs text-emerald-400 font-bold">Вы победили в мини-игре! Выберите другую сторону:</div>
                 <div class="flex justify-center gap-4">
@@ -175,7 +174,6 @@
                     <span class="font-bold text-purple-400 text-sm md:text-base">⚠️ УСЛОЖНЕНИЕ РАУНДА</span>
                 </div>
                 
-                <!-- ВЫБОР РЕЖИМА УСЛОЖНЕНИЙ -->
                 <div id="challengeModeSelection" class="bg-slate-950/60 p-3 rounded-lg border border-purple-500/20 space-y-2 text-center">
                     <div class="text-xs text-purple-300 font-bold">Выберите тип усложнений для раунда:</div>
                     <div class="flex flex-wrap justify-center gap-2">
@@ -187,7 +185,6 @@
                     <div id="challengeStatusInfo" class="text-[11px] text-slate-400 pt-1">Ожидание выбора обоих игроков...</div>
                 </div>
 
-                <!-- КНОПКА КРУТИТЬ И РУЛЕТКА -->
                 <div class="flex justify-end pt-1">
                     <button id="spinChallengeBtn" onclick="triggerSpin('CHALLENGE')" class="spin-btn px-4 py-2 bg-purple-600 hover:bg-purple-500 rounded-lg text-xs font-bold uppercase tracking-wider transition">
                         🎲 Выбить Челлендж
@@ -253,10 +250,9 @@
             { title: '🚫 Без A / D', desc: 'Запрещено нажимать A и D. Только мышь!', color: 'border-purple-500/50 bg-purple-950/30' },
             { title: '⚔️ Без укрытий', desc: 'Только открытая дуэль в лоб.', color: 'border-purple-500/50 bg-purple-950/30' },
             { title: '🦘 Без прыжков', desc: 'Запрещено прыгать весь раунд', color: 'border-purple-500/50 bg-purple-950/30' },
-            { title: '🔇 Без звука', desc: 'Играйте полностью без звука (в наушниках/без наушников)', color: 'border-purple-500/50 bg-purple-950/30' },
-            { title: '🛑 Без Shift', desc: 'Запрещено зажимать Shift (бег на носочках запрещен)', color: 'border-purple-500/50 bg-purple-950/30' },
-            { title: '🎛️ Без Ctrl', desc: 'Запрещено приседать (нажимать Ctrl)', color: 'border-purple-500/50 bg-purple-950/30' },
-            { title: '🔦 Только с ножом / пистолетом', desc: 'Дополнительное ограничение по движению или стрельбе', color: 'border-purple-500/50 bg-purple-950/30' }
+            { title: '🔇 Без звука', desc: 'Играйте полностью без звука', color: 'border-purple-500/50 bg-purple-950/30' },
+            { title: '🛑 Без Shift', desc: 'Запрещено зажимать Shift', color: 'border-purple-500/50 bg-purple-950/30' },
+            { title: '🎛️ Без Ctrl', desc: 'Запрещено приседать (Ctrl)', color: 'border-purple-500/50 bg-purple-950/30' }
         ];
 
         let spinCountCT = 0, spinCountT = 0;
@@ -316,7 +312,6 @@
                         document.getElementById('playersList').innerText = `Ожидание второго игрока в комнате... Вы зашли за ${chosenSide}`;
                     }
 
-                    // Обновляем статус выбора усложнений
                     if(data.challengeChoices) {
                         updateChallengeChoicesUI(data.challengeChoices, players);
                     }
@@ -354,23 +349,18 @@
                 statusEl.innerText = `Оба выбрали одинаковый режим (${c1}). Применено!`;
                 applyResolvedChallengeMode(c1, players);
             } else {
-                statusEl.innerText = `Выборы разлись (${p1}: ${c1} vs ${p2}: ${c2}). Бросаем кубик...`;
-                // Сравниваем кубики
-                setTimeout(() => {
-                    const d1 = choices[p1].dice;
-                    const d2 = choices[p2].dice;
-                    const winner = d1 > d2 ? p1 : (d2 > d1 ? p2 : p1);
-                    const winningMode = choices[winner].mode;
-                    statusEl.innerText = `У ${p1} выпало ${d1}, у ${p2} выпало ${d2}. Победил ${winner}, выбран режим: ${winningMode}`;
-                    applyResolvedChallengeMode(winningMode, players);
-                }, 1000);
+                const d1 = choices[p1].dice;
+                const d2 = choices[p2].dice;
+                const winner = d1 > d2 ? p1 : (d2 > d1 ? p2 : p1);
+                const winningMode = choices[winner].mode;
+                statusEl.innerText = `У ${p1} выпало ${d1}, у ${p2} выпало ${d2}. Победил ${winner}, выбран режим: ${winningMode}`;
+                applyResolvedChallengeMode(winningMode, players);
             }
         }
 
         function applyResolvedChallengeMode(mode, players) {
             let finalMode = mode;
             if(mode === 'random') {
-                // Рандом: 25% none, 50% general, 25% individual
                 const rand = Math.random();
                 if(rand < 0.25) finalMode = 'none';
                 else if(rand < 0.75) finalMode = 'general';
