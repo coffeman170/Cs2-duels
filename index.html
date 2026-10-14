@@ -57,7 +57,7 @@
 </head>
 <body class="p-3 md:p-6 flex flex-col items-center min-h-screen justify-center">
 
-    <!-- МОДАЛЬНОЕ ОКНО ИТОГОВ КНБ -->
+    <!-- МОДАЛЬНОЕ ОКНО КНБ -->
     <div id="rpsOverlay" class="fixed inset-0 bg-black/80 flex items-center justify-center z-50 hidden">
         <div id="rpsOverlayBox" class="p-8 rounded-2xl border-2 text-center space-y-4 max-w-md w-full shadow-2xl transition-all">
             <h1 id="rpsOverlayTitle" class="text-3xl font-black uppercase"></h1>
@@ -80,7 +80,7 @@
         </div>
     </div>
 
-    <!-- ЭКРАН СОЗДАНИЯ И ВХОДА -->
+    <!-- СОЗДАНИЕ И ВХОД -->
     <div id="csSpinScreen" class="hidden max-w-md w-full bg-slate-900 p-6 rounded-2xl border border-slate-800 space-y-6 shadow-2xl">
         <div class="flex justify-between items-center border-b border-slate-800 pb-4">
             <h2 class="text-cyan-400 text-lg font-black uppercase">⚔️ Тактическая Дуэль</h2>
@@ -92,30 +92,33 @@
                 <input type="text" id="usernameInput" value="User" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-3 text-sm text-white focus:outline-none focus:border-cyan-500">
             </div>
             <div class="p-4 bg-slate-950 rounded-xl border border-slate-800 space-y-3">
-                <button onclick="createRoom()" class="w-full py-3 bg-cyan-600 hover:bg-cyan-500 rounded-xl font-bold text-sm uppercase transition shadow-lg shadow-cyan-900/30">
+                <label class="block text-xs text-slate-400">Желаемая сторона:</label>
+                <div class="flex gap-2">
+                    <button onclick="setChosenSide('CT')" id="btnPickCT" class="flex-1 py-2 bg-blue-600 rounded-xl text-xs font-bold uppercase transition border border-blue-400">💙 CT</button>
+                    <button onclick="setChosenSide('T')" id="btnPickT" class="flex-1 py-2 bg-slate-800 rounded-xl text-xs font-bold uppercase transition border border-slate-700">💛 T</button>
+                </div>
+                <button onclick="createRoom()" class="w-full mt-2 py-3 bg-cyan-600 hover:bg-cyan-500 rounded-xl font-bold text-sm uppercase transition shadow-lg">
                     ➕ Создать комнату
                 </button>
             </div>
             <div class="text-center text-xs text-slate-500 font-bold">— ИЛИ —</div>
             <div class="p-4 bg-slate-950 rounded-xl border border-slate-800 space-y-3">
                 <input type="text" id="roomCodeInput" placeholder="Код комнаты" class="w-full bg-slate-900 border border-slate-800 rounded-xl px-4 py-2 text-sm text-white text-center uppercase tracking-widest focus:outline-none focus:border-emerald-500">
-                <button onclick="joinRoom('CT')" class="w-full py-3 bg-emerald-600 hover:bg-emerald-500 rounded-xl font-bold text-sm uppercase transition shadow-lg shadow-emerald-900/30">
-                    🔗 Войти за CT
-                </button>
-                <button onclick="joinRoom('T')" class="w-full py-3 bg-amber-600 hover:bg-amber-500 rounded-xl font-bold text-sm uppercase transition shadow-lg shadow-amber-900/30">
-                    🔗 Войти за T
+                <button onclick="joinRoom()" class="w-full py-3 bg-emerald-600 hover:bg-emerald-500 rounded-xl font-bold text-sm uppercase transition shadow-lg">
+                    🔗 Подключиться к комнате
                 </button>
             </div>
         </div>
     </div>
 
-    <!-- ЛОББИ / КНБ -->
+    <!-- ЛОББИ И МИНИ-ИГРА КНБ -->
     <div id="lobbyScreen" class="hidden max-w-md w-full bg-slate-900 p-6 rounded-2xl border border-slate-800 space-y-6 shadow-2xl text-center">
         <h2 class="text-cyan-400 text-lg font-black uppercase">⚔️ Комната: <span id="displayRoomCode" class="text-white"></span></h2>
-        <div id="playersList" class="text-xs text-slate-300 font-bold">Ожидание игроков...</div>
-        <div id="rpsSection" class="space-y-4 pt-4 border-t border-slate-800">
+        <div id="playersList" class="text-xs text-slate-300 font-bold">Ожидание второго игрока...</div>
+        
+        <div id="rpsSection" class="hidden space-y-4 pt-4 border-t border-slate-800">
             <div id="timerDisplay" class="text-sm font-bold text-amber-400">⏱️ Время на выбор: <span id="timeLeft">15</span>с</div>
-            <p class="text-xs text-slate-400">Камень, Ножницы, Бумага для выбора стороны:</p>
+            <p class="text-xs text-slate-400">Конфликт сторон! Выберите Камень, Ножницы или Бумагу:</p>
             <div class="flex justify-center gap-3">
                 <button onclick="playRPS('Камень')" class="px-4 py-3 bg-slate-800 hover:bg-slate-700 rounded-xl font-bold text-xs transition border border-slate-700">✊ Камень</button>
                 <button onclick="playRPS('Ножницы')" class="px-4 py-3 bg-slate-800 hover:bg-slate-700 rounded-xl font-bold text-xs transition border border-slate-700">✌️ Ножницы</button>
@@ -124,11 +127,12 @@
             <div id="rpsStatus" class="text-xs font-bold text-cyan-400"></div>
             <div id="rpsResult" class="text-sm font-bold text-emerald-400"></div>
         </div>
+
         <div id="sideChoiceSection" class="hidden space-y-3 pt-4 border-t border-slate-800">
-            <p class="text-xs text-slate-300">Вы победили! Выберите стартовую сторону:</p>
+            <p class="text-xs text-slate-300">Вы победили в КНБ! Выберите сторону:</p>
             <div class="flex gap-3">
-                <button onclick="resolveConflict('CT')" class="flex-1 py-2 bg-blue-600 hover:bg-blue-500 rounded-lg text-xs font-bold uppercase transition">💙 CT</button>
-                <button onclick="resolveConflict('T')" class="flex-1 py-2 bg-amber-600 hover:bg-amber-500 rounded-lg text-xs font-bold uppercase transition">💛 T</button>
+                <button onclick="resolveConflict('CT')" class="flex-1 py-2 bg-blue-600 hover:bg-blue-500 rounded-lg text-xs font-bold uppercase transition">💙 Играть за CT</button>
+                <button onclick="resolveConflict('T')" class="flex-1 py-2 bg-amber-600 hover:bg-amber-500 rounded-lg text-xs font-bold uppercase transition">💛 Играть за T</button>
             </div>
         </div>
     </div>
@@ -195,11 +199,11 @@
             </div>
         </div>
 
-        <!-- УСЛОВИЯ / ЛЕНТА -->
+        <!-- ИТОГИ И ЛЕНТА -->
         <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
             <div class="md:col-span-1 bg-slate-900 p-4 rounded-2xl border border-slate-800 space-y-2">
                 <h4 class="text-xs font-black uppercase text-slate-400">📋 Выбор игрока</h4>
-                <div id="summaryChallenge" class="text-xs text-slate-300 font-bold">Кликните на слот оружия, чтобы выбрать его для раунда.</div>
+                <div id="summaryChallenge" class="text-xs text-slate-300 font-bold">Кликните на слот оружия или брони для выбора.</div>
             </div>
             <div class="md:col-span-2 bg-slate-900 p-4 rounded-2xl border border-slate-800 space-y-2">
                 <h4 class="text-xs font-black uppercase text-slate-400">📢 Лента событий (Синхронно)</h4>
@@ -223,7 +227,7 @@
         <div class="p-4 bg-slate-950 rounded-xl border border-slate-800 space-y-3">
             <label class="block text-xs text-slate-400">Ставка ($):</label>
             <input type="number" id="betAmount" value="20" min="5" max="100" class="w-full bg-slate-900 border border-slate-800 rounded-xl px-4 py-2 text-sm text-white text-center font-bold focus:outline-none focus:border-emerald-500">
-            <button onclick="playMiniGame()" class="w-full py-3 bg-emerald-600 hover:bg-emerald-500 rounded-xl font-bold text-sm uppercase transition shadow-lg shadow-emerald-900/30">
+            <button onclick="playMiniGame()" class="w-full py-3 bg-emerald-600 hover:bg-emerald-500 rounded-xl font-bold text-sm uppercase transition shadow-lg">
                 🚀 Сделать ставку
             </button>
         </div>
@@ -241,13 +245,13 @@
 
         let currentRoomCode = '';
         let playerName = '';
+        let chosenSidePreference = 'CT';
         let playerSide = '';
         let roomRef = null;
         let isSpinning = false;
         let timerInterval = null;
         let lastProcessedTimestamp = 0;
 
-        // База оружия CS2 с точными ценами
         const WEAPONS_CT = [
             { title: 'M4A1-S', price: 2900, color: 'border-cyan-500/50 bg-cyan-950/30' },
             { title: 'USP-S', price: 200, color: 'border-blue-500/50 bg-blue-950/30' },
@@ -264,7 +268,6 @@
             { title: 'Galil AR', price: 1800, color: 'border-emerald-500/50 bg-emerald-950/30' }
         ];
 
-        // 3 варианта брони CS2 с точными ценами
         const ARMOR_ITEMS = [
             { title: 'Без брони', price: 0, color: 'border-slate-700 bg-slate-950/30' },
             { title: 'Броня', price: 650, color: 'border-blue-500/50 bg-blue-950/30' },
@@ -300,10 +303,16 @@
             }
         }
 
+        function setChosenSide(side) {
+            chosenSidePreference = side;
+            document.getElementById('btnPickCT').className = side === 'CT' ? 'flex-1 py-2 bg-blue-600 rounded-xl text-xs font-bold uppercase transition border border-blue-400' : 'flex-1 py-2 bg-slate-800 rounded-xl text-xs font-bold uppercase transition border border-slate-700';
+            document.getElementById('btnPickT').className = side === 'T' ? 'flex-1 py-2 bg-amber-600 rounded-xl text-xs font-bold uppercase transition border border-amber-400' : 'flex-1 py-2 bg-slate-800 rounded-xl text-xs font-bold uppercase transition border border-slate-700';
+        }
+
         function createRoom() {
             playerName = document.getElementById('usernameInput').value.trim() || 'User';
             currentRoomCode = Math.random().toString(36).substring(2, 8).toUpperCase();
-            playerSide = 'CT';
+            playerSide = chosenSidePreference;
 
             roomRef = db.ref('rooms/' + currentRoomCode);
             const roomData = {
@@ -327,14 +336,12 @@
             });
         }
 
-        function joinRoom(chosenSide) {
+        function joinRoom() {
             playerName = document.getElementById('usernameInput').value.trim() || 'User';
             const code = document.getElementById('roomCodeInput').value.trim().toUpperCase();
             if(!code) { alert('Введите код комнаты!'); return; }
 
-            playerSide = chosenSide;
             roomRef = db.ref('rooms/' + code);
-
             roomRef.once('value').then((snapshot) => {
                 if(snapshot.exists()) {
                     const data = snapshot.val();
@@ -344,13 +351,9 @@
                     currentRoomCode = code;
                     players[playerName] = true;
                     
-                    let assignedSide = chosenSide;
                     const existingSide = Object.values(sides)[0];
-                    if(existingSide) {
-                        assignedSide = existingSide === 'CT' ? 'T' : 'CT';
-                    }
-                    playerSide = assignedSide;
-                    sides[playerName] = assignedSide;
+                    playerSide = existingSide === 'CT' ? 'T' : 'CT';
+                    sides[playerName] = playerSide;
 
                     roomRef.update({ players, sides, status: 'ready' }).then(() => {
                         showLobby(code, 'Оба игрока в сборе!');
@@ -368,6 +371,14 @@
             document.getElementById('lobbyScreen').classList.remove('hidden');
             document.getElementById('displayRoomCode').innerText = code;
             document.getElementById('playersList').innerText = statusText;
+
+            roomRef.on('value', snap => {
+                const data = snap.val() || {};
+                const players = Object.keys(data.players || {});
+                if(players.length === 2 && !data.rpsWinner) {
+                    document.getElementById('rpsSection').classList.remove('hidden');
+                }
+            });
         }
 
         function listenRoom() {
@@ -388,7 +399,24 @@
                 const sides = data.sides || {};
                 const players = Object.keys(data.players || {});
 
-                if(players.length === 2) {
+                if(data.rpsWinner) {
+                    if(timerInterval) clearInterval(timerInterval);
+                    const winnerData = data.rpsWinner;
+                    if(winnerData.winner === playerName) {
+                        document.getElementById('sideChoiceSection').classList.remove('hidden');
+                    } else {
+                        document.getElementById('sideChoiceSection').classList.add('hidden');
+                        document.getElementById('playersList').innerText = "Ожидание выбора стороны победителем КНБ...";
+                    }
+                    playerSide = winnerData.sides[playerName];
+                }
+
+                if(players.length === 2 && data.sides && data.sides[playerName] && !document.getElementById('sideChoiceSection').classList.contains('hidden') === false && !data.rpsWinner) {
+                    // если КНБ пропущено / решено
+                }
+
+                // Переход в игру если стороны распределены и нет активного КНБ экрана выбора
+                if(players.length === 2 && (!data.rpsWinner || data.gameStarted)) {
                     document.getElementById('lobbyScreen').classList.add('hidden');
                     document.getElementById('gameScreen').classList.remove('hidden');
                     document.getElementById('gameRoomCode').innerText = currentRoomCode;
@@ -444,7 +472,7 @@
             const timerEl = document.getElementById('timeLeft');
             timerInterval = setInterval(() => {
                 timeLeft--;
-                timerEl.innerText = timeLeft;
+                if(timerEl) timerEl.innerText = timeLeft;
                 if(timeLeft <= 0) {
                     clearInterval(timerInterval);
                     ref.once('value', snap => {
@@ -476,9 +504,7 @@
                 }
 
                 roomRef.child('sides').update(updates).then(() => {
-                    roomRef.child('rpsWinner').remove();
-                    roomRef.child('rps').remove();
-                    roomRef.child('timerStarted').remove();
+                    roomRef.update({ gameStarted: true });
                 });
             });
         }
@@ -529,10 +555,11 @@
             return new Promise(resolve => {
                 const track = document.getElementById(trackId);
                 if(!track) return resolve(winner);
-                const targetIdx = 30;
+                // Карточка победителя ровно посередине под указателем (индекс 20)
+                const targetIdx = 20;
                 track.children[targetIdx].replaceWith(createCard(winner));
                 const cardWidth = 120;
-                const offset = (targetIdx * cardWidth) - (track.parentElement.clientWidth / 2) + (cardWidth / 2) + (Math.random() * 30 - 15);
+                const offset = (targetIdx * cardWidth) - (track.parentElement.clientWidth / 2) + (cardWidth / 2);
                 
                 track.style.transition = 'none';
                 track.style.transform = `translateX(0px)`;
@@ -629,8 +656,7 @@
                 armorSlotT.innerText = 'Броня не выбрана';
             }
 
-            // Текст выбора в итогах
-            let summaryText = 'Кликните на слот оружия, чтобы выбрать его.';
+            let summaryText = 'Кликните на слот оружия или брони для выбора.';
             if (playerSide === 'CT' && selectedCTIndex !== null && itemsCT[selectedCTIndex]) {
                 summaryText = `Вы выбрали за CT: ${itemsCT[selectedCTIndex].title} ($${itemsCT[selectedCTIndex].price})`;
             } else if (playerSide === 'T' && selectedTIndex !== null && itemsT[selectedTIndex]) {
