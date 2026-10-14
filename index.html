@@ -41,9 +41,28 @@
             opacity: 0.5;
             cursor: not-allowed !important;
         }
+        @keyframes fall {
+            0% { transform: translateY(-30px) rotate(0deg); opacity: 1; }
+            100% { transform: translateY(100vh) rotate(360deg); opacity: 0; }
+        }
+        .falling-element {
+            position: fixed;
+            top: -50px;
+            font-size: 32px;
+            animation: fall 3s linear infinite;
+            z-index: 999;
+            pointer-events: none;
+        }
     </style>
 </head>
 <body class="p-3 md:p-6 flex flex-col items-center min-h-screen justify-center">
+
+    <!-- МОДАЛЬНОЕ ОКНО АНИМАЦИИ КНБ (5 секунд) -->
+    <div id="rpsResultModal" class="fixed inset-0 bg-black/90 flex flex-col items-center justify-center z-50 hidden space-y-4">
+        <div id="rpsResultTitle" class="text-5xl font-black uppercase tracking-wider"></div>
+        <div id="rpsResultTeam" class="text-xl font-bold text-slate-300"></div>
+        <div id="fallingContainer"></div>
+    </div>
 
     <!-- ГЛАВНОЕ МЕНЮ -->
     <div id="mainMenu" class="max-w-md w-full bg-slate-900/90 p-8 rounded-2xl border border-slate-800 text-center space-y-6 shadow-2xl">
@@ -119,7 +138,6 @@
         </div>
 
         <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
-            <!-- СТОРОНА CT -->
             <div class="bg-slate-900 p-5 rounded-2xl border border-blue-900/50 space-y-4">
                 <div class="flex justify-between items-center border-b border-slate-800 pb-3">
                     <h2 class="text-blue-400 font-black text-sm uppercase">💙 CT (Контр-террористы)</h2>
@@ -143,7 +161,6 @@
                 </div>
             </div>
 
-            <!-- СТОРОНА T -->
             <div class="bg-slate-900 p-5 rounded-2xl border border-amber-900/50 space-y-4">
                 <div class="flex justify-between items-center border-b border-slate-800 pb-3">
                     <h2 class="text-amber-400 font-black text-sm uppercase">💛 T (Террористы)</h2>
@@ -190,7 +207,7 @@
         </div>
         <div class="space-y-4 text-xs text-slate-300">
             <p class="bg-slate-950 p-3 rounded-xl border border-slate-800">
-                <b>Правила:</b> Каждому выдается по $20. Бросайте кубик (1-6) для очередности. Победитель броска крутит рулетку со всеми предметами CS2 и выставляет лот на аукцион со ставками или передачей!
+                <b>Правила:</b> У каждого по $20. Бросайте кубик (1-6) для очередности. Победитель крутит рулетку со всеми предметами CS2 и выставляет лот на аукцион. Ставки сгорают!
             </p>
             <div>
                 <label class="block text-slate-400 mb-1">Ваш никнейм:</label>
@@ -297,7 +314,7 @@
         const db = firebase.database();
 
         let currentRoomCode = '', playerName = '', playerSide = '', roomRef = null, isSpinning = false, lastProcessedTimestamp = 0;
-        let mgCode = '', mgName = 'Player', mgAvatar = '👨', mgRef = null, isMgSpinning = false;
+        let mgCode = '', mgName = 'Player', mgAvatar = '👨', mgRef = null, isMgSpinning = false, mgLastTs = 0;
 
         const WEAPONS_CT = [
             { title: 'M4A1-S', price: 2900, color: 'border-cyan-500/50 bg-cyan-950/30' },
@@ -453,7 +470,10 @@
 
             mgRef.child('action').on('value', snap => {
                 const act = snap.val();
-                if(act && !isMgSpinning) { runMgAnimation(act); }
+                if(act && act.timestamp > mgLastTs && !isMgSpinning) {
+                    mgLastTs = act.timestamp;
+                    runMgAnimation(act);
+                }
             });
         }
 
@@ -492,11 +512,11 @@
             if(act.type === 'SPIN') {
                 const track = document.getElementById('mgTrack');
                 fillMgTrack();
-                const targetIdx = 20;
+                const targetIdx = 30;
                 if(track.children[targetIdx]) {
                     const winDiv = document.createElement('div');
                     winDiv.className = `flex-shrink-0 flex flex-col items-center justify-center p-2 rounded-xl border ${act.item.color} text-center`;
-                    winDiv.style.width = '110px';
+                    winDiv.style.width = '120px';
                     winDiv.innerHTML = `<div class="text-xs font-bold text-white truncate w-full">${act.item.title}</div><div class="text-[10px] text-emerald-400 font-black">$${act.item.price}</div>`;
                     track.children[targetIdx].replaceWith(winDiv);
                 }
@@ -522,26 +542,46 @@
         }
 
         function placeBid() {
-            const val = document.getElementById('bidInput').value;
-            if(!val) return;
-            mgRef.child('chat').once('value', s => {
-                const chat = s.val() || [];
-                chat.push({ user: mgName, text: `Ставка: $${val}` });
-                mgRef.child('chat').set(chat);
+            const val = parseInt(document.getElementById('bidInput').value);
+            if(isNaN(val) || val <= 0) { alert('Введите корректную ставку!'); return; }
+            
+            mgRef.once('value', snap => {
+                const data = snap.val();
+                const players = data.players || {};
+                const currentBalance = players[mgName].balance || 0;
+
+                if(currentBalance < val) {
+                    alert('У вас недостаточно средств для такой ставки!');
+                    return;
+                }
+
+                const newBalance = currentBalance - val;
+                const chat = data.chat || [];
+                chat.push({ user: mgName, text: `Ставка: $${val} (сгорело)` });
+
+                const pKeys = Object.keys(players);
+                const nextTurn = pKeys.find(p => p !== mgName) || mgName;
+
+                mgRef.update({
+                    [`players/${mgName}/balance`]: newBalance,
+                    turn: nextTurn,
+                    chat: chat
+                });
+                document.getElementById('bidInput').value = '';
             });
-            document.getElementById('bidInput').value = '';
         }
 
         function giveItem() {
-            mgRef.child('chat').once('value', s => {
-                const chat = s.val() || [];
+            mgRef.once('value', snap => {
+                const data = snap.val();
+                const chat = data.chat || [];
                 chat.push({ user: mgName, text: `отдал(а) предмет оппоненту!` });
-                mgRef.once('value', snap => {
-                    const players = snap.val().players || {};
-                    const pKeys = Object.keys(players);
-                    const nextTurn = pKeys.find(p => p !== mgName) || mgName;
-                    mgRef.update({ turn: nextTurn, chat });
-                });
+
+                const players = data.players || {};
+                const pKeys = Object.keys(players);
+                const nextTurn = pKeys.find(p => p !== mgName) || mgName;
+
+                mgRef.update({ turn: nextTurn, chat: chat });
             });
         }
 
@@ -549,11 +589,11 @@
             const track = document.getElementById('mgTrack');
             if(!track) return;
             track.innerHTML = '';
-            for(let i=0; i<40; i++) {
+            for(let i=0; i<60; i++) {
                 const item = ALL_CS2_ITEMS[i % ALL_CS2_ITEMS.length];
                 const div = document.createElement('div');
                 div.className = `flex-shrink-0 flex flex-col items-center justify-center p-2 rounded-xl border ${item.color} text-center`;
-                div.style.width = '110px';
+                div.style.width = '120px';
                 div.innerHTML = `<div class="text-xs font-bold text-white truncate w-full">${item.title}</div><div class="text-[10px] text-emerald-400 font-black">$${item.price}</div>`;
                 track.appendChild(div);
             }
@@ -640,9 +680,54 @@
                     const newSides = {};
                     newSides[winner] = winningSide;
                     newSides[loser] = losingSide;
-                    roomRef.update({ sides: newSides, status: 'ready', gameStarted: true });
+                    roomRef.update({ sides: newSides, status: 'show_rps_result', rpsWinner: winner, rpsLoser: loser });
                 }
             });
+        }
+
+        function showRpsAnimation(winner, loser, sides) {
+            const modal = document.getElementById('rpsResultModal');
+            const titleEl = document.getElementById('rpsResultTitle');
+            const teamEl = document.getElementById('rpsResultTeam');
+            const container = document.getElementById('fallingContainer');
+            container.innerHTML = '';
+
+            modal.classList.remove('hidden');
+            const isWinner = (playerName === winner);
+            const myAssignedSide = sides[playerName];
+
+            if(isWinner) {
+                titleEl.className = 'text-6xl font-black uppercase text-emerald-400 drop-shadow-[0_0_20px_#10b981]';
+                titleEl.innerText = 'ПОБЕДА!';
+                teamEl.innerText = `Вы играете за сторону: ${myAssignedSide}`;
+                for(let i=0; i<15; i++) {
+                    const el = document.createElement('div');
+                    el.className = 'falling-element';
+                    el.innerText = '🏆';
+                    el.style.left = Math.random() * 100 + 'vw';
+                    el.style.animationDuration = (2 + Math.random() * 2) + 's';
+                    el.style.animationDelay = (Math.random() * 1.5) + 's';
+                    container.appendChild(el);
+                }
+            } else {
+                titleEl.className = 'text-6xl font-black uppercase text-rose-500 drop-shadow-[0_0_20px_#f43f5e]';
+                titleEl.innerText = 'ПОРАЖЕНИЕ';
+                teamEl.innerText = `Вам досталась сторона: ${myAssignedSide}`;
+                for(let i=0; i<15; i++) {
+                    const el = document.createElement('div');
+                    el.className = 'falling-element';
+                    el.innerText = '💀';
+                    el.style.left = Math.random() * 100 + 'vw';
+                    el.style.animationDuration = (2 + Math.random() * 2) + 's';
+                    el.style.animationDelay = (Math.random() * 1.5) + 's';
+                    container.appendChild(el);
+                }
+            }
+
+            setTimeout(() => {
+                modal.classList.add('hidden');
+                roomRef.update({ status: 'ready', gameStarted: true });
+            }, 5000);
         }
 
         function listenRoom() {
@@ -662,12 +747,17 @@
                 const sides = data.sides || {};
                 const players = Object.keys(data.players || {});
 
-                if(players.length === 2 && !sides[playerName] && data.status !== 'conflict' && data.status !== 'ready') {
+                if(players.length === 2 && !sides[playerName] && data.status !== 'conflict' && data.status !== 'ready' && data.status !== 'show_rps_result') {
                     document.getElementById('sideSelectSection').classList.remove('hidden');
                 }
                 if(data.status === 'conflict') {
                     document.getElementById('sideSelectSection').classList.add('hidden');
                     document.getElementById('rpsSection').classList.remove('hidden');
+                }
+                if(data.status === 'show_rps_result' && !document.getElementById('rpsResultModal').classList.contains('shown')) {
+                    document.getElementById('rpsSection').classList.add('hidden');
+                    document.getElementById('rpsResultModal').classList.add('shown');
+                    showRpsAnimation(data.rpsWinner, data.rpsLoser, data.sides);
                 }
                 if(data.gameStarted || data.status === 'ready') {
                     playerSide = sides[playerName];
@@ -700,7 +790,22 @@
             if(type === 'ARMOR_T' && playerSide !== 'T') { alert('Вы играете за CT!'); return; }
 
             const pool = (type === 'CT') ? WEAPONS_CT : (type === 'T') ? WEAPONS_T : ARMOR_ITEMS;
-            const winningItem = pool[Math.floor(Math.random() * pool.length)];
+            
+            // Проверка на уникальность оружия (чтобы не выпадало дубликатов)
+            let winningItem;
+            let attempts = 0;
+            const existingItems = (type === 'CT') ? itemsCT : itemsT;
+            
+            do {
+                winningItem = pool[Math.floor(Math.random() * pool.length)];
+                attempts++;
+                // Если броня, дубликаты разрешены
+                if(type.includes('ARMOR')) break;
+                // Проверяем, есть ли уже такое оружие в слотах
+                const alreadyExists = existingItems.some(slot => slot && slot.title === winningItem.title);
+                if (!alreadyExists || attempts > 20) break;
+            } while (true);
+
             roomRef.child('action').set({ type, winner: winningItem, player: playerName, timestamp: Date.now() });
         }
 
@@ -724,7 +829,7 @@
             const track = document.getElementById(trackId);
             if(!track) return;
             track.innerHTML = '';
-            for (let i = 0; i < 50; i++) track.appendChild(createCard(pool[i % pool.length]));
+            for (let i = 0; i < 60; i++) track.appendChild(createCard(pool[i % pool.length]));
         }
 
         async function animateTrackWithWinner(trackId, pool, winner) {
@@ -785,7 +890,7 @@
                     const isSelected = (selectedIdx === i);
                     if(item) {
                         div.className = `h-14 rounded-xl border ${item.color} p-1 flex flex-col justify-center text-center cursor-pointer transition ${isSelected ? 'ring-2 ring-amber-400 scale-105' : 'opacity-80 hover:opacity-100'}`;
-                        div.innerHTML = `<div class="text-xs font-bold text-white truncate">${item.title}</div><div class="text-[10px] text-emerald-400 font-bold">$${item.price}</div>`;
+                        div.innerHTML = `<div class="text-xs font-bold text-white truncate w-full">${item.title}</div><div class="text-[10px] text-emerald-400 font-bold">$${item.price}</div>`;
                         div.onclick = () => selectSlot(side, i);
                     } else {
                         div.className = 'h-14 bg-slate-950 rounded-xl border border-slate-800 flex items-center justify-center text-xs text-slate-600';
