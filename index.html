@@ -215,17 +215,45 @@
             const input = document.getElementById('roomInput').value.trim();
             if(!input) return alert('Введите код комнаты!');
             roomRef = db.ref('rooms/' + input);
+            
             roomRef.on('value', (snapshot) => {
                 const data = snapshot.val();
-                if(data && data.action) executeAction(data.action);
+                if (data) {
+                    // Восстанавливаем полное состояние из базы данных
+                    spinCountCT = data.spinCountCT || 0;
+                    spinCountT = data.spinCountT || 0;
+                    itemsCT = data.itemsCT || [null, null, null];
+                    itemsT = data.itemsT || [null, null, null];
+                    selectedCTIndexes = data.selectedCTIndexes || [];
+                    selectedTIndexes = data.selectedTIndexes || [];
+                    armorCTItem = data.armorCTItem || null;
+                    armorTItem = data.armorTItem || null;
+                    currentChallenge = data.currentChallenge || null;
+
+                    renderState();
+
+                    // Если в базе есть активное действие прокрутки — запускаем анимацию
+                    if (data.action) {
+                        animateAction(data.action);
+                    }
+                }
             });
             alert(`Подключено к комнате: ${input}`);
         }
 
+        function saveStateToFirebase() {
+            if (!roomRef) return;
+            roomRef.update({
+                spinCountCT, spinCountT,
+                itemsCT, itemsT,
+                selectedCTIndexes, selectedTIndexes,
+                armorCTItem, armorTItem,
+                currentChallenge
+            });
+        }
+
         function triggerSpin(type) {
             if (isSpinning) return;
-            
-            // Определяем результат заранее, чтобы у всех игроков он был одинаковым
             let payload = { type };
             if (type === 'CT' || type === 'T') {
                 const pool = type === 'CT' ? WEAPONS_CT : WEAPONS_T;
@@ -237,8 +265,11 @@
                 payload.winner = CHALLENGES[Math.floor(Math.random() * CHALLENGES.length)];
             }
 
-            if(roomRef) roomRef.set({ action: payload });
-            else executeAction(payload);
+            if(roomRef) {
+                roomRef.child('action').set(payload);
+            } else {
+                executeActionLocally(payload);
+            }
         }
 
         function setButtonsDisabled(state) {
@@ -280,9 +311,26 @@
             });
         }
 
-        async function executeAction(action) {
+        async function animateAction(action) {
             setButtonsDisabled(true);
+            try {
+                if (action.type === 'CT' || action.type === 'T') {
+                    const side = action.type;
+                    const pool = side === 'CT' ? WEAPONS_CT : WEAPONS_T;
+                    await animateTrackWithWinner(`trackWeapon${side}`, pool, action.winner);
+                } else if (action.type === 'ARMOR') {
+                    await animateTrackWithWinner('trackArmorCT', ARMOR_ITEMS, action.winnerCT);
+                    await animateTrackWithWinner('trackArmorT', ARMOR_ITEMS, action.winnerT);
+                } else if (action.type === 'CHALLENGE') {
+                    await animateTrackWithWinner('trackChallenge', CHALLENGES, action.winner, true);
+                }
+            } finally {
+                setButtonsDisabled(false);
+            }
+        }
 
+        async function executeActionLocally(action) {
+            setButtonsDisabled(true);
             try {
                 if (action.type === 'CT' || action.type === 'T') {
                     const side = action.type;
@@ -291,32 +339,17 @@
                         count = 0;
                         if(side==='CT') { spinCountCT=0; itemsCT=[null,null,null]; selectedCTIndexes=[]; }
                         else { spinCountT=0; itemsT=[null,null,null]; selectedTIndexes=[]; }
-                        for(let i=0; i<3; i++) {
-                            const s = document.getElementById(`slot${side}_${i}`);
-                            s.className = 'item-slot h-16 border border-dashed border-slate-700 rounded-lg flex items-center justify-center text-xs text-slate-500 font-bold';
-                            s.innerText = `Слот ${i+1}`; s.onclick = null;
-                        }
-                        updateSummary();
                     }
                     const pool = side === 'CT' ? WEAPONS_CT : WEAPONS_T;
                     const item = await animateTrackWithWinner(`trackWeapon${side}`, pool, action.winner);
-                    if(side==='CT') itemsCT[count] = item; else itemsT[count] = item;
-
-                    const slot = document.getElementById(`slot${side}_${count}`);
-                    slot.className = 'item-slot h-16 border border-slate-700 bg-slate-800/80 rounded-lg flex flex-col items-center justify-center p-1 text-center';
-                    slot.innerHTML = `<div class="text-[9px] text-slate-400 font-bold">${item.tag}</div><div class="text-xs font-black text-cyan-300">${item.title}</div><div class="text-[10px] text-emerald-400">$${item.price}</div>`;
-                    const sIdx = count;
-                    slot.onclick = () => toggleSlot(side, sIdx);
                     
+                    if(side==='CT') itemsCT[count] = item; else itemsT[count] = item;
                     count++;
                     if(side==='CT') spinCountCT = count; else spinCountT = count;
-                    document.getElementById(`spinBtn${side}`).innerText = count < 3 ? `🎰 Крутить Оружие ${side} (${count+1}/3)` : `🔄 Сбросить заново`;
 
-                    // ВЗАИМНОЕ ИСКЛЮЧЕНИЕ 'ВИНТОВКА' и 'СНАЙПЕРКА'
                     const currentItems = (side === 'CT') ? itemsCT : itemsT;
                     const hasRifle = currentItems.some(i => i && i.tag === 'ВИНТОВКА');
                     const hasSniper = currentItems.some(i => i && i.tag === 'СНАЙПЕРКА');
-                    
                     if (hasRifle && hasSniper) {
                         const sniperIndex = currentItems.findIndex(i => i && i.tag === 'СНАЙПЕРКА');
                         if (sniperIndex !== -1) {
@@ -324,32 +357,63 @@
                             const sel = side === 'CT' ? selectedCTIndexes : selectedTIndexes;
                             const selIdx = sel.indexOf(sniperIndex);
                             if(selIdx !== -1) sel.splice(selIdx, 1);
-
-                            const slotToClear = document.getElementById(`slot${side}_${sniperIndex}`);
-                            if (slotToClear) {
-                                slotToClear.innerHTML = `Слот ${sniperIndex + 1}`;
-                                slotToClear.className = "item-slot h-16 border border-dashed border-slate-700 rounded-lg flex items-center justify-center text-xs text-slate-500 font-bold";
-                                slotToClear.onclick = null;
-                                slotToClear.classList.remove('selected');
-                            }
-                            updateSummary();
                         }
                     }
                 } else if (action.type === 'ARMOR') {
-                    const resCT = await animateTrackWithWinner('trackArmorCT', ARMOR_ITEMS, action.winnerCT);
-                    const resT = await animateTrackWithWinner('trackArmorT', ARMOR_ITEMS, action.winnerT);
-                    armorCTItem = resCT; armorTItem = resT;
-                    document.getElementById('resArmorCT').innerText = `${resCT.title} ($${resCT.price})`;
-                    document.getElementById('resArmorT').innerText = `${resT.title} ($${resT.price})`;
-                    updateSummary();
+                    armorCTItem = await animateTrackWithWinner('trackArmorCT', ARMOR_ITEMS, action.winnerCT);
+                    armorTItem = await animateTrackWithWinner('trackArmorT', ARMOR_ITEMS, action.winnerT);
                 } else if (action.type === 'CHALLENGE') {
-                    const winner = await animateTrackWithWinner('trackChallenge', CHALLENGES, action.winner, true);
-                    currentChallenge = winner;
-                    document.getElementById('summaryChallenge').innerText = `Модификатор: ${winner.title} (${winner.desc})`;
+                    currentChallenge = await animateTrackWithWinner('trackChallenge', CHALLENGES, action.winner, true);
                 }
+                saveStateToFirebase();
+                renderState();
             } finally {
                 setButtonsDisabled(false);
             }
+        }
+
+        // Рендер текущего состояния на экране для всех игроков
+        function renderState() {
+            // Оружие CT
+            for(let i=0; i<3; i++) {
+                const slot = document.getElementById(`slotCT_${i}`);
+                const item = itemsCT[i];
+                if(item) {
+                    slot.className = `item-slot h-16 border border-slate-700 bg-slate-800/80 rounded-lg flex flex-col items-center justify-center p-1 text-center ${selectedCTIndexes.includes(i) ? 'selected' : ''}`;
+                    slot.innerHTML = `<div class="text-[9px] text-slate-400 font-bold">${item.tag}</div><div class="text-xs font-black text-cyan-300">${item.title}</div><div class="text-[10px] text-emerald-400">$${item.price}</div>`;
+                } else {
+                    slot.className = 'item-slot h-16 border border-dashed border-slate-700 rounded-lg flex items-center justify-center text-xs text-slate-500 font-bold';
+                    slot.innerHTML = `Слот ${i+1}`;
+                }
+                slot.onclick = () => toggleSlot('CT', i);
+            }
+            document.getElementById('spinBtnCT').innerText = spinCountCT < 3 ? `🎰 Крутить Оружие CT (${spinCountCT+1}/3)` : `🔄 Сбросить заново`;
+
+            // Оружие T
+            for(let i=0; i<3; i++) {
+                const slot = document.getElementById(`slotT_${i}`);
+                const item = itemsT[i];
+                if(item) {
+                    slot.className = `item-slot h-16 border border-slate-700 bg-slate-800/80 rounded-lg flex flex-col items-center justify-center p-1 text-center ${selectedTIndexes.includes(i) ? 'selected' : ''}`;
+                    slot.innerHTML = `<div class="text-[9px] text-slate-400 font-bold">${item.tag}</div><div class="text-xs font-black text-cyan-300">${item.title}</div><div class="text-[10px] text-emerald-400">$${item.price}</div>`;
+                } else {
+                    slot.className = 'item-slot h-16 border border-dashed border-slate-700 rounded-lg flex items-center justify-center text-xs text-slate-500 font-bold';
+                    slot.innerHTML = `Слот ${i+1}`;
+                }
+                slot.onclick = () => toggleSlot('T', i);
+            }
+            document.getElementById('spinBtnT').innerText = spinCountT < 3 ? `🎰 Крутить Оружие T (${spinCountT+1}/3)` : `🔄 Сбросить заново`;
+
+            // Броня
+            if(armorCTItem) document.getElementById('resArmorCT').innerText = `${armorCTItem.title} ($${armorCTItem.price})`;
+            if(armorTItem) document.getElementById('resArmorT').innerText = `${armorTItem.title} ($${armorTItem.price})`;
+
+            // Челлендж
+            if(currentChallenge) {
+                document.getElementById('summaryChallenge').innerText = `Модификатор: ${currentChallenge.title} (${currentChallenge.desc})`;
+            }
+
+            updateSummary();
         }
 
         function toggleSlot(side, index) {
@@ -359,21 +423,19 @@
             if(!item) return;
             const ex = sel.indexOf(index);
             if(ex !== -1) sel.splice(ex, 1);
-            else { sel = sel.filter(i => items[i].tag !== item.tag); sel.push(index); }
+            else { sel = sel.filter(i => items[i] && items[i].tag !== item.tag); sel.push(index); }
+            
             if(side==='CT') selectedCTIndexes = sel; else selectedTIndexes = sel;
-            for(let i=0; i<3; i++) {
-                const el = document.getElementById(`slot${side}_${i}`);
-                if(el) sel.includes(i) ? el.classList.add('selected') : el.classList.remove('selected');
-            }
-            updateSummary();
+            saveStateToFirebase();
+            renderState();
         }
 
         function updateSummary() {
-            let pCT = 0, strCT = selectedCTIndexes.map(i => { pCT += itemsCT[i].price; return itemsCT[i].title; }).join(' + ');
+            let pCT = 0, strCT = selectedCTIndexes.map(i => { if(itemsCT[i]) { pCT += itemsCT[i].price; return itemsCT[i].title; } }).filter(Boolean).join(' + ');
             if(armorCTItem) pCT += armorCTItem.price;
             document.getElementById('summaryCT').innerText = strCT ? `CT: ${strCT} [${armorCTItem ? armorCTItem.title : 'LOZER'}] ($${pCT})` : `CT: Выберите оружие`;
 
-            let pT = 0, strT = selectedTIndexes.map(i => { pT += itemsT[i].price; return itemsT[i].title; }).join(' + ');
+            let pT = 0, strT = selectedTIndexes.map(i => { if(itemsT[i]) { pT += itemsT[i].price; return itemsT[i].title; } }).filter(Boolean).join(' + ');
             if(armorTItem) pT += armorTItem.price;
             document.getElementById('summaryT').innerText = strT ? `T: ${strT} [${armorTItem ? armorTItem.title : 'LOZER'}] ($${pT})` : `T: Выберите оружие`;
         }
@@ -383,6 +445,68 @@
         fillTrack('trackArmorCT', ARMOR_ITEMS);
         fillTrack('trackArmorT', ARMOR_ITEMS);
         fillTrack('trackChallenge', CHALLENGES, true);
+
+        // Слушаем изменения действий в Firebase в реальном времени
+        db.ref().child('rooms').on('value', snapshot => {
+            // Для слушателя комнаты
+        });
+        
+        // Подключаем прослушку действий, если уже в комнате
+        function listenRoom(roomCode) {
+            db.ref('rooms/' + roomCode).on('value', snapshot => {
+                const data = snapshot.val();
+                if (data) {
+                    spinCountCT = data.spinCountCT || 0;
+                    spinCountT = data.spinCountT || 0;
+                    itemsCT = data.itemsCT || [null, null, null];
+                    itemsT = data.itemsT || [null, null, null];
+                    selectedCTIndexes = data.selectedCTIndexes || [];
+                    selectedTIndexes = data.selectedTIndexes || [];
+                    armorCTItem = data.armorCTItem || null;
+                    armorTItem = data.armorTItem || null;
+                    currentChallenge = data.currentChallenge || null;
+                    renderState();
+                }
+            });
+
+            // Отдельно слушаем событие прокрутки
+            db.ref('rooms/' + roomCode + '/action').on('child_added', snapshot => {
+                // срабатывает при новом действии
+            });
+        }
+        
+        // Перепишем joinRoom для точной синхронизации действий
+        window.joinRoom = function() {
+            const input = document.getElementById('roomInput').value.trim();
+            if(!input) return alert('Введите код комнаты!');
+            roomRef = db.ref('rooms/' + input);
+            
+            roomRef.on('value', (snapshot) => {
+                const data = snapshot.val();
+                if (data) {
+                    spinCountCT = data.spinCountCT || 0;
+                    spinCountT = data.spinCountT || 0;
+                    itemsCT = data.itemsCT || [null, null, null];
+                    itemsT = data.itemsT || [null, null, null];
+                    selectedCTIndexes = data.selectedCTIndexes || [];
+                    selectedTIndexes = data.selectedTIndexes || [];
+                    armorCTItem = data.armorCTItem || null;
+                    armorTItem = data.armorTItem || null;
+                    currentChallenge = data.currentChallenge || null;
+                    renderState();
+                }
+            });
+
+            // Отслеживаем момент, когда кто-то запускает анимацию
+            db.ref('rooms/' + input + '/action').on('value', (snapshot) => {
+                const action = snapshot.val();
+                if (action && !isSpinning) {
+                    animateAction(action);
+                }
+            });
+
+            alert(`Подключено к комнате: ${input}`);
+        };
     </script>
 </body>
 </html>
