@@ -59,19 +59,13 @@
 <body class="p-3 md:p-6 flex flex-col items-center min-h-screen justify-center">
 
     <div class="max-w-4xl w-full space-y-5">
-        
-        <!-- HEADER -->
-        <header id="mainHeader" class="text-center space-y-1">
-            <h1 class="text-2xl md:text-4xl font-black text-cyan-400 tracking-wider uppercase">CS2 DUEL GENERATOR ONLINE</h1>
-            <p class="text-xs text-slate-400">Мультиплеер рулетка с выбором сторон через мини-игру!</p>
-        </header>
 
         <!-- ЭКРАН ВХОДА И ЛОББИ -->
         <div id="loginScreen" class="bg-slate-900/90 p-5 rounded-xl border border-emerald-500/40 space-y-4 text-center">
             <h2 class="text-lg font-bold text-emerald-400">Вход в лобби</h2>
             <div class="flex flex-col md:flex-row gap-3 justify-center">
-                <input id="usernameInput" type="text" placeholder="например, uzer67" class="px-3 py-2 bg-slate-800 border border-slate-700 rounded-lg text-xs font-bold text-white outline-none focus:border-emerald-500" />
-                <input id="roomInput" type="text" placeholder="например, 67" class="px-3 py-2 bg-slate-800 border border-slate-700 rounded-lg text-xs font-bold text-white outline-none focus:border-emerald-500" />
+                <input id="usernameInput" type="text" placeholder="uzer67" class="px-3 py-2 bg-slate-800 border border-slate-700 rounded-lg text-xs font-bold text-white outline-none focus:border-emerald-500" />
+                <input id="roomInput" type="text" placeholder="67" class="px-3 py-2 bg-slate-800 border border-slate-700 rounded-lg text-xs font-bold text-white outline-none focus:border-emerald-500" />
                 <button onclick="joinRoom()" class="px-6 py-2 bg-emerald-600 hover:bg-emerald-500 rounded-lg text-xs font-bold uppercase transition">Войти в лобби</button>
             </div>
         </div>
@@ -79,12 +73,13 @@
         <!-- ЛОББИ И МИНИ-ИГРА (КАМЕНЬ-НОЖНИЦЫ-БУМАГА) -->
         <div id="lobbyScreen" class="hidden bg-slate-900/95 p-5 rounded-xl border border-blue-500/40 space-y-4 text-center">
             <h2 class="text-lg font-bold text-blue-400">Лобби комнаты</h2>
-            <div id="playersList" class="text-xs text-slate-300">Игроки в комнате: ожидание...</div>
+            <div id="playersList" class="text-xs text-slate-300">Игроки в комнате: ожидание второго игрока...</div>
             
-            <div id="rpsSection" class="border-t border-slate-800 pt-4 space-y-3">
+            <div id="rpsSection" class="hidden border-t border-slate-800 pt-4 space-y-3">
                 <div class="text-xs text-yellow-400 font-bold">Мини-игра: Камень, Ножницы, Бумага (Победитель выбирает сторону!)</div>
+                <div id="timerDisplay" class="text-xs font-bold text-red-400">Осталось времени на выбор: 15с</div>
                 <div id="rpsStatus" class="text-xs text-slate-400">Выберите жест:</div>
-                <div class="flex justify-center gap-3">
+                <div class="flex justify-center gap-3" id="rpsButtons">
                     <button onclick="playRPS('Камень')" class="px-4 py-2 bg-slate-800 hover:bg-slate-700 border border-slate-700 rounded text-xs font-bold">✊ Камень</button>
                     <button onclick="playRPS('Ножницы')" class="px-4 py-2 bg-slate-800 hover:bg-slate-700 border border-slate-700 rounded text-xs font-bold">✌️ Ножницы</button>
                     <button onclick="playRPS('Бумага')" class="px-4 py-2 bg-slate-800 hover:bg-slate-700 border border-slate-700 rounded text-xs font-bold">🖐️ Бумага</button>
@@ -203,6 +198,7 @@
         let playerName = "";
         let playerSide = null;
         let isSpinning = false;
+        let timerInterval = null;
 
         const svgAK = `<svg class="w-16 h-10 my-auto" viewBox="0 0 100 40" fill="none"><path d="M5 18 L25 18 L28 12 L38 12 L40 18 L82 18 L88 20 L82 22 L40 22 L36 32 L30 32 L34 22 L20 22 L15 30 L8 30 L12 20 Z" fill="#78350f" stroke="#d97706" stroke-width="0.8"/><rect x="38" y="15" width="28" height="6" fill="#1e293b" stroke="#94a3b8" stroke-width="0.8"/><line x1="82" y1="19" x2="96" y2="19" stroke="#cbd5e1" stroke-width="2.5"/></svg>`;
         const svgM4A4 = `<svg class="w-16 h-10 my-auto" viewBox="0 0 100 40" fill="none"><path d="M5 18 L22 18 L25 14 L42 14 L44 18 L80 18 L84 20 L80 22 L42 22 L38 32 L32 32 L36 22 L22 22 L18 28 L10 28 L14 20 Z" fill="#0f172a" stroke="#f97316" stroke-width="1"/><line x1="80" y1="19.5" x2="94" y2="19.5" stroke="#94a3b8" stroke-width="3"/></svg>`;
@@ -278,12 +274,18 @@
                     const players = data.players ? Object.keys(data.players) : [];
                     document.getElementById('playersList').innerText = `Игроки в комнате: ${players.join(', ')}`;
 
+                    if (players.length >= 2) {
+                        document.getElementById('rpsSection').classList.remove('hidden');
+                        startRpsTimer(roomRef, players);
+                    }
+
                     const sides = data.sides || {};
                     if(sides[playerName]) {
                         playerSide = sides[playerName];
                         document.getElementById('currentSideInfo').innerText = `Ваша сторона: ${playerSide === 'CT' ? 'Counter-Terrorists (CT)' : 'Terrorists (T)'}`;
                         document.getElementById('lobbyScreen').classList.add('hidden');
                         document.getElementById('gameScreen').classList.remove('hidden');
+                        if(timerInterval) clearInterval(timerInterval);
                     }
 
                     renderState();
@@ -297,6 +299,52 @@
                     runAnimation(action);
                 }
             });
+
+            roomRef.child('rpsWinner').on('value', snapshot => {
+                const winner = snapshot.val();
+                if(winner) {
+                    document.getElementById('timerDisplay').classList.add('hidden');
+                    document.getElementById('rpsResult').innerText = winner.includes('Ничья') ? winner : `Победитель мини-игры: ${winner}!`;
+                    if(winner === playerName) {
+                        document.getElementById('sideChoiceSection').classList.remove('hidden');
+                    }
+                }
+            });
+        }
+
+        function startRpsTimer(ref, players) {
+            if (timerInterval) return;
+            let timeLeft = 15;
+            
+            ref.child('timerStarted').transaction(current => {
+                if (!current) return Date.now();
+                return current;
+            }, (error, committed, snapshot) => {
+                const startTime = snapshot.val();
+                
+                timerInterval = setInterval(() => {
+                    const elapsed = Math.floor((Date.now() - startTime) / 1000);
+                    timeLeft = 15 - elapsed;
+
+                    if (timeLeft <= 0) {
+                        clearInterval(timerInterval);
+                        document.getElementById('timerDisplay').innerText = "Время вышло!";
+                        
+                        // Проверяем кто сделал выбор, кто нет
+                        ref.child('rps').once('value', snap => {
+                            const rpsChoices = snap.val() || {};
+                            const missingPlayer = players.find(p => !rpsChoices[p]);
+                            if (missingPlayer && missingPlayer === playerName) {
+                                // Автопроигрыш тому кто не успел
+                                const winner = players.find(p => p !== playerName);
+                                ref.child('rpsWinner').set(winner);
+                            }
+                        });
+                    } else {
+                        document.getElementById('timerDisplay').innerText = `Осталось времени на выбор: ${timeLeft}с`;
+                    }
+                }, 1000);
+            });
         }
 
         function playRPS(choice) {
@@ -306,32 +354,22 @@
 
             roomRef.child('rps').once('value', snapshot => {
                 const rpsData = snapshot.val() || {};
-                const players = Object.keys(rpsData);
-                if(players.length >= 2) {
-                    const p1 = players[0], p2 = players[1];
-                    const c1 = rpsData[p1], c2 = rpsData[p2];
-                    let winner = null;
-                    if(c1 === c2) winner = "Ничья! Переиграйте.";
-                    else if((c1==='Камень'&&c2==='Ножницы')||(c1==='Ножницы'&&c2==='Бумага')||(c1==='Бумага'&&c2==='Камень')) winner = p1;
-                    else winner = p2;
+                roomRef.child('players').once('playersSnap', pSnap => {})
+                roomRef.child('players').once('value', pSnap => {
+                    const players = Object.keys(pSnap.val() || {});
+                    if(players.length >= 2 && rpsData[players[0]] && rpsData[players[1]]) {
+                        const p1 = players[0], p2 = players[1];
+                        const c1 = rpsData[p1], c2 = rpsData[p2];
+                        let winner = null;
+                        if(c1 === c2) winner = "Ничья! Переиграйте.";
+                        else if((c1==='Камень'&&c2==='Ножницы')||(c1==='Ножницы'&&c2==='Бумага')||(c1==='Бумага'&&c2==='Камень')) winner = p1;
+                        else winner = p2;
 
-                    roomRef.child('rpsWinner').set(winner);
-                }
+                        roomRef.child('rpsWinner').set(winner);
+                    }
+                });
             });
         }
-
-        setTimeout(() => {
-            if(!roomRef) return;
-            roomRef.child('rpsWinner').on('value', snapshot => {
-                const winner = snapshot.val();
-                if(winner) {
-                    document.getElementById('rpsResult').innerText = winner.includes('Ничья') ? winner : `Победитель мини-игры: ${winner}!`;
-                    if(winner === playerName) {
-                        document.getElementById('sideChoiceSection').classList.remove('hidden');
-                    }
-                }
-            });
-        }, 1000);
 
         function chooseSide(side) {
             roomRef.child('sides').once('value', snapshot => {
