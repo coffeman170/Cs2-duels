@@ -60,24 +60,26 @@
 
     <div class="max-w-4xl w-full space-y-5">
 
-        <!-- ЭКРАН ВХОДА И ЛОББИ -->
+        <!-- ЭКРАН ВХОДА И ВЫБОРА СТОРОНЫ -->
         <div id="loginScreen" class="bg-slate-900/90 p-5 rounded-xl border border-emerald-500/40 space-y-4 text-center">
-            <h2 class="text-lg font-bold text-emerald-400">Вход в лобби</h2>
+            <h2 class="text-lg font-bold text-emerald-400">Вход в комнату и выбор стороны</h2>
             <div class="flex flex-col md:flex-row gap-3 justify-center">
                 <input id="usernameInput" type="text" placeholder="uzer67" class="px-3 py-2 bg-slate-800 border border-slate-700 rounded-lg text-xs font-bold text-white outline-none focus:border-emerald-500" />
                 <input id="roomInput" type="text" placeholder="67" class="px-3 py-2 bg-slate-800 border border-slate-700 rounded-lg text-xs font-bold text-white outline-none focus:border-emerald-500" />
-                <button onclick="joinRoom()" class="px-6 py-2 bg-emerald-600 hover:bg-emerald-500 rounded-lg text-xs font-bold uppercase transition">Войти в лобби</button>
+            </div>
+            <div class="flex justify-center gap-4 pt-2">
+                <button onclick="joinRoom('CT')" class="px-6 py-2 bg-cyan-600 hover:bg-cyan-500 rounded-lg text-xs font-bold uppercase transition">Зайти за CT (Защита)</button>
+                <button onclick="joinRoom('T')" class="px-6 py-2 bg-amber-600 hover:bg-amber-500 rounded-lg text-xs font-bold uppercase transition">Зайти за T (Атака)</button>
             </div>
         </div>
 
-        <!-- ЛОББИ И МИНИ-ИГРА (КАМЕНЬ-НОЖНИЦЫ-БУМАГА) -->
+        <!-- ЛОББИ И МИНИ-ИГРА ПРИ КОНФЛИКТЕ СТОРОН -->
         <div id="lobbyScreen" class="hidden bg-slate-900/95 p-5 rounded-xl border border-blue-500/40 space-y-4 text-center">
-            <h2 class="text-lg font-bold text-blue-400">Лобби комнаты</h2>
-            <div id="playersList" class="text-xs text-slate-300">Игроки в комнате: ожидание второго игрока...</div>
+            <h2 class="text-lg font-bold text-blue-400">Конфликт сторон!</h2>
+            <div id="playersList" class="text-xs text-slate-300">Оба игрока выбрали одинаковую сторону. Сыграйте в Камень-Ножницы-Бумагу (15 секунд на выбор):</div>
             
-            <div id="rpsSection" class="hidden border-t border-slate-800 pt-4 space-y-3">
-                <div class="text-xs text-yellow-400 font-bold">Мини-игра: Камень, Ножницы, Бумага (Победитель выбирает сторону!)</div>
-                <div id="timerDisplay" class="text-xs font-bold text-red-400">Осталось времени на выбор: 15с</div>
+            <div id="rpsSection" class="border-t border-slate-800 pt-4 space-y-3">
+                <div id="timerDisplay" class="text-xs font-bold text-red-400">Осталось времени: 15с</div>
                 <div id="rpsStatus" class="text-xs text-slate-400">Выберите жест:</div>
                 <div class="flex justify-center gap-3" id="rpsButtons">
                     <button onclick="playRPS('Камень')" class="px-4 py-2 bg-slate-800 hover:bg-slate-700 border border-slate-700 rounded text-xs font-bold">✊ Камень</button>
@@ -87,21 +89,20 @@
                 <div id="rpsResult" class="text-xs font-bold text-cyan-300"></div>
             </div>
 
-            <!-- ВЫБОР СТОРОНЫ ДЛЯ ПОБЕДИТЕЛЯ -->
+            <!-- ПЕРЕХОД ДЛЯ ПОБЕДИТЕЛЯ КНБ -->
             <div id="sideChoiceSection" class="hidden border-t border-slate-800 pt-4 space-y-3">
-                <div class="text-xs text-emerald-400 font-bold">Вы победили в мини-игре! Выберите свою сторону:</div>
+                <div class="text-xs text-emerald-400 font-bold">Вы победили в мини-игре! Выберите другую сторону:</div>
                 <div class="flex justify-center gap-4">
-                    <button onclick="chooseSide('CT')" class="px-6 py-2 bg-cyan-600 hover:bg-cyan-500 rounded text-xs font-bold uppercase">Защита (CT)</button>
-                    <button onclick="chooseSide('T')" class="px-6 py-2 bg-amber-600 hover:bg-amber-500 rounded text-xs font-bold uppercase">Атака (T)</button>
+                    <button onclick="resolveConflict('CT')" class="px-6 py-2 bg-cyan-600 hover:bg-cyan-500 rounded text-xs font-bold uppercase">Взять CT</button>
+                    <button onclick="resolveConflict('T')" class="px-6 py-2 bg-amber-600 hover:bg-amber-500 rounded text-xs font-bold uppercase">Взять T</button>
                 </div>
             </div>
             <div id="currentSideInfo" class="text-xs font-bold text-slate-400"></div>
         </div>
 
-        <!-- ОСНОВНОЙ ИГРОВОЙ ИНТЕРФЕЙС (СКРЫТ ДО ВХОДА) -->
+        <!-- ОСНОВНОЙ ИГРОВОЙ ИНТЕРФЕЙС -->
         <div id="gameScreen" class="hidden space-y-5">
             
-            <!-- ЛЕНТА ВЫПАВШИХ ПРЕДМЕТОВ СВЕРХУ (CASE BATTLE FEED) -->
             <div id="caseFeed" class="bg-slate-900/80 border border-slate-800 rounded-xl p-2 flex items-center gap-3 overflow-x-auto h-14 text-xs">
                 <span class="text-slate-500 font-bold whitespace-nowrap">📜 Лента выпадений:</span>
                 <div id="feedItems" class="flex gap-2"></div>
@@ -241,7 +242,7 @@
         let armorCTItem = null, armorTItem = null, currentChallenge = null;
         let feedList = [];
 
-        function joinRoom() {
+        function joinRoom(chosenSide) {
             const name = document.getElementById('usernameInput').value.trim();
             const room = document.getElementById('roomInput').value.trim();
             if(!name || !room) return alert('Введите имя и код комнаты!');
@@ -249,13 +250,14 @@
             roomRef = db.ref('rooms/' + room);
 
             roomRef.child('players/' + playerName).set(true);
+            roomRef.child('sides/' + playerName).set(chosenSide);
             
             window.addEventListener('beforeunload', () => {
                 roomRef.child('players/' + playerName).remove();
+                roomRef.child('sides/' + playerName).remove();
             });
 
             document.getElementById('loginScreen').classList.add('hidden');
-            document.getElementById('lobbyScreen').classList.remove('hidden');
 
             roomRef.on('value', (snapshot) => {
                 const data = snapshot.val();
@@ -271,21 +273,28 @@
                     currentChallenge = data.currentChallenge || null;
                     feedList = data.feedList || [];
 
-                    const players = data.players ? Object.keys(data.players) : [];
-                    document.getElementById('playersList').innerText = `Игроки в комнате: ${players.join(', ')}`;
-
-                    if (players.length >= 2) {
-                        document.getElementById('rpsSection').classList.remove('hidden');
-                        startRpsTimer(roomRef, players);
-                    }
-
                     const sides = data.sides || {};
-                    if(sides[playerName]) {
-                        playerSide = sides[playerName];
-                        document.getElementById('currentSideInfo').innerText = `Ваша сторона: ${playerSide === 'CT' ? 'Counter-Terrorists (CT)' : 'Terrorists (T)'}`;
-                        document.getElementById('lobbyScreen').classList.add('hidden');
-                        document.getElementById('gameScreen').classList.remove('hidden');
-                        if(timerInterval) clearInterval(timerInterval);
+                    const players = Object.keys(data.players || {});
+
+                    // Проверяем конфликт: оба игрока выбрали одну и ту же сторону
+                    if (players.length >= 2) {
+                        const p1 = players[0], p2 = players[1];
+                        if (sides[p1] && sides[p2] && sides[p1] === sides[p2]) {
+                            // Конфликт! Показываем лобби с КНБ
+                            document.getElementById('lobbyScreen').classList.remove('hidden');
+                            document.getElementById('gameScreen').classList.add('hidden');
+                            startRpsTimer(roomRef, players);
+                        } else if (sides[playerName]) {
+                            // Стороны разные — сразу в игру!
+                            playerSide = sides[playerName];
+                            document.getElementById('lobbyScreen').classList.add('hidden');
+                            document.getElementById('gameScreen').classList.remove('hidden');
+                            if(timerInterval) clearInterval(timerInterval);
+                        }
+                    } else {
+                        // Ожидание второго игрока
+                        document.getElementById('lobbyScreen').classList.remove('hidden');
+                        document.getElementById('playersList').innerText = `Ожидание второго игрока в комнате... Вы зашли за ${chosenSide}`;
                     }
 
                     renderState();
@@ -307,6 +316,9 @@
                     document.getElementById('rpsResult').innerText = winner.includes('Ничья') ? winner : `Победитель мини-игры: ${winner}!`;
                     if(winner === playerName) {
                         document.getElementById('sideChoiceSection').classList.remove('hidden');
+                    } else {
+                        document.getElementById('sideChoiceSection').classList.add('hidden');
+                        document.getElementById('rpsResult').innerText += " Ожидание, пока победитель сменит сторону...";
                     }
                 }
             });
@@ -320,7 +332,7 @@
                 if (!current) return Date.now();
                 return current;
             }, (error, committed, snapshot) => {
-                const startTime = snapshot.val();
+                const startTime = snapshot.val() || Date.now();
                 
                 timerInterval = setInterval(() => {
                     const elapsed = Math.floor((Date.now() - startTime) / 1000);
@@ -330,12 +342,10 @@
                         clearInterval(timerInterval);
                         document.getElementById('timerDisplay').innerText = "Время вышло!";
                         
-                        // Проверяем кто сделал выбор, кто нет
                         ref.child('rps').once('value', snap => {
                             const rpsChoices = snap.val() || {};
                             const missingPlayer = players.find(p => !rpsChoices[p]);
                             if (missingPlayer && missingPlayer === playerName) {
-                                // Автопроигрыш тому кто не успел
                                 const winner = players.find(p => p !== playerName);
                                 ref.child('rpsWinner').set(winner);
                             }
@@ -354,7 +364,6 @@
 
             roomRef.child('rps').once('value', snapshot => {
                 const rpsData = snapshot.val() || {};
-                roomRef.child('players').once('playersSnap', pSnap => {})
                 roomRef.child('players').once('value', pSnap => {
                     const players = Object.keys(pSnap.val() || {});
                     if(players.length >= 2 && rpsData[players[0]] && rpsData[players[1]]) {
@@ -371,18 +380,11 @@
             });
         }
 
-        function chooseSide(side) {
-            roomRef.child('sides').once('value', snapshot => {
-                const sides = snapshot.val() || {};
-                const assignedSides = Object.values(sides);
-                const otherPlayer = assignedSides.length > 0 ? Object.keys(sides)[0] : null;
-
-                let updates = {};
-                updates[playerName] = side;
-                if(otherPlayer && otherPlayer !== playerName) {
-                    updates[otherPlayer] = side === 'CT' ? 'T' : 'CT';
-                }
-                roomRef.child('sides').update(updates);
+        function resolveConflict(newSide) {
+            roomRef.child('sides/' + playerName).set(newSide).then(() => {
+                roomRef.child('rpsWinner').remove();
+                roomRef.child('rps').remove();
+                roomRef.child('timerStarted').remove();
             });
         }
 
