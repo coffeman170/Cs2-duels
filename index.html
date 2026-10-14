@@ -9,21 +9,56 @@
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
     <style>
         body { 
-            background: #07090e; 
+            background: #05070c; 
             color: #ffffff; 
             font-family: system-ui, -apple-system, sans-serif; 
             user-select: none; 
-            background-image: 
-                radial-gradient(at 0% 0%, rgba(14, 165, 233, 0.12) 0px, transparent 50%),
-                radial-gradient(at 100% 100%, rgba(16, 185, 129, 0.1) 0px, transparent 50%);
+            overflow-x: hidden;
+            position: relative;
         }
+        .bg-glow-1 {
+            position: fixed;
+            top: -10%;
+            left: -10%;
+            width: 50vw;
+            height: 50vw;
+            background: radial-gradient(circle, rgba(14, 165, 233, 0.15) 0%, transparent 70%);
+            filter: blur(60px);
+            z-index: -2;
+            animation: pulseGlow 8s ease-in-out infinite alternate;
+        }
+        .bg-glow-2 {
+            position: fixed;
+            bottom: -10%;
+            right: -10%;
+            width: 50vw;
+            height: 50vw;
+            background: radial-gradient(circle, rgba(16, 185, 129, 0.12) 0%, transparent 70%);
+            filter: blur(60px);
+            z-index: -2;
+            animation: pulseGlow 10s ease-in-out infinite alternate-reverse;
+        }
+        .bg-grid {
+            position: fixed;
+            inset: 0;
+            background-image: linear-gradient(to right, rgba(255, 255, 255, 0.02) 1px, transparent 1px),
+                              linear-gradient(to bottom, rgba(255, 255, 255, 0.02) 1px, transparent 1px);
+            background-size: 40px 40px;
+            z-index: -1;
+            pointer-events: none;
+        }
+        @keyframes pulseGlow {
+            0% { transform: scale(1) translate(0, 0); }
+            100% { transform: scale(1.2) translate(30px, -20px); }
+        }
+
         .hide-scrollbar::-webkit-scrollbar { display: none; }
         .hide-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
         
         .roulette-container {
             position: relative;
             overflow: hidden;
-            background: #090b10;
+            background: rgba(9, 11, 16, 0.8);
             border-radius: 0.75rem;
             border: 1px solid #1e293b;
         }
@@ -65,25 +100,28 @@
 </head>
 <body class="p-3 md:p-6 flex flex-col items-center min-h-screen justify-center">
 
-    <!-- МОДАЛЬНОЕ ОКНО АНИМАЦИИ КНБ (5 секунд) -->
-    <div id="rpsResultModal" class="fixed inset-0 bg-black/90 flex flex-col items-center justify-center z-50 hidden space-y-4">
+    <div class="bg-glow-1"></div>
+    <div class="bg-glow-2"></div>
+    <div class="bg-grid"></div>
+
+    <!-- МОДАЛЬНОЕ ОКНО АНИМАЦИИ КНБ -->
+    <div id="rpsResultModal" class="fixed inset-0 bg-black/90 backdrop-blur-md flex flex-col items-center justify-center z-50 hidden space-y-4">
         <div id="rpsResultTitle" class="text-5xl font-black uppercase tracking-wider"></div>
         <div id="rpsResultTeam" class="text-xl font-bold text-slate-300"></div>
         <div id="fallingContainer"></div>
     </div>
 
-    <!-- ГЛАВНОЕ МЕНЮ (ОБНОВЛЕННЫЙ ДИЗАЙН) -->
+    <!-- ГЛАВНОЕ МЕНЮ -->
     <div id="mainMenu" class="max-w-md w-full bg-slate-900/80 backdrop-blur-xl p-8 rounded-3xl border border-slate-800/80 text-center space-y-8 shadow-2xl shadow-cyan-950/20">
         <div class="space-y-2">
             <div class="inline-flex items-center gap-2 px-3 py-1 bg-cyan-950/50 border border-cyan-800/40 rounded-full text-[11px] font-bold text-cyan-400 uppercase tracking-widest">
-                <span class="w-2 h-2 rounded-full bg-cyan-400 animate-pulse"></span> Игровой хаб CS2
+                <span class="w-2 h-2 rounded-full bg-cyan-400 animate-pulse"></span> Игровой хаб
             </div>
             <h1 class="text-4xl font-black text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 via-teal-300 to-emerald-400 uppercase tracking-tight">CS2 DUEL CENTER</h1>
             <p class="text-xs text-slate-400 font-medium">Выберите режим игры для начала дуэли:</p>
         </div>
 
         <div class="flex flex-col gap-4">
-            <!-- Режим 1: Тактическая дуэль -->
             <button onclick="openGame('csSpin')" class="group relative overflow-hidden p-5 bg-slate-950/60 hover:bg-slate-800/50 border border-cyan-500/20 hover:border-cyan-500/50 rounded-2xl transition-all duration-300 text-left shadow-lg hover:shadow-cyan-500/10 active:scale-[0.98]">
                 <div class="flex items-center justify-between">
                     <div class="space-y-1">
@@ -97,7 +135,6 @@
                 </div>
             </button>
 
-            <!-- Режим 2: Аукцион -->
             <button onclick="openGame('miniGame')" class="group relative overflow-hidden p-5 bg-slate-950/60 hover:bg-slate-800/50 border border-emerald-500/20 hover:border-emerald-500/50 rounded-2xl transition-all duration-300 text-left shadow-lg hover:shadow-emerald-500/10 active:scale-[0.98]">
                 <div class="flex items-center justify-between">
                     <div class="space-y-1">
@@ -166,14 +203,14 @@
 
     <!-- ИГРОВОЙ ЭКРАН ДУЭЛИ -->
     <div id="gameScreen" class="hidden max-w-4xl w-full space-y-5">
-        <div class="bg-slate-900 p-4 rounded-2xl border border-slate-800 flex justify-between items-center shadow-lg">
+        <div class="bg-slate-900/90 backdrop-blur-xl p-4 rounded-2xl border border-slate-800/80 flex justify-between items-center shadow-lg">
             <div class="text-sm font-black text-cyan-400 uppercase">⚔️ CS2 DUEL CENTER</div>
             <div class="text-xs text-slate-400">Комната: <span id="gameRoomCode" class="text-white font-bold"></span> | Ваша сторона: <span id="mySideDisplay" class="font-bold"></span></div>
             <button onclick="backToMenu()" class="px-3 py-1 bg-slate-800 hover:bg-slate-700 rounded-lg text-xs font-bold transition">Выйти</button>
         </div>
 
-        <!-- БЛОК УСЛОВИЙ (РАНДОМ УСЛОВИЙ) -->
-        <div class="bg-slate-900 p-4 rounded-2xl border border-slate-800 space-y-3">
+        <!-- БЛОК УСЛОВИЙ -->
+        <div class="bg-slate-900/90 backdrop-blur-xl p-4 rounded-2xl border border-slate-800/80 space-y-3">
             <h3 class="text-xs font-black uppercase text-amber-400">⚡ Система усложнений раунда</h3>
             <div id="complicationArea" class="flex flex-col items-center gap-3">
                 <div id="complicationStatusText" class="text-xs text-slate-300 font-bold">Нажмите кнопку «Рандом», чтобы выбрать тип усложнения:</div>
@@ -186,7 +223,7 @@
 
         <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
             <!-- CT СТОРОНА -->
-            <div class="bg-slate-900 p-5 rounded-2xl border border-blue-900/50 space-y-4">
+            <div class="bg-slate-900/80 backdrop-blur-xl p-5 rounded-2xl border border-blue-900/50 space-y-4 shadow-xl">
                 <div class="flex justify-between items-center border-b border-slate-800 pb-3">
                     <h2 class="text-blue-400 font-black text-sm uppercase">💙 CT (Контр-террористы)</h2>
                     <span id="playerCTName" class="text-xs font-bold text-slate-300">-</span>
@@ -210,7 +247,7 @@
             </div>
 
             <!-- T СТОРОНА -->
-            <div class="bg-slate-900 p-5 rounded-2xl border border-amber-900/50 space-y-4">
+            <div class="bg-slate-900/80 backdrop-blur-xl p-5 rounded-2xl border border-amber-900/50 space-y-4 shadow-xl">
                 <div class="flex justify-between items-center border-b border-slate-800 pb-3">
                     <h2 class="text-amber-400 font-black text-sm uppercase">💛 T (Террористы)</h2>
                     <span id="playerTName" class="text-xs font-bold text-slate-300">-</span>
@@ -235,23 +272,23 @@
         </div>
 
         <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <!-- ВЫБОР ИГРОКА (ОТОБРАЖЕНИЕ КТ И Т) -->
-            <div class="md:col-span-1 bg-slate-900 p-4 rounded-2xl border border-slate-800 space-y-3">
+            <!-- ВЫБОР ИГРОКА С ИТОГОВОЙ СТОИМОСТЬЮ -->
+            <div class="md:col-span-1 bg-slate-900/90 backdrop-blur-xl p-4 rounded-2xl border border-slate-800/80 space-y-3">
                 <h4 class="text-xs font-black uppercase text-slate-400">📋 Выбор игроков</h4>
                 <div id="summaryChallenge" class="space-y-2 text-xs">
-                    <div class="p-2 bg-slate-950 rounded-xl border border-blue-900/40">
-                        <span class="font-bold text-blue-400">Выбор CT:</span>
-                        <div id="summaryCTText" class="text-slate-300 mt-0.5">Предметы не выбраны</div>
+                    <div class="p-2.5 bg-slate-950 rounded-xl border border-blue-900/40">
+                        <div class="font-bold text-blue-400">Выбор CT:</div>
+                        <div id="summaryCTText" class="text-slate-300 mt-1">Предметы не выбраны</div>
                     </div>
-                    <div class="p-2 bg-slate-950 rounded-xl border border-amber-900/40">
-                        <span class="font-bold text-amber-400">Выбор T:</span>
-                        <div id="summaryTText" class="text-slate-300 mt-0.5">Предметы не выбраны</div>
+                    <div class="p-2.5 bg-slate-950 rounded-xl border border-amber-900/40">
+                        <div class="font-bold text-amber-400">Выбор T:</div>
+                        <div id="summaryTText" class="text-slate-300 mt-1">Предметы не выбраны</div>
                     </div>
                 </div>
             </div>
 
             <!-- ЛЕНТА СОБЫТИЙ -->
-            <div class="md:col-span-2 bg-slate-900 p-4 rounded-2xl border border-slate-800 space-y-2">
+            <div class="md:col-span-2 bg-slate-900/90 backdrop-blur-xl p-4 rounded-2xl border border-slate-800/80 space-y-2">
                 <h4 class="text-xs font-black uppercase text-slate-400">📢 Лента событий (Синхронно)</h4>
                 <div id="feedContainer" class="space-y-1 max-h-24 overflow-y-auto hide-scrollbar text-xs">
                     <div class="text-slate-500">Событий пока нет...</div>
@@ -295,14 +332,14 @@
 
     <!-- MINI GAME 20$ ИГРОВОЙ ЭКРАН -->
     <div id="miniGameScreen" class="hidden max-w-4xl w-full space-y-5">
-        <div class="bg-slate-900 p-4 rounded-2xl border border-slate-800 flex justify-between items-center shadow-lg">
+        <div class="bg-slate-900/90 backdrop-blur-xl p-4 rounded-2xl border border-slate-800 flex justify-between items-center shadow-lg">
             <div class="text-sm font-black text-emerald-400 uppercase">🎲 MINI GAME 20$ | Комната: <span id="mgDisplayCode" class="text-white"></span></div>
             <button onclick="backToMenu()" class="px-3 py-1 bg-slate-800 hover:bg-slate-700 rounded-lg text-xs font-bold transition">Выйти</button>
         </div>
 
         <div class="grid grid-cols-2 gap-4">
             <!-- Игрок 1 -->
-            <div class="bg-slate-900 p-4 rounded-2xl border border-slate-800 space-y-3">
+            <div class="bg-slate-900/90 backdrop-blur-xl p-4 rounded-2xl border border-slate-800 space-y-3 shadow-xl">
                 <div class="flex items-center justify-between">
                     <div class="flex items-center gap-3">
                         <div id="mgP1Avatar" class="text-3xl">👨</div>
@@ -319,7 +356,7 @@
                 </div>
             </div>
             <!-- Игрок 2 -->
-            <div class="bg-slate-900 p-4 rounded-2xl border border-slate-800 space-y-3">
+            <div class="bg-slate-900/90 backdrop-blur-xl p-4 rounded-2xl border border-slate-800 space-y-3 shadow-xl">
                 <div class="flex items-center justify-between">
                     <div class="flex items-center gap-3">
                         <div id="mgP2Avatar" class="text-3xl">👩</div>
@@ -337,7 +374,7 @@
             </div>
         </div>
 
-        <div id="diceSection" class="hidden bg-slate-900 p-6 rounded-2xl border border-slate-800 text-center space-y-4">
+        <div id="diceSection" class="hidden bg-slate-900/90 backdrop-blur-xl p-6 rounded-2xl border border-slate-800 text-center space-y-4 shadow-2xl">
             <h3 class="text-sm font-black text-amber-400 uppercase">🎲 Бросок кубика для очередности</h3>
             <p class="text-xs text-slate-400">Нажмите на кубик (от 1 до 6). У кого больше — тот крутит первым!</p>
             <div class="flex justify-center">
@@ -347,7 +384,7 @@
         </div>
 
         <div id="auctionSection" class="hidden grid grid-cols-1 md:grid-cols-3 gap-5">
-            <div class="md:col-span-2 bg-slate-900 p-5 rounded-2xl border border-slate-800 space-y-4">
+            <div class="md:col-span-2 bg-slate-900/90 backdrop-blur-xl p-5 rounded-2xl border border-slate-800 space-y-4 shadow-xl">
                 <div class="flex justify-between items-center border-b border-slate-800 pb-3">
                     <h2 class="text-emerald-400 font-black text-sm uppercase">🎰 Рулетка всех предметов CS2</h2>
                     <span id="turnIndicator" class="text-xs font-bold text-amber-400">Ход: -</span>
@@ -358,7 +395,7 @@
                 </button>
             </div>
 
-            <div class="bg-slate-900 p-5 rounded-2xl border border-slate-800 flex flex-col justify-between space-y-4">
+            <div class="bg-slate-900/90 backdrop-blur-xl p-5 rounded-2xl border border-slate-800 flex flex-col justify-between space-y-4 shadow-xl">
                 <div>
                     <h3 class="text-xs font-black uppercase text-slate-400 mb-2">🏷️ Аукцион <span id="timerDisplay" class="text-amber-400 font-bold"></span></h3>
                     <div id="currentAuctionItem" class="p-3 bg-slate-950 rounded-xl border border-slate-800 text-center text-xs text-slate-300">
@@ -392,37 +429,56 @@
         let mgCode = '', mgName = 'Player', mgAvatar = '👨', mgRef = null, isMgSpinning = false, mgLastTs = 0;
         let timerInterval = null;
 
+        // РАЗДЕЛЕНИЕ НА КАТЕГОРИИ: 'primary' (основное), 'secondary' (вторичное), 'grenade' (граната)
         const WEAPONS_CT = [
-            { title: 'M4A1-S', price: 2900, color: 'border-cyan-500/50 bg-cyan-950/30' },
-            { title: 'USP-S', price: 200, color: 'border-blue-500/50 bg-blue-950/30' },
-            { title: 'AWP', price: 4750, color: 'border-amber-500/50 bg-amber-950/30' },
-            { title: 'Desert Eagle', price: 700, color: 'border-purple-500/50 bg-purple-950/30' },
-            { title: 'MP9', price: 1250, color: 'border-emerald-500/50 bg-emerald-950/30' }
+            { title: 'M4A1-S', price: 2900, category: 'primary', label: 'Основное', color: 'border-cyan-500/50 bg-cyan-950/30' },
+            { title: 'AWP', price: 4750, category: 'primary', label: 'Основное', color: 'border-amber-500/50 bg-amber-950/30' },
+            { title: 'MP9', price: 1250, category: 'primary', label: 'Основное', color: 'border-emerald-500/50 bg-emerald-950/30' },
+            { title: 'XM1014', price: 2000, category: 'primary', label: 'Основное', color: 'border-orange-500/50 bg-orange-950/30' },
+            { title: 'Negev', price: 1700, category: 'primary', label: 'Основное', color: 'border-teal-500/50 bg-teal-950/30' },
+            
+            { title: 'USP-S', price: 200, category: 'secondary', label: 'Вторичное', color: 'border-blue-500/50 bg-blue-950/30' },
+            { title: 'Desert Eagle', price: 700, category: 'secondary', label: 'Вторичное', color: 'border-purple-500/50 bg-purple-950/30' },
+            { title: 'R8 Revolver', price: 600, category: 'secondary', label: 'Вторичное', color: 'border-rose-500/50 bg-rose-950/30' },
+
+            { title: 'Smoke', price: 300, category: 'grenade', label: 'Граната', color: 'border-emerald-500/50 bg-emerald-950/30' },
+            { title: 'Flashbang', price: 200, category: 'grenade', label: 'Граната', color: 'border-yellow-500/50 bg-yellow-950/30' },
+            { title: 'HE Grenade', price: 300, category: 'grenade', label: 'Граната', color: 'border-red-500/50 bg-red-950/30' },
+            { title: 'Molotov', price: 400, category: 'grenade', label: 'Граната', color: 'border-orange-600/50 bg-orange-950/30' },
+            { title: 'Decoy', price: 50, category: 'grenade', label: 'Граната', color: 'border-slate-500/50 bg-slate-950/30' }
         ];
 
         const WEAPONS_T = [
-            { title: 'AK-47', price: 2700, color: 'border-rose-500/50 bg-rose-950/30' },
-            { title: 'Glock-18', price: 200, color: 'border-cyan-500/50 bg-cyan-950/30' },
-            { title: 'AWP', price: 4750, color: 'border-amber-500/50 bg-amber-950/30' },
-            { title: 'Desert Eagle', price: 700, color: 'border-purple-500/50 bg-purple-950/30' },
-            { title: 'Galil AR', price: 1800, color: 'border-emerald-500/50 bg-emerald-950/30' }
+            { title: 'AK-47', price: 2700, category: 'primary', label: 'Основное', color: 'border-rose-500/50 bg-rose-950/30' },
+            { title: 'AWP', price: 4750, category: 'primary', label: 'Основное', color: 'border-amber-500/50 bg-amber-950/30' },
+            { title: 'Galil AR', price: 1800, category: 'primary', label: 'Основное', color: 'border-emerald-500/50 bg-emerald-950/30' },
+            { title: 'XM1014', price: 2000, category: 'primary', label: 'Основное', color: 'border-orange-500/50 bg-orange-950/30' },
+            { title: 'Negev', price: 1700, category: 'primary', label: 'Основное', color: 'border-teal-500/50 bg-teal-950/30' },
+            
+            { title: 'Glock-18', price: 200, category: 'secondary', label: 'Вторичное', color: 'border-cyan-500/50 bg-cyan-950/30' },
+            { title: 'Tec-9', price: 500, category: 'secondary', label: 'Вторичное', color: 'border-yellow-500/50 bg-yellow-950/30' },
+            { title: 'Desert Eagle', price: 700, category: 'secondary', label: 'Вторичное', color: 'border-purple-500/50 bg-purple-950/30' },
+            { title: 'R8 Revolver', price: 600, category: 'secondary', label: 'Вторичное', color: 'border-rose-500/50 bg-rose-950/30' },
+
+            { title: 'Smoke', price: 300, category: 'grenade', label: 'Граната', color: 'border-emerald-500/50 bg-emerald-950/30' },
+            { title: 'Flashbang', price: 200, category: 'grenade', label: 'Граната', color: 'border-yellow-500/50 bg-yellow-950/30' },
+            { title: 'HE Grenade', price: 300, category: 'grenade', label: 'Граната', color: 'border-red-500/50 bg-red-950/30' },
+            { title: 'Molotov', price: 400, category: 'grenade', label: 'Граната', color: 'border-orange-600/50 bg-orange-950/30' },
+            { title: 'Decoy', price: 50, category: 'grenade', label: 'Граната', color: 'border-slate-500/50 bg-slate-950/30' }
         ];
 
         const ARMOR_ITEMS = [
-            { title: 'Без брони', price: 0, color: 'border-slate-700 bg-slate-950/30' },
-            { title: 'Броня', price: 650, color: 'border-blue-500/50 bg-blue-950/30' },
-            { title: 'Броня + Шлем', price: 1000, color: 'border-amber-500/50 bg-amber-950/30' }
+            { title: 'Без брони', price: 0, category: 'armor', label: 'Снаряжение', color: 'border-slate-700 bg-slate-950/30' },
+            { title: 'Броня', price: 650, category: 'armor', label: 'Снаряжение', color: 'border-blue-500/50 bg-blue-950/30' },
+            { title: 'Броня + Шлем', price: 1000, category: 'armor', label: 'Снаряжение', color: 'border-amber-500/50 bg-amber-950/30' }
         ];
 
         const ALL_CS2_ITEMS = [
-            ...WEAPONS_CT, ...WEAPONS_T, ...ARMOR_ITEMS,
-            { title: 'Smoke', price: 300, color: 'border-emerald-500/50 bg-emerald-950/30' },
-            { title: 'Flashbang', price: 200, color: 'border-yellow-500/50 bg-yellow-950/30' },
-            { title: 'HE Grenade', price: 300, color: 'border-red-500/50 bg-red-950/30' }
+            ...WEAPONS_CT, ...WEAPONS_T, ...ARMOR_ITEMS
         ];
 
         const GENERAL_COMPLICATIONS = [
-            "Без шифта", "Без прыжков", "Без звука", "Ноу-скопом", "Свап на нож при выстреле", "Только ван-тапы", "Без перезарядки"
+            "Без шифта", "Без прыжков", "Без звука", "Ноу-скопом", "Свап на нож при выстреле", "Только ван-тапы", "Перезарядка на 0 патрон в обойме"
         ];
 
         let spinCountCT = 0, spinCountT = 0;
@@ -770,13 +826,36 @@
             roomRef.child('action').set({ type, winner: winningItem, player: playerName, timestamp: Date.now() });
         }
 
+        // ЛОГИКА ОГРАНИЧЕНИЙ ВЫБОРА ОРУЖИЯ И ГРАНАТ
         function selectSlot(side, index) {
             if (side !== playerSide) return;
+            const items = (side === 'CT') ? itemsCT : itemsT;
+            const targetItem = items[index];
+            if(!targetItem) return;
+
             let currentList = (side === 'CT') ? [...selectedCTIndices] : [...selectedTIndices];
-            
+
             if(currentList.includes(index)) {
+                // Если с кликнутого предмета снимается галочка
                 currentList = currentList.filter(i => i !== index);
             } else {
+                // ПРОВЕРКА ОГРАНИЧЕНИЙ:
+                if (targetItem.category === 'primary') {
+                    // Нельзя брать 2 основных оружия (снимаем выбор с предыдущего основного)
+                    currentList = currentList.filter(idx => items[idx] && items[idx].category !== 'primary');
+                } else if (targetItem.category === 'secondary') {
+                    // Нельзя брать 2 второстепенных оружия (снимаем выбор с предыдущего пистолета)
+                    currentList = currentList.filter(idx => items[idx] && items[idx].category !== 'secondary');
+                } else if (targetItem.category === 'grenade') {
+                    // Проверка на одинаковые гранаты (кроме Flashbang)
+                    if (targetItem.title !== 'Flashbang') {
+                        const hasSameGrenade = currentList.some(idx => items[idx] && items[idx].title === targetItem.title);
+                        if (hasSameGrenade) {
+                            alert(`Нельзя брать две одинаковые гранаты (${targetItem.title})! Это правило не распространяется только на Flashbang.`);
+                            return;
+                        }
+                    }
+                }
                 currentList.push(index);
             }
 
@@ -790,7 +869,8 @@
             const div = document.createElement('div');
             div.className = `flex-shrink-0 flex flex-col items-center justify-center p-2 rounded-xl border ${item.color} text-center`;
             div.style.width = '120px';
-            div.innerHTML = `<div class="text-xs font-bold text-white truncate w-full">${item.title}</div><div class="text-[10px] text-emerald-400 font-black">$${item.price}</div>`;
+            const labelText = item.label ? `<div class="text-[9px] text-slate-400 font-medium">${item.label}</div>` : '';
+            div.innerHTML = `<div class="text-xs font-bold text-white truncate w-full">${item.title}</div>${labelText}<div class="text-[10px] text-emerald-400 font-black">$${item.price}</div>`;
             return div;
         }
 
@@ -822,34 +902,49 @@
         async function runAnimation(action) {
             isSpinning = true;
             let item = action.winner;
+
             if (action.type === 'CT' || action.type === 'T') {
                 const side = action.type;
                 const pool = side === 'CT' ? WEAPONS_CT : WEAPONS_T;
                 await animateTrackWithWinner(`trackWeapon${side}`, pool, item);
-                let currentItems = side === 'CT' ? [...itemsCT] : [...itemsT];
-                let count = side === 'CT' ? spinCountCT : spinCountT;
-                if(count >= 3) { currentItems = [null, null, null]; count = 0; }
-                currentItems[count] = item;
-                count++;
-                if(side === 'CT') { itemsCT = currentItems; spinCountCT = count; }
-                else { itemsT = currentItems; spinCountT = count; }
-                feedList.unshift({ player: action.player, title: item.title, price: item.price });
-            } else if (action.type === 'ARMOR_CT') {
-                await animateTrackWithWinner('trackArmorCT', ARMOR_ITEMS, item);
-                armorCTItem = item;
-                hasSpunArmorCT = true;
-                feedList.unshift({ player: action.player, title: `Снаряжение: ${item.title}`, price: item.price });
-            } else if (action.type === 'ARMOR_T') {
-                await animateTrackWithWinner('trackArmorT', ARMOR_ITEMS, item);
-                armorTItem = item;
-                hasSpunArmorT = true;
-                feedList.unshift({ player: action.player, title: `Снаряжение: ${item.title}`, price: item.price });
-            }
-            if (roomRef) { 
-                roomRef.update({ 
-                    spinCountCT, spinCountT, itemsCT, itemsT, 
-                    armorCTItem, armorTItem, hasSpunArmorCT, hasSpunArmorT, feedList 
-                }); 
+                
+                if (action.player === playerName) {
+                    let currentItems = side === 'CT' ? [...itemsCT] : [...itemsT];
+                    let count = side === 'CT' ? spinCountCT : spinCountT;
+                    if(count >= 3) { currentItems = [null, null, null]; count = 0; }
+                    currentItems[count] = item;
+                    count++;
+                    
+                    const newFeed = [{ player: action.player, title: item.title, price: item.price }, ...feedList];
+
+                    const updates = {};
+                    if(side === 'CT') {
+                        updates.itemsCT = currentItems;
+                        updates.spinCountCT = count;
+                    } else {
+                        updates.itemsT = currentItems;
+                        updates.spinCountT = count;
+                    }
+                    updates.feedList = newFeed;
+                    roomRef.update(updates);
+                }
+            } else if (action.type === 'ARMOR_CT' || action.type === 'ARMOR_T') {
+                const side = action.type === 'ARMOR_CT' ? 'CT' : 'T';
+                await animateTrackWithWinner(`trackArmor${side}`, ARMOR_ITEMS, item);
+                
+                if (action.player === playerName) {
+                    const newFeed = [{ player: action.player, title: `Снаряжение: ${item.title}`, price: item.price }, ...feedList];
+                    const updates = {};
+                    if(side === 'CT') {
+                        updates.armorCTItem = item;
+                        updates.hasSpunArmorCT = true;
+                    } else {
+                        updates.armorTItem = item;
+                        updates.hasSpunArmorT = true;
+                    }
+                    updates.feedList = newFeed;
+                    roomRef.update(updates);
+                }
             }
             isSpinning = false;
         }
@@ -870,7 +965,7 @@
                     const isSelected = selectedList.includes(i);
                     if(item) {
                         div.className = `h-14 rounded-xl border ${item.color} p-1 flex flex-col justify-center text-center cursor-pointer transition ${isSelected ? 'ring-2 ring-amber-400 scale-105 shadow-lg shadow-amber-500/20' : 'opacity-80 hover:opacity-100'}`;
-                        div.innerHTML = `<div class="text-xs font-bold text-white truncate w-full">${item.title}</div><div class="text-[10px] text-emerald-400 font-bold">$${item.price}</div>`;
+                        div.innerHTML = `<div class="text-xs font-bold text-white truncate w-full">${item.title}</div><div class="text-[9px] text-slate-400">${item.label || ''}</div><div class="text-[10px] text-emerald-400 font-bold">$${item.price}</div>`;
                         div.onclick = () => selectSlot(side, i);
                     } else {
                         div.className = 'h-14 bg-slate-950 rounded-xl border border-slate-800 flex items-center justify-center text-xs text-slate-600';
@@ -882,16 +977,25 @@
             renderSlots(itemsCT, 'slotsCT', 'CT', selectedCTIndices);
             renderSlots(itemsT, 'slotsT', 'T', selectedTIndices);
 
-            const ctSelectedNames = selectedCTIndices.map(idx => itemsCT[idx]).filter(Boolean).map(it => it.title);
-            const tSelectedNames = selectedTIndices.map(idx => itemsT[idx]).filter(Boolean).map(it => it.title);
+            const ctSelectedItems = selectedCTIndices.map(idx => itemsCT[idx]).filter(Boolean);
+            const ctSelectedNames = ctSelectedItems.map(it => it.title);
+            let ctTotalPrice = ctSelectedItems.reduce((sum, item) => sum + (item.price || 0), 0);
+            if(armorCTItem) ctTotalPrice += (armorCTItem.price || 0);
 
             let ctSummaryText = ctSelectedNames.length > 0 ? ctSelectedNames.join(' + ') : 'Предметы не выбраны';
             if(armorCTItem) ctSummaryText += ` | 🛡️ ${armorCTItem.title}`;
-            document.getElementById('summaryCTText').innerHTML = `<span class="font-bold text-white">${ctSummaryText}</span>`;
+            ctSummaryText += ` <span class="text-emerald-400 font-black ml-1">— Итого: $${ctTotalPrice}</span>`;
+            document.getElementById('summaryCTText').innerHTML = ctSummaryText;
+
+            const tSelectedItems = selectedTIndices.map(idx => itemsT[idx]).filter(Boolean);
+            const tSelectedNames = tSelectedItems.map(it => it.title);
+            let tTotalPrice = tSelectedItems.reduce((sum, item) => sum + (item.price || 0), 0);
+            if(armorTItem) tTotalPrice += (armorTItem.price || 0);
 
             let tSummaryText = tSelectedNames.length > 0 ? tSelectedNames.join(' + ') : 'Предметы не выбраны';
             if(armorTItem) tSummaryText += ` | 🛡️ ${armorTItem.title}`;
-            document.getElementById('summaryTText').innerHTML = `<span class="font-bold text-white">${tSummaryText}</span>`;
+            tSummaryText += ` <span class="text-emerald-400 font-black ml-1">— Итого: $${tTotalPrice}</span>`;
+            document.getElementById('summaryTText').innerHTML = tSummaryText;
 
             const armorSlotCT = document.getElementById('armorSlotCT');
             if(armorCTItem) {
@@ -919,7 +1023,7 @@
                 return;
             }
             container.innerHTML = feedList.map(f => `
-                <div class="bg-slate-800 px-2 py-1 rounded border border-slate-700 flex justify-between items-center">
+                <div class="bg-slate-800/80 px-2 py-1 rounded border border-slate-700/80 flex justify-between items-center">
                     <div><span class="text-cyan-400 font-bold">${f.player}:</span> <span class="text-white">${f.title}</span></div>
                     ${f.price > 0 ? `<span class="text-emerald-400 font-bold">($${f.price})</span>` : ''}
                 </div>
@@ -1026,7 +1130,7 @@
                     const giveItemBtn = document.getElementById('giveItemBtn');
 
                     if(data.currentAuctionItem) {
-                        document.getElementById('currentAuctionItem').innerHTML = `<b>${data.currentAuctionItem.title}</b> ($${data.currentAuctionItem.price}) выставил ${data.currentAuctionItem.owner}`;
+                        document.getElementById('currentAuctionItem').innerHTML = `<b>${data.currentAuctionItem.title}</b> (${data.currentAuctionItem.label || ''} | $${data.currentAuctionItem.price}) выставил ${data.currentAuctionItem.owner}`;
                         spinBtn.disabled = true;
 
                         const isOwner = (data.currentAuctionItem.owner === mgName);
@@ -1104,7 +1208,7 @@
                 const refundedBalance = currentBalance + playerBids;
 
                 const oppInventory = players[opponentName].inventory || [];
-                oppInventory.push({ title: auctionItem.title, price: auctionItem.price, color: auctionItem.color });
+                oppInventory.push({ title: auctionItem.title, price: auctionItem.price, label: auctionItem.label, color: auctionItem.color });
 
                 const chat = data.chat || [];
                 chat.push({ user: 'Система', text: `⏰ Время истекло (10 сек)! Предмет автоматически отдан оппоненту.` });
@@ -1132,6 +1236,7 @@
             container.innerHTML = inventory.map(item => `
                 <div class="px-2 py-1 rounded bg-slate-950 border ${item.color} text-[10px] flex flex-col items-center">
                     <span class="font-bold text-white">${item.title}</span>
+                    <span class="text-[8px] text-slate-400">${item.label || ''}</span>
                     <span class="text-emerald-400 font-black">$${item.price}</span>
                 </div>
             `).join('');
@@ -1178,7 +1283,7 @@
                     const winDiv = document.createElement('div');
                     winDiv.className = `flex-shrink-0 flex flex-col items-center justify-center p-2 rounded-xl border ${act.item.color} text-center`;
                     winDiv.style.width = '120px';
-                    winDiv.innerHTML = `<div class="text-xs font-bold text-white truncate w-full">${act.item.title}</div><div class="text-[10px] text-emerald-400 font-black">$${act.item.price}</div>`;
+                    winDiv.innerHTML = `<div class="text-xs font-bold text-white truncate w-full">${act.item.title}</div><div class="text-[9px] text-slate-400">${act.item.label || ''}</div><div class="text-[10px] text-emerald-400 font-black">$${act.item.price}</div>`;
                     track.children[targetIdx].replaceWith(winDiv);
                 }
 
@@ -1268,7 +1373,7 @@
                 const refundedBalance = currentBalance + playerBids;
 
                 const oppInventory = players[opponentName].inventory || [];
-                oppInventory.push({ title: auctionItem.title, price: auctionItem.price, color: auctionItem.color });
+                oppInventory.push({ title: auctionItem.title, price: auctionItem.price, label: auctionItem.label, color: auctionItem.color });
 
                 const chat = data.chat || [];
                 chat.push({ user: mgName, text: `отдал(а) предмет оппоненту! Возврат за ставки: +$${playerBids}` });
@@ -1297,7 +1402,7 @@
                 const div = document.createElement('div');
                 div.className = `flex-shrink-0 flex flex-col items-center justify-center p-2 rounded-xl border ${item.color} text-center`;
                 div.style.width = '120px';
-                div.innerHTML = `<div class="text-xs font-bold text-white truncate w-full">${item.title}</div><div class="text-[10px] text-emerald-400 font-black">$${item.price}</div>`;
+                div.innerHTML = `<div class="text-xs font-bold text-white truncate w-full">${item.title}</div><div class="text-[9px] text-slate-400">${item.label || ''}</div><div class="text-[10px] text-emerald-400 font-black">$${item.price}</div>`;
                 track.appendChild(div);
             }
         }
