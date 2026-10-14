@@ -307,12 +307,14 @@
         };
 
         let spinCountCT = 0, spinCountT = 0;
-        let itemsCT = [null, null, null], itemsT = [null, null, null];
+        let itemsCT = [], itemsT = [];
         let selectedCTIndexes = [], selectedTIndexes = [];
         let armorCTItem = null, armorTItem = null;
         let currentChallenge = null, challengeCTItem = null, challengeTItem = null;
         let activeChallengeMode = 'general';
         let feedList = [];
+        let lastProcessedTimestamp = 0;
+        let serverAutoSpun = false;
 
         function joinRoom(chosenSide) {
             const name = document.getElementById('usernameInput').value.trim();
@@ -336,8 +338,8 @@
                 if (data) {
                     spinCountCT = data.spinCountCT || 0;
                     spinCountT = data.spinCountT || 0;
-                    itemsCT = data.itemsCT || [null, null, null];
-                    itemsT = data.itemsT || [null, null, null];
+                    itemsCT = data.itemsCT || [];
+                    itemsT = data.itemsT || [];
                     selectedCTIndexes = data.selectedCTIndexes || [];
                     selectedTIndexes = data.selectedTIndexes || [];
                     armorCTItem = data.armorCTItem || null;
@@ -372,14 +374,17 @@
                         updateChallengeChoicesUI(data.challengeChoices, players);
                     }
 
-                    renderState();
-                    renderFeed();
+                    if(!isSpinning) {
+                        renderState();
+                        renderFeed();
+                    }
                 }
             });
 
             roomRef.child('action').on('value', (snapshot) => {
                 const action = snapshot.val();
-                if (action && !isSpinning) {
+                if (action && action.timestamp > lastProcessedTimestamp && !isSpinning) {
+                    lastProcessedTimestamp = action.timestamp;
                     runAnimation(action);
                 }
             });
@@ -535,6 +540,7 @@
 
         function chooseChallengeMode(mode) {
             if(!roomRef) return;
+            serverAutoSpun = false;
             roomRef.child('challengeChoices/' + playerName).set({ mode, dice: Math.floor(Math.random() * 10) + 1 });
         }
 
@@ -549,22 +555,32 @@
             const c1 = choices[p1].mode;
             const c2 = choices[p2].mode;
 
+            const d1 = choices[p1].dice;
+            const d2 = choices[p2].dice;
+
+            const loserByDice = d1 < d2 ? p1 : (d2 < d1 ? p2 : p1);
+            const winnerByDice = d1 > d2 ? p1 : (d2 > d1 ? p2 : p1);
+
             let finalMode = 'general';
-            let spinnerPlayer = null;
+            let isRandomTriggered = false;
 
             if (c1 === c2) {
                 if (c1 === 'random') {
+                    isRandomTriggered = true;
                     const rand = Math.random();
                     if (rand < 0.25) finalMode = 'none';
                     else if (rand < 0.75) finalMode = 'general';
                     else finalMode = 'individual';
-                    statusEl.innerText = `Оба выбрали «Рандом». Выпало: «${MODE_NAMES[finalMode]}»`;
+                    statusEl.innerText = `У ${p1} [${d1}], у ${p2} [${d2}]. Оба выбрали «Рандом» -> Выпало: «${MODE_NAMES[finalMode]}»`;
                 } else {
                     finalMode = c1;
-                    statusEl.innerText = `Оба выбрали режим «${MODE_NAMES[c1]}». Применено!`;
+                    if (finalMode === 'general') {
+                        statusEl.innerText = `Оба выбрали «Общее усложнение». На кубике у ${p1} [${d1}], у ${p2} [${d2}]. Крутит ${loserByDice} (меньше баллов).`;
+                    } else {
+                        statusEl.innerText = `Оба выбрали «${MODE_NAMES[c1]}». Применено!`;
+                    }
                 }
             } else {
-                // Если один из выборов рандом, разыгрываем рандом для него
                 let effectiveC1 = c1;
                 let effectiveC2 = c2;
                 if(c1 === 'random') {
@@ -578,32 +594,27 @@
 
                 if (effectiveC1 === effectiveC2) {
                     finalMode = effectiveC1;
-                    statusEl.innerText = `После рандома совпало: «${MODE_NAMES[finalMode]}»!`;
+                    statusEl.innerText = `После совпадения выбора: «${MODE_NAMES[finalMode]}»!`;
                 } else {
-                    const d1 = choices[p1].dice;
-                    const d2 = choices[p2].dice;
-                    const winner = d1 > d2 ? p1 : (d2 > d1 ? p2 : p1);
-                    const loser = d1 > d2 ? p2 : p1; // У проигравшего по кубику меньше балов!
-                    finalMode = choices[winner].mode;
+                    finalMode = choices[winnerByDice].mode;
                     if(finalMode === 'random') {
+                        isRandomTriggered = true;
                         const r = Math.random();
                         finalMode = r < 0.25 ? 'none' : (r < 0.75 ? 'general' : 'individual');
                     }
                     
-                    // Если получилось Общее усложнение при разном голосовании — крутит тот, у кого МЕНЬШЕ балов (loser)
                     if (finalMode === 'general') {
-                        spinnerPlayer = loser;
-                        statusEl.innerText = `У ${p1} выпало ${d1}, у ${p2} выпало ${d2}. Общее усложнение! Крутит ${loser} (у него меньше балов).`;
+                        statusEl.innerText = `У ${p1} [${d1}], у ${p2} [${d2}]. Победил режим Общее усложнение! Крутит ${loserByDice} (меньше баллов).`;
                     } else {
-                        statusEl.innerText = `У ${p1} выпало ${d1}, у ${p2} выпало ${d2}. Победил ${winner}, режим: «${MODE_NAMES[finalMode]}»`;
+                        statusEl.innerText = `У ${p1} [${d1}], у ${p2} [${d2}]. Выиграл ${winnerByDice}, выбран режим: «${MODE_NAMES[finalMode]}»`;
                     }
                 }
             }
 
-            applyResolvedChallengeMode(finalMode, spinnerPlayer);
+            applyResolvedChallengeMode(finalMode, loserByDice, isRandomTriggered, players);
         }
 
-        function applyResolvedChallengeMode(mode, spinnerPlayer) {
+        function applyResolvedChallengeMode(mode, spinnerPlayer, isRandomTriggered, players) {
             activeChallengeMode = mode;
             if(roomRef) roomRef.child('activeChallengeMode').set(mode);
 
@@ -617,25 +628,22 @@
                 document.getElementById('generalChallengeContainer').classList.remove('hidden');
                 document.getElementById('individualChallengeContainer').classList.add('hidden');
 
-                // Если это рандом или выбор обоих -> игра сама крутит (кнопка пропадает)
-                // Если по спору -> крутит игрок с меньшим количеством баллов (spinnerPlayer)
-                if (spinnerPlayer) {
+                if (isRandomTriggered) {
+                    spinBtn.classList.add('hidden');
+                    document.getElementById('summaryChallenge').innerText = currentChallenge ? `Модификатор (Рандом): ${currentChallenge.title}` : "Модификатор: Общее усложнение (Сервер крутит рандом...)";
+                    
+                    if (playerName === players[0] && !currentChallenge && !isSpinning && !serverAutoSpun) {
+                        serverAutoSpun = true;
+                        triggerSpin('CHALLENGE_RANDOM');
+                    }
+                } else {
                     if (playerName === spinnerPlayer) {
                         spinBtn.classList.remove('hidden');
-                        spinBtn.innerText = "🎲 Выбить Челлендж (Ваша очередь — у вас меньше баллов)";
+                        spinBtn.innerText = "🎲 Выбить Челлендж (Ваша очередь — меньше баллов)";
                     } else {
                         spinBtn.classList.add('hidden');
                     }
-                    document.getElementById('summaryChallenge').innerText = `Модификатор: Общее усложнение (крутит ${spinnerPlayer})`;
-                } else {
-                    // Автоматическая прокрутка сервером / без кнопки
-                    spinBtn.classList.add('hidden');
-                    document.getElementById('summaryChallenge').innerText = currentChallenge ? `Модификатор: ${currentChallenge.title}` : "Модификатор: Общее усложнение (авто-выбор)";
-                    
-                    // Если мы лидер комнаты / первый игрок и челлендж еще не крутился — крутим автоматически
-                    if (playerName === Object.keys(roomRef.child('players').parent.once('value') || {})[0] && !currentChallenge && !isSpinning) {
-                        triggerSpin('CHALLENGE');
-                    }
+                    document.getElementById('summaryChallenge').innerText = currentChallenge ? `Модификатор: ${currentChallenge.title}` : `Модификатор: Общее усложнение (крутит ${spinnerPlayer})`;
                 }
             } else if(mode === 'individual') {
                 document.getElementById('generalChallengeContainer').classList.add('hidden');
@@ -665,7 +673,7 @@
                 payload.winnerCT = ARMOR_ITEMS[Math.floor(Math.random() * ARMOR_ITEMS.length)];
             } else if (type === 'ARMOR_T') {
                 payload.winnerT = ARMOR_ITEMS[Math.floor(Math.random() * ARMOR_ITEMS.length)];
-            } else if (type === 'CHALLENGE' || type === 'CHALLENGE_CT' || type === 'CHALLENGE_T') {
+            } else if (type === 'CHALLENGE' || type === 'CHALLENGE_RANDOM' || type === 'CHALLENGE_CT' || type === 'CHALLENGE_T') {
                 payload.winner = CHALLENGES[Math.floor(Math.random() * CHALLENGES.length)];
             }
 
@@ -721,32 +729,36 @@
                     const pool = side === 'CT' ? WEAPONS_CT : WEAPONS_T;
                     await animateTrackWithWinner(`trackWeapon${side}`, pool, action.winner);
 
+                    let currentItems = side === 'CT' ? [...itemsCT] : [...itemsT];
                     let count = side === 'CT' ? spinCountCT : spinCountT;
+
                     if(count >= 3) {
+                        currentItems = [];
                         count = 0;
-                        if(side==='CT') { spinCountCT=0; itemsCT=[null,null,null]; selectedCTIndexes=[]; }
-                        else { spinCountT=0; itemsT=[null,null,null]; selectedTIndexes=[]; }
+                        if(side === 'CT') selectedCTIndexes = []; else selectedTIndexes = [];
                     }
 
-                    if(side==='CT') itemsCT[count] = action.winner; else itemsT[count] = action.winner;
+                    currentItems.push(action.winner);
                     count++;
-                    if(side==='CT') spinCountCT = count; else spinCountT = count;
+
+                    const hasRifle = currentItems.some(i => i && i.tag === 'ВИНТОВКА');
+                    const hasSniper = currentItems.some(i => i && i.tag === 'СНАЙПЕРКА');
+
+                    if (hasRifle && hasSniper) {
+                        currentItems = currentItems.filter(i => i && i.tag !== 'СНАЙПЕРКА');
+                        if(side === 'CT') selectedCTIndexes = []; else selectedTIndexes = [];
+                    }
+
+                    if(side === 'CT') {
+                        itemsCT = currentItems;
+                        spinCountCT = count;
+                    } else {
+                        itemsT = currentItems;
+                        spinCountT = count;
+                    }
 
                     feedList.unshift({ player: action.player, title: action.winner.title, price: action.winner.price });
                     if(feedList.length > 15) feedList.pop();
-
-                    const currentItems = (side === 'CT') ? itemsCT : itemsT;
-                    const hasRifle = currentItems.some(i => i && i.tag === 'ВИНТОВКА');
-                    const hasSniper = currentItems.some(i => i && i.tag === 'СНАЙПЕРКА');
-                    if (hasRifle && hasSniper) {
-                        const sniperIndex = currentItems.findIndex(i => i && i.tag === 'СНАЙПЕРКА');
-                        if (sniperIndex !== -1) {
-                            currentItems[sniperIndex] = null;
-                            const sel = side === 'CT' ? selectedCTIndexes : selectedTIndexes;
-                            const selIdx = sel.indexOf(sniperIndex);
-                            if(selIdx !== -1) sel.splice(selIdx, 1);
-                        }
-                    }
 
                 } else if (action.type === 'ARMOR_CT') {
                     armorCTItem = await animateTrackWithWinner('trackArmorCT', ARMOR_ITEMS, action.winnerCT);
@@ -754,9 +766,10 @@
                 } else if (action.type === 'ARMOR_T') {
                     armorTItem = await animateTrackWithWinner('trackArmorT', ARMOR_ITEMS, action.winnerT);
                     feedList.unshift({ player: action.player, title: `Броня T: ${action.winnerT.title}`, price: action.winnerT.price });
-                } else if (action.type === 'CHALLENGE') {
+                } else if (action.type === 'CHALLENGE' || action.type === 'CHALLENGE_RANDOM') {
                     currentChallenge = await animateTrackWithWinner('trackChallenge', CHALLENGES, action.winner, true);
-                    feedList.unshift({ player: action.player, title: `Челлендж: ${action.winner.title}`, price: 0 });
+                    const tagLabel = action.type === 'CHALLENGE_RANDOM' ? 'Рандом: Общее усложнение' : 'Общее усложнение';
+                    feedList.unshift({ player: action.player, title: `${tagLabel}: ${action.winner.title}`, price: 0 });
                 } else if (action.type === 'CHALLENGE_CT') {
                     challengeCTItem = await animateTrackWithWinner('trackChallengeCT', CHALLENGES, action.winner, true);
                     feedList.unshift({ player: action.player, title: `Челлендж CT: ${action.winner.title}`, price: 0 });
@@ -788,7 +801,7 @@
                 <div class="bg-slate-800 px-2 py-1 rounded border border-slate-700 flex items-center gap-1 whitespace-nowrap">
                     <span class="text-cyan-400 font-bold">${f.player}:</span>
                     <span class="text-white">${f.title}</span>
-                    <span class="text-emerald-400">($${f.price})</span>
+                    ${f.price > 0 ? `<span class="text-emerald-400">($${f.price})</span>` : ''}
                 </div>
             `).join('');
         }
