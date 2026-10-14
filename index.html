@@ -50,13 +50,9 @@
             box-shadow: 0 0 15px rgba(16, 185, 129, 0.6);
             background-color: rgba(16, 185, 129, 0.15) !important;
         }
-        .skull-particle {
-            position: fixed; pointer-events: none;
-            animation: fall 2.2s linear forwards; z-index: 100;
-        }
-        @keyframes fall {
-            0% { transform: translateY(-50px) rotate(0deg); opacity: 1; }
-            100% { transform: translateY(100vh) rotate(360deg); opacity: 0; }
+        button:disabled {
+            opacity: 0.5;
+            cursor: not-allowed !important;
         }
     </style>
 </head>
@@ -86,7 +82,7 @@
         <div class="space-y-2 bg-slate-900/90 p-3 rounded-xl border border-cyan-500/30">
             <div class="flex justify-between items-center">
                 <span class="font-bold text-cyan-400 text-sm md:text-base">🛡️ ОРУЖИЕ CT</span>
-                <button id="spinBtnCT" onclick="triggerSpin('CT')" class="px-4 py-2 bg-cyan-600 hover:bg-cyan-500 rounded-lg text-xs font-bold uppercase tracking-wider transition">
+                <button id="spinBtnCT" onclick="triggerSpin('CT')" class="spin-btn px-4 py-2 bg-cyan-600 hover:bg-cyan-500 rounded-lg text-xs font-bold uppercase tracking-wider transition">
                     🎰 Крутить Оружие CT (1/3)
                 </button>
             </div>
@@ -107,7 +103,7 @@
         <div class="space-y-2 bg-slate-900/90 p-3 rounded-xl border border-amber-500/30">
             <div class="flex justify-between items-center">
                 <span class="font-bold text-amber-400 text-sm md:text-base">🔥 ОРУЖИЕ T</span>
-                <button id="spinBtnT" onclick="triggerSpin('T')" class="px-4 py-2 bg-amber-600 hover:bg-amber-500 rounded-lg text-xs font-bold uppercase tracking-wider transition">
+                <button id="spinBtnT" onclick="triggerSpin('T')" class="spin-btn px-4 py-2 bg-amber-600 hover:bg-amber-500 rounded-lg text-xs font-bold uppercase tracking-wider transition">
                     🎰 Крутить Оружие T (1/3)
                 </button>
             </div>
@@ -128,7 +124,7 @@
         <div class="space-y-3 bg-slate-900/90 p-4 rounded-xl border border-indigo-500/30">
             <div class="flex justify-between items-center">
                 <span class="font-bold text-indigo-400 text-sm md:text-base">🪖 РУЛЕТКА БРОНИ</span>
-                <button id="spinArmorBtn" onclick="triggerSpin('ARMOR')" class="px-4 py-2 bg-indigo-600 hover:bg-indigo-500 rounded-lg text-xs font-bold uppercase tracking-wider transition">
+                <button id="spinArmorBtn" onclick="triggerSpin('ARMOR')" class="spin-btn px-4 py-2 bg-indigo-600 hover:bg-indigo-500 rounded-lg text-xs font-bold uppercase tracking-wider transition">
                     ⚙️ Крутить Броню (CT + T)
                 </button>
             </div>
@@ -148,7 +144,7 @@
         <div class="space-y-3 bg-slate-900/90 p-4 rounded-xl border border-purple-500/30">
             <div class="flex justify-between items-center">
                 <span class="font-bold text-purple-400 text-sm md:text-base">⚠️ УСЛОЖНЕНИЕ РАУНДА</span>
-                <button id="spinChallengeBtn" onclick="triggerSpin('CHALLENGE')" class="px-4 py-2 bg-purple-600 hover:bg-purple-500 rounded-lg text-xs font-bold uppercase tracking-wider transition">
+                <button id="spinChallengeBtn" onclick="triggerSpin('CHALLENGE')" class="spin-btn px-4 py-2 bg-purple-600 hover:bg-purple-500 rounded-lg text-xs font-bold uppercase tracking-wider transition">
                     🎲 Выбить Челлендж
                 </button>
             </div>
@@ -172,6 +168,7 @@
         firebase.initializeApp(firebaseConfig);
         const db = firebase.database();
         let roomRef = null;
+        let isSpinning = false;
 
         // SVG ICONS
         const svgAK = `<svg class="w-16 h-10 my-auto" viewBox="0 0 100 40" fill="none"><path d="M5 18 L25 18 L28 12 L38 12 L40 18 L82 18 L88 20 L82 22 L40 22 L36 32 L30 32 L34 22 L20 22 L15 30 L8 30 L12 20 Z" fill="#78350f" stroke="#d97706" stroke-width="0.8"/><rect x="38" y="15" width="28" height="6" fill="#1e293b" stroke="#94a3b8" stroke-width="0.8"/><line x1="82" y1="19" x2="96" y2="19" stroke="#cbd5e1" stroke-width="2.5"/></svg>`;
@@ -226,9 +223,27 @@
         }
 
         function triggerSpin(type) {
-            const action = { type, rand: Math.random() };
-            if(roomRef) roomRef.set({ action });
-            else executeAction(action);
+            if (isSpinning) return;
+            
+            // Определяем результат заранее, чтобы у всех игроков он был одинаковым
+            let payload = { type };
+            if (type === 'CT' || type === 'T') {
+                const pool = type === 'CT' ? WEAPONS_CT : WEAPONS_T;
+                payload.winner = pool[Math.floor(Math.random() * pool.length)];
+            } else if (type === 'ARMOR') {
+                payload.winnerCT = ARMOR_ITEMS[Math.floor(Math.random() * ARMOR_ITEMS.length)];
+                payload.winnerT = ARMOR_ITEMS[Math.floor(Math.random() * ARMOR_ITEMS.length)];
+            } else if (type === 'CHALLENGE') {
+                payload.winner = CHALLENGES[Math.floor(Math.random() * CHALLENGES.length)];
+            }
+
+            if(roomRef) roomRef.set({ action: payload });
+            else executeAction(payload);
+        }
+
+        function setButtonsDisabled(state) {
+            isSpinning = state;
+            document.querySelectorAll('.spin-btn').forEach(b => b.disabled = state);
         }
 
         function createCard(item, isChallenge = false) {
@@ -248,10 +263,9 @@
             for (let i = 0; i < 40; i++) track.appendChild(createCard(pool[i % pool.length], isChallenge));
         }
 
-        function animateTrack(trackId, pool, isChallenge = false) {
+        function animateTrackWithWinner(trackId, pool, winner, isChallenge = false) {
             return new Promise(resolve => {
                 const track = document.getElementById(trackId);
-                const winner = pool[Math.floor(Math.random() * pool.length)];
                 const targetIdx = 30;
                 track.children[targetIdx].replaceWith(createCard(winner, isChallenge));
                 const cardWidth = isChallenge ? 216 : 120;
@@ -267,64 +281,76 @@
         }
 
         async function executeAction(action) {
-            if (action.type === 'CT' || action.type === 'T') {
-                const side = action.type;
-                let count = side === 'CT' ? spinCountCT : spinCountT;
-                if(count >= 3) {
-                    count = 0;
-                    if(side==='CT') { spinCountCT=0; itemsCT=[null,null,null]; selectedCTIndexes=[]; }
-                    else { spinCountT=0; itemsT=[null,null,null]; selectedTIndexes=[]; }
-                    for(let i=0; i<3; i++) {
-                        const s = document.getElementById(`slot${side}_${i}`);
-                        s.className = 'item-slot h-16 border border-dashed border-slate-700 rounded-lg flex items-center justify-center text-xs text-slate-500 font-bold';
-                        s.innerText = `Слот ${i+1}`; s.onclick = null;
+            setButtonsDisabled(true);
+
+            try {
+                if (action.type === 'CT' || action.type === 'T') {
+                    const side = action.type;
+                    let count = side === 'CT' ? spinCountCT : spinCountT;
+                    if(count >= 3) {
+                        count = 0;
+                        if(side==='CT') { spinCountCT=0; itemsCT=[null,null,null]; selectedCTIndexes=[]; }
+                        else { spinCountT=0; itemsT=[null,null,null]; selectedTIndexes=[]; }
+                        for(let i=0; i<3; i++) {
+                            const s = document.getElementById(`slot${side}_${i}`);
+                            s.className = 'item-slot h-16 border border-dashed border-slate-700 rounded-lg flex items-center justify-center text-xs text-slate-500 font-bold';
+                            s.innerText = `Слот ${i+1}`; s.onclick = null;
+                        }
+                        updateSummary();
                     }
+                    const pool = side === 'CT' ? WEAPONS_CT : WEAPONS_T;
+                    const item = await animateTrackWithWinner(`trackWeapon${side}`, pool, action.winner);
+                    if(side==='CT') itemsCT[count] = item; else itemsT[count] = item;
+
+                    const slot = document.getElementById(`slot${side}_${count}`);
+                    slot.className = 'item-slot h-16 border border-slate-700 bg-slate-800/80 rounded-lg flex flex-col items-center justify-center p-1 text-center';
+                    slot.innerHTML = `<div class="text-[9px] text-slate-400 font-bold">${item.tag}</div><div class="text-xs font-black text-cyan-300">${item.title}</div><div class="text-[10px] text-emerald-400">$${item.price}</div>`;
+                    const sIdx = count;
+                    slot.onclick = () => toggleSlot(side, sIdx);
+                    
+                    count++;
+                    if(side==='CT') spinCountCT = count; else spinCountT = count;
+                    document.getElementById(`spinBtn${side}`).innerText = count < 3 ? `🎰 Крутить Оружие ${side} (${count+1}/3)` : `🔄 Сбросить заново`;
+
+                    // ВЗАИМНОЕ ИСКЛЮЧЕНИЕ 'ВИНТОВКА' и 'СНАЙПЕРКА'
+                    const currentItems = (side === 'CT') ? itemsCT : itemsT;
+                    const hasRifle = currentItems.some(i => i && i.tag === 'ВИНТОВКА');
+                    const hasSniper = currentItems.some(i => i && i.tag === 'СНАЙПЕРКА');
+                    
+                    if (hasRifle && hasSniper) {
+                        const sniperIndex = currentItems.findIndex(i => i && i.tag === 'СНАЙПЕРКА');
+                        if (sniperIndex !== -1) {
+                            currentItems[sniperIndex] = null;
+                            const sel = side === 'CT' ? selectedCTIndexes : selectedTIndexes;
+                            const selIdx = sel.indexOf(sniperIndex);
+                            if(selIdx !== -1) sel.splice(selIdx, 1);
+
+                            const slotToClear = document.getElementById(`slot${side}_${sniperIndex}`);
+                            if (slotToClear) {
+                                slotToClear.innerHTML = `Слот ${sniperIndex + 1}`;
+                                slotToClear.className = "item-slot h-16 border border-dashed border-slate-700 rounded-lg flex items-center justify-center text-xs text-slate-500 font-bold";
+                                slotToClear.onclick = null;
+                                slotToClear.classList.remove('selected');
+                            }
+                            updateSummary();
+                        }
+                    }
+                } else if (action.type === 'ARMOR') {
+                    const resCT = await animateTrackWithWinner('trackArmorCT', ARMOR_ITEMS, action.winnerCT);
+                    const resT = await animateTrackWithWinner('trackArmorT', ARMOR_ITEMS, action.winnerT);
+                    armorCTItem = resCT; armorTItem = resT;
+                    document.getElementById('resArmorCT').innerText = `${resCT.title} ($${resCT.price})`;
+                    document.getElementById('resArmorT').innerText = `${resT.title} ($${resT.price})`;
                     updateSummary();
+                } else if (action.type === 'CHALLENGE') {
+                    const winner = await animateTrackWithWinner('trackChallenge', CHALLENGES, action.winner, true);
+                    currentChallenge = winner;
+                    document.getElementById('summaryChallenge').innerText = `Модификатор: ${winner.title} (${winner.desc})`;
                 }
-                const pool = side === 'CT' ? WEAPONS_CT : WEAPONS_T;
-                const item = await animateTrack(`trackWeapon${side}`, pool);
-                if(side==='CT') itemsCT[count] = item; else itemsT[count] = item;
-
-                const slot = document.getElementById(`slot${side}_${count}`);
-                slot.className = 'item-slot h-16 border border-slate-700 bg-slate-800/80 rounded-lg flex flex-col items-center justify-center p-1 text-center';
-                slot.innerHTML = `<div class="text-[9px] text-slate-400 font-bold">${item.tag}</div><div class="text-xs font-black text-cyan-300">${item.title}</div><div class="text-[10px] text-emerald-400">$${item.price}</div>`;
-                const sIdx = count;
-                slot.onclick = () => toggleSlot(side, sIdx);
-                
-           count++;
-    if(side==='CT') spinCountCT = count; else spinCountT = count;
-    document.getElementById(`spinBtn${side}`).innerText = count < 3 ? `🔄 Крутить Оружие ${side} (${count+1}/3)` : `🔄 Сбросить заново`;
-
-    const currentItems = (side === 'CT') ? itemsCT : itemsT;
-    const hasRifle = currentItems.some(i => i && i.tag === 'ВИНТОВКА');
-    const hasSniper = currentItems.some(i => i && i.tag === 'СНАЙПЕРКА');
-    
-    if (hasRifle && hasSniper) {
-        const sniperIndex = currentItems.findIndex(i => i && i.tag === 'СНАЙПЕРКА');
-        if (sniperIndex !== -1) {
-            currentItems[sniperIndex] = null;
-            const slotToClear = document.getElementById(`slot_${side}_${sniperIndex}`) || document.getElementById(`slot${side}_${sniperIndex}`);
-            if (slotToClear) {
-                slotToClear.innerHTML = `Слот ${sniperIndex + 1}`;
-                slotToClear.className = "item-slot h-16 border border-dashed border-slate-700 rounded-lg flex items-center justify-center text-xs text-slate-500 font-bold";
-                slotToClear.onclick = null;
+            } finally {
+                setButtonsDisabled(false);
             }
         }
-    }
-}
-else if (action.type === 'ARMOR') {
-    const resCT = await animateTrack('trackArmorCT', ARMOR_ITEMS);
-    const resT = await animateTrack('trackArmorT', ARMOR_ITEMS);
-    armorCTItem = resCT; armorTItem = resT;
-    document.getElementById('resArmorCT').innerText = `${resCT.title} (${resCT.price})`;
-    document.getElementById('resArmorT').innerText = `${resT.title} (${resT.price})`;
-    updateSummary();
-}
-else if (action.type === 'CHALLENGE') {
-    const winner = await animateTrack('trackChallenge', CHALLENGES, true);
-    currentChallenge = winner;
-    document.getElementById('summaryChallenge').innerText = `Модификатор: ${winner.title} (${winner.desc})`;
-}
 
         function toggleSlot(side, index) {
             let items = side === 'CT' ? itemsCT : itemsT;
