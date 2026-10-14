@@ -327,6 +327,88 @@
                     runAnimation(action);
                 }
             });
+
+            roomRef.child('rpsWinner').on('value', snapshot => {
+                const winner = snapshot.val();
+                if(winner) {
+                    if(timerInterval) clearInterval(timerInterval);
+                    document.getElementById('timerDisplay').classList.add('hidden');
+                    document.getElementById('rpsResult').innerText = winner.includes('Ничья') ? winner : `Победитель мини-игры: ${winner}!`;
+                    if(winner === playerName) {
+                        document.getElementById('sideChoiceSection').classList.remove('hidden');
+                    } else {
+                        document.getElementById('sideChoiceSection').classList.add('hidden');
+                        document.getElementById('rpsResult').innerText += " Ожидание, пока победитель сменит сторону...";
+                    }
+                }
+            });
+        }
+
+        function startRpsTimer(ref, players) {
+            if (timerInterval) return;
+            let timeLeft = 15;
+            
+            ref.child('timerStarted').transaction(current => {
+                if (!current) return Date.now();
+                return current;
+            }, (error, committed, snapshot) => {
+                const startTime = snapshot.val() || Date.now();
+                
+                timerInterval = setInterval(() => {
+                    const elapsed = Math.floor((Date.now() - startTime) / 1000);
+                    timeLeft = 15 - elapsed;
+
+                    if (timeLeft <= 0) {
+                        clearInterval(timerInterval);
+                        document.getElementById('timerDisplay').innerText = "Время вышло!";
+                        
+                        ref.child('rps').once('value', snap => {
+                            const rpsChoices = snap.val() || {};
+                            const missingPlayer = players.find(p => !rpsChoices[p]);
+                            if (missingPlayer && missingPlayer === playerName) {
+                                const winner = players.find(p => p !== playerName);
+                                ref.child('rpsWinner').set(winner);
+                            }
+                        });
+                    } else {
+                        document.getElementById('timerDisplay').innerText = `Осталось времени на выбор: ${timeLeft}с`;
+                    }
+                }, 1000);
+            });
+        }
+
+        function playRPS(choice) {
+            if(!roomRef) return;
+            
+            // Сохраняем выбор игрока
+            roomRef.child('rps/' + playerName).set(choice);
+            document.getElementById('rpsStatus').innerText = `Вы выбрали: ${choice}. Ожидание оппонента...`;
+
+            // Сразу проверяем оба выбора в базе
+            roomRef.once('value', snapshot => {
+                const data = snapshot.val() || {};
+                const players = Object.keys(data.players || {});
+                const rpsData = data.rps || {};
+
+                if (players.length >= 2 && rpsData[players[0]] && rpsData[players[1]]) {
+                    const p1 = players[0], p2 = players[1];
+                    const c1 = rpsData[p1], c2 = rpsData[p2];
+                    let winner = null;
+                    if(c1 === c2) winner = "Ничья! Переиграйте.";
+                    else if((c1==='Камень'&&c2==='Ножницы')||(c1==='Ножницы'&&c2==='Бумага')||(c1==='Бумага'&&c2==='Камень')) winner = p1;
+                    else winner = p2;
+
+                    roomRef.child('rpsWinner').set(winner);
+                }
+            });
+        }
+
+        function resolveConflict(newSide) {
+            roomRef.child('sides/' + playerName).set(newSide).then(() => {
+                roomRef.child('rpsWinner').remove();
+                roomRef.child('rps').remove();
+                roomRef.child('timerStarted').remove();
+            });
         }
 
         function chooseChallengeMode(mode) {
@@ -376,70 +458,6 @@
                 const rand2 = CHALLENGES[Math.floor(Math.random() * CHALLENGES.length)].title;
                 document.getElementById('summaryChallenge').innerText = `Модификатор: Каждому своё -> ${players[0]}: [${rand1}] | ${players[1]}: [${rand2}]`;
             }
-        }
-
-        function startRpsTimer(ref, players) {
-            if (timerInterval) return;
-            let timeLeft = 15;
-            
-            ref.child('timerStarted').transaction(current => {
-                if (!current) return Date.now();
-                return current;
-            }, (error, committed, snapshot) => {
-                const startTime = snapshot.val() || Date.now();
-                
-                timerInterval = setInterval(() => {
-                    const elapsed = Math.floor((Date.now() - startTime) / 1000);
-                    timeLeft = 15 - elapsed;
-
-                    if (timeLeft <= 0) {
-                        clearInterval(timerInterval);
-                        document.getElementById('timerDisplay').innerText = "Время вышло!";
-                        
-                        ref.child('rps').once('value', snap => {
-                            const rpsChoices = snap.val() || {};
-                            const missingPlayer = players.find(p => !rpsChoices[p]);
-                            if (missingPlayer && missingPlayer === playerName) {
-                                const winner = players.find(p => p !== playerName);
-                                ref.child('rpsWinner').set(winner);
-                            }
-                        });
-                    } else {
-                        document.getElementById('timerDisplay').innerText = `Осталось времени на выбор: ${timeLeft}с`;
-                    }
-                }, 1000);
-            });
-        }
-
-        function playRPS(choice) {
-            if(!roomRef) return;
-            roomRef.child('rps/' + playerName).set(choice);
-            document.getElementById('rpsStatus').innerText = `Вы выбрали: ${choice}. Ожидание оппонента...`;
-
-            roomRef.child('rps').once('value', snapshot => {
-                const rpsData = snapshot.val() || {};
-                roomRef.child('players').once('value', pSnap => {
-                    const players = Object.keys(pSnap.val() || {});
-                    if(players.length >= 2 && rpsData[players[0]] && rpsData[players[1]]) {
-                        const p1 = players[0], p2 = players[1];
-                        const c1 = rpsData[p1], c2 = rpsData[p2];
-                        let winner = null;
-                        if(c1 === c2) winner = "Ничья! Переиграйте.";
-                        else if((c1==='Камень'&&c2==='Ножницы')||(c1==='Ножницы'&&c2==='Бумага')||(c1==='Бумага'&&c2==='Камень')) winner = p1;
-                        else winner = p2;
-
-                        roomRef.child('rpsWinner').set(winner);
-                    }
-                });
-            });
-        }
-
-        function resolveConflict(newSide) {
-            roomRef.child('sides/' + playerName).set(newSide).then(() => {
-                roomRef.child('rpsWinner').remove();
-                roomRef.child('rps').remove();
-                roomRef.child('timerStarted').remove();
-            });
         }
 
         function triggerSpin(type) {
