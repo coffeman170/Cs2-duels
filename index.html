@@ -8,7 +8,15 @@
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
     <style>
-        body { background-color: #0b0e14; color: #ffffff; font-family: system-ui, sans-serif; user-select: none; }
+        body { 
+            background: #07090e; 
+            color: #ffffff; 
+            font-family: system-ui, -apple-system, sans-serif; 
+            user-select: none; 
+            background-image: 
+                radial-gradient(at 0% 0%, rgba(14, 165, 233, 0.12) 0px, transparent 50%),
+                radial-gradient(at 100% 100%, rgba(16, 185, 129, 0.1) 0px, transparent 50%);
+        }
         .hide-scrollbar::-webkit-scrollbar { display: none; }
         .hide-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
         
@@ -64,40 +72,67 @@
         <div id="fallingContainer"></div>
     </div>
 
-    <!-- ГЛАВНОЕ МЕНЮ -->
-    <div id="mainMenu" class="max-w-md w-full bg-slate-900/90 p-8 rounded-2xl border border-slate-800 text-center space-y-6 shadow-2xl">
-        <h1 class="text-3xl font-black text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 to-emerald-400 uppercase pt-2">CS2 DUEL CENTER</h1>
-        <p class="text-xs text-slate-400">Выберите игровой режим:</p>
+    <!-- ГЛАВНОЕ МЕНЮ (ОБНОВЛЕННЫЙ ДИЗАЙН) -->
+    <div id="mainMenu" class="max-w-md w-full bg-slate-900/80 backdrop-blur-xl p-8 rounded-3xl border border-slate-800/80 text-center space-y-8 shadow-2xl shadow-cyan-950/20">
+        <div class="space-y-2">
+            <div class="inline-flex items-center gap-2 px-3 py-1 bg-cyan-950/50 border border-cyan-800/40 rounded-full text-[11px] font-bold text-cyan-400 uppercase tracking-widest">
+                <span class="w-2 h-2 rounded-full bg-cyan-400 animate-pulse"></span> Игровой хаб CS2
+            </div>
+            <h1 class="text-4xl font-black text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 via-teal-300 to-emerald-400 uppercase tracking-tight">CS2 DUEL CENTER</h1>
+            <p class="text-xs text-slate-400 font-medium">Выберите режим игры для начала дуэли:</p>
+        </div>
+
         <div class="flex flex-col gap-4">
-            <button onclick="openGame('csSpin')" class="py-4 bg-gradient-to-r from-cyan-600 to-blue-600 hover:from-cyan-500 hover:to-blue-500 rounded-xl font-black text-sm uppercase tracking-wider transition shadow-lg shadow-cyan-900/40">
-                ⚔️ CS2 ТАКТИЧЕСКАЯ ДУЭЛЬ
+            <!-- Режим 1: Тактическая дуэль -->
+            <button onclick="openGame('csSpin')" class="group relative overflow-hidden p-5 bg-slate-950/60 hover:bg-slate-800/50 border border-cyan-500/20 hover:border-cyan-500/50 rounded-2xl transition-all duration-300 text-left shadow-lg hover:shadow-cyan-500/10 active:scale-[0.98]">
+                <div class="flex items-center justify-between">
+                    <div class="space-y-1">
+                        <div class="flex items-center gap-2">
+                            <span class="text-lg">⚔️</span>
+                            <span class="font-black text-sm uppercase text-cyan-400 group-hover:text-cyan-300 transition">ТАКТИЧЕСКАЯ ДУЭЛЬ</span>
+                        </div>
+                        <p class="text-[11px] text-slate-400 leading-tight">Рулетка оружия, брони и случайные усложнения раунда</p>
+                    </div>
+                    <div class="p-2 rounded-xl bg-cyan-500/10 text-cyan-400 group-hover:translate-x-1 transition-transform">➡️</div>
+                </div>
             </button>
-            <button onclick="openGame('miniGame')" class="py-4 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 rounded-xl font-black text-sm uppercase tracking-wider transition shadow-lg shadow-emerald-900/40">
-                🎲 MINI GAME 20$ (Аукцион)
+
+            <!-- Режим 2: Аукцион -->
+            <button onclick="openGame('miniGame')" class="group relative overflow-hidden p-5 bg-slate-950/60 hover:bg-slate-800/50 border border-emerald-500/20 hover:border-emerald-500/50 rounded-2xl transition-all duration-300 text-left shadow-lg hover:shadow-emerald-500/10 active:scale-[0.98]">
+                <div class="flex items-center justify-between">
+                    <div class="space-y-1">
+                        <div class="flex items-center gap-2">
+                            <span class="text-lg">🎲</span>
+                            <span class="font-black text-sm uppercase text-emerald-400 group-hover:text-emerald-300 transition">MINI GAME 20$ (Аукцион)</span>
+                        </div>
+                        <p class="text-[11px] text-slate-400 leading-tight">Борьба за серверные лоты, ставки и блеф с балансом $20</p>
+                    </div>
+                    <div class="p-2 rounded-xl bg-emerald-500/10 text-emerald-400 group-hover:translate-x-1 transition-transform">➡️</div>
+                </div>
             </button>
         </div>
     </div>
 
     <!-- ТАКТИЧЕСКАЯ ДУЭЛЬ: СОЗДАНИЕ И ВХОД -->
-    <div id="csSpinScreen" class="hidden max-w-md w-full bg-slate-900 p-6 rounded-2xl border border-slate-800 space-y-6 shadow-2xl">
+    <div id="csSpinScreen" class="hidden max-w-md w-full bg-slate-900/90 backdrop-blur-xl p-6 rounded-3xl border border-slate-800 space-y-6 shadow-2xl">
         <div class="flex justify-between items-center border-b border-slate-800 pb-4">
-            <h2 class="text-cyan-400 text-lg font-black uppercase">⚔️ Тактическая Дуэль</h2>
-            <button onclick="backToMenu()" class="px-3 py-1.5 bg-slate-800 hover:bg-slate-700 rounded-lg text-xs font-bold transition">⬅️ В меню</button>
+            <h2 class="text-cyan-400 text-base font-black uppercase flex items-center gap-2">⚔️ Тактическая Дуэль</h2>
+            <button onclick="backToMenu()" class="px-3 py-1.5 bg-slate-800 hover:bg-slate-700 rounded-xl text-xs font-bold transition active:scale-95">⬅️ В меню</button>
         </div>
         <div class="space-y-4">
             <div>
-                <label class="block text-xs text-slate-400 mb-1">Ваш никнейм:</label>
-                <input type="text" id="usernameInput" value="User" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-3 text-sm text-white focus:outline-none focus:border-cyan-500">
+                <label class="block text-xs text-slate-400 font-bold mb-1.5">Ваш никнейм:</label>
+                <input type="text" id="usernameInput" value="User" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-3 text-sm text-white focus:outline-none focus:border-cyan-500 transition">
             </div>
-            <div class="p-4 bg-slate-950 rounded-xl border border-slate-800 space-y-3">
-                <button onclick="createRoom()" class="w-full py-3 bg-cyan-600 hover:bg-cyan-500 rounded-xl font-bold text-sm uppercase transition shadow-lg">
+            <div class="p-4 bg-slate-950/60 rounded-2xl border border-slate-800/80 space-y-3">
+                <button onclick="createRoom()" class="w-full py-3 bg-gradient-to-r from-cyan-600 to-blue-600 hover:from-cyan-500 hover:to-blue-500 rounded-xl font-black text-xs uppercase transition shadow-lg shadow-cyan-900/30 active:scale-95">
                     ➕ Создать комнату
                 </button>
             </div>
-            <div class="text-center text-xs text-slate-500 font-bold">— ИЛИ —</div>
-            <div class="p-4 bg-slate-950 rounded-xl border border-slate-800 space-y-3">
-                <input type="text" id="roomCodeInput" placeholder="Код комнаты" class="w-full bg-slate-900 border border-slate-800 rounded-xl px-4 py-2 text-sm text-white text-center uppercase tracking-widest focus:outline-none focus:border-emerald-500">
-                <button onclick="joinRoom()" class="w-full py-3 bg-emerald-600 hover:bg-emerald-500 rounded-xl font-bold text-sm uppercase transition shadow-lg">
+            <div class="text-center text-xs text-slate-500 font-bold uppercase tracking-widest">— ИЛИ —</div>
+            <div class="p-4 bg-slate-950/60 rounded-2xl border border-slate-800/80 space-y-3">
+                <input type="text" id="roomCodeInput" placeholder="КОД КОМНАТЫ" class="w-full bg-slate-900 border border-slate-800 rounded-xl px-4 py-2.5 text-sm text-white text-center uppercase tracking-widest focus:outline-none focus:border-emerald-500 transition">
+                <button onclick="joinRoom()" class="w-full py-3 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 rounded-xl font-black text-xs uppercase transition shadow-lg shadow-emerald-900/30 active:scale-95">
                     🔗 Подключиться к комнате
                 </button>
             </div>
@@ -105,8 +140,8 @@
     </div>
 
     <!-- ЛОББИ ДУЭЛИ -->
-    <div id="lobbyScreen" class="hidden max-w-md w-full bg-slate-900 p-6 rounded-2xl border border-slate-800 space-y-6 shadow-2xl text-center">
-        <h2 class="text-cyan-400 text-lg font-black uppercase">⚔️ Комната: <span id="displayRoomCode" class="text-white"></span></h2>
+    <div id="lobbyScreen" class="hidden max-w-md w-full bg-slate-900/90 backdrop-blur-xl p-6 rounded-3xl border border-slate-800 space-y-6 shadow-2xl text-center">
+        <h2 class="text-cyan-400 text-base font-black uppercase">⚔️ Комната: <span id="displayRoomCode" class="text-white"></span></h2>
         <div id="playersList" class="text-xs text-slate-300 font-bold">Ожидание второго игрока...</div>
         
         <div id="sideSelectSection" class="hidden space-y-3 pt-4 border-t border-slate-800">
@@ -226,32 +261,32 @@
     </div>
 
     <!-- MINI GAME 20$ МЕНЮ -->
-    <div id="miniGameMenu" class="hidden max-w-md w-full bg-slate-900 p-6 rounded-2xl border border-slate-800 space-y-6 shadow-2xl">
+    <div id="miniGameMenu" class="hidden max-w-md w-full bg-slate-900/90 backdrop-blur-xl p-6 rounded-3xl border border-slate-800 space-y-6 shadow-2xl">
         <div class="flex justify-between items-center border-b border-slate-800 pb-4">
-            <h2 class="text-emerald-400 text-lg font-black uppercase">🎲 MINI GAME 20$ (Аукцион)</h2>
-            <button onclick="backToMenu()" class="px-3 py-1.5 bg-slate-800 hover:bg-slate-700 rounded-lg text-xs font-bold transition">⬅️ В меню</button>
+            <h2 class="text-emerald-400 text-base font-black uppercase flex items-center gap-2">🎲 MINI GAME 20$ (Аукцион)</h2>
+            <button onclick="backToMenu()" class="px-3 py-1.5 bg-slate-800 hover:bg-slate-700 rounded-xl text-xs font-bold transition active:scale-95">⬅️ В меню</button>
         </div>
         <div class="space-y-4 text-xs text-slate-300">
-            <p class="bg-slate-950 p-3 rounded-xl border border-slate-800">
+            <p class="bg-slate-950/60 p-3 rounded-2xl border border-slate-800/80 leading-relaxed">
                 <b>Правила:</b> У каждого по $20. Первый поставивший крутит рулетку. Владелец обязан поставить ставку за 10 секунд, иначе предмет автоматически отдается оппоненту!
             </p>
             <div>
-                <label class="block text-slate-400 mb-1">Ваш никнейм:</label>
-                <input type="text" id="mgUsername" value="Player" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-2 text-sm text-white focus:outline-none focus:border-emerald-500">
+                <label class="block text-slate-400 font-bold mb-1.5">Ваш никнейм:</label>
+                <input type="text" id="mgUsername" value="Player" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-2.5 text-sm text-white focus:outline-none focus:border-emerald-500 transition">
             </div>
             <div>
-                <label class="block text-slate-400 mb-1">Выберите аватар:</label>
+                <label class="block text-slate-400 font-bold mb-1.5">Выберите аватар:</label>
                 <div class="flex gap-3 justify-center">
-                    <button onclick="setAvatar('👨')" id="btnAvatarMan" class="p-3 bg-emerald-600 rounded-xl text-xl border border-emerald-400">👨 Мужчина</button>
-                    <button onclick="setAvatar('👩')" id="btnAvatarWoman" class="p-3 bg-slate-800 rounded-xl text-xl border border-slate-700">👩 Женщина</button>
+                    <button onclick="setAvatar('👨')" id="btnAvatarMan" class="p-3 bg-emerald-600 rounded-2xl text-xl border border-emerald-400 transition active:scale-95">👨 Мужчина</button>
+                    <button onclick="setAvatar('👩')" id="btnAvatarWoman" class="p-3 bg-slate-800 rounded-2xl text-xl border border-slate-700 transition active:scale-95">👩 Женщина</button>
                 </div>
             </div>
-            <div class="p-4 bg-slate-950 rounded-xl border border-slate-800 space-y-3">
-                <button onclick="createMgRoom()" class="w-full py-3 bg-emerald-600 hover:bg-emerald-500 rounded-xl font-bold text-xs uppercase transition shadow-lg">
+            <div class="p-4 bg-slate-950/60 rounded-2xl border border-slate-800/80 space-y-3">
+                <button onclick="createMgRoom()" class="w-full py-3 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 rounded-xl font-black text-xs uppercase transition shadow-lg shadow-emerald-900/30 active:scale-95">
                     ➕ Создать аукцион
                 </button>
-                <input type="text" id="mgRoomCodeInput" placeholder="КОД КОМНАТЫ" class="w-full bg-slate-900 border border-slate-800 rounded-xl px-4 py-2 text-sm text-white text-center uppercase tracking-widest focus:outline-none">
-                <button onclick="joinMgRoom()" class="w-full py-2 bg-teal-600 hover:bg-teal-500 rounded-xl font-bold text-xs uppercase transition">
+                <input type="text" id="mgRoomCodeInput" placeholder="КОД КОМНАТЫ" class="w-full bg-slate-900 border border-slate-800 rounded-xl px-4 py-2.5 text-sm text-white text-center uppercase tracking-widest focus:outline-none focus:border-teal-500 transition">
+                <button onclick="joinMgRoom()" class="w-full py-2.5 bg-slate-800 hover:bg-slate-700 rounded-xl font-bold text-xs uppercase transition active:scale-95">
                     🔗 Подключиться
                 </button>
             </div>
@@ -394,7 +429,7 @@
         let itemsCT = [null, null, null], itemsT = [null, null, null];
         let selectedCTIndices = [], selectedTIndices = [];
         let armorCTItem = null, armorTItem = null;
-        let hasSpunArmorCT = false, hasSpunArmorT = false; // Блокировка повторного кручения брони
+        let hasSpunArmorCT = false, hasSpunArmorT = false;
         let feedList = [];
 
         function openGame(type) {
@@ -715,7 +750,6 @@
             if(type === 'ARMOR_CT' && playerSide !== 'CT') { alert('Вы играете за Т!'); return; }
             if(type === 'ARMOR_T' && playerSide !== 'T') { alert('Вы играете за CT!'); return; }
 
-            // Ограничение: броню можно крутить только 1 раз!
             if(type === 'ARMOR_CT' && hasSpunArmorCT) { alert('Броню за CT можно крутить только 1 раз!'); return; }
             if(type === 'ARMOR_T' && hasSpunArmorT) { alert('Броню за T можно крутить только 1 раз!'); return; }
 
@@ -824,7 +858,6 @@
             document.getElementById('countCT').innerText = spinCountCT;
             document.getElementById('countT').innerText = spinCountT;
 
-            // Блокировка кнопок прокрутки брони после 1 кручения
             document.getElementById('spinArmorCTBtn').disabled = hasSpunArmorCT;
             document.getElementById('spinArmorTBtn').disabled = hasSpunArmorT;
 
@@ -849,7 +882,6 @@
             renderSlots(itemsCT, 'slotsCT', 'CT', selectedCTIndices);
             renderSlots(itemsT, 'slotsT', 'T', selectedTIndices);
 
-            // Отрисовка выборки в блоке "ВЫБОР ИГРОКА"
             const ctSelectedNames = selectedCTIndices.map(idx => itemsCT[idx]).filter(Boolean).map(it => it.title);
             const tSelectedNames = selectedTIndices.map(idx => itemsT[idx]).filter(Boolean).map(it => it.title);
 
@@ -898,11 +930,11 @@
         function setAvatar(av) {
             mgAvatar = av;
             if(av === '👨') {
-                document.getElementById('btnAvatarMan').className = 'p-3 bg-emerald-600 rounded-xl text-xl border border-emerald-400';
-                document.getElementById('btnAvatarWoman').className = 'p-3 bg-slate-800 rounded-xl text-xl border border-slate-700';
+                document.getElementById('btnAvatarMan').className = 'p-3 bg-emerald-600 rounded-2xl text-xl border border-emerald-400 transition active:scale-95';
+                document.getElementById('btnAvatarWoman').className = 'p-3 bg-slate-800 rounded-2xl text-xl border border-slate-700 transition active:scale-95';
             } else {
-                document.getElementById('btnAvatarWoman').className = 'p-3 bg-emerald-600 rounded-xl text-xl border border-emerald-400';
-                document.getElementById('btnAvatarMan').className = 'p-3 bg-slate-800 rounded-xl text-xl border border-slate-700';
+                document.getElementById('btnAvatarWoman').className = 'p-3 bg-emerald-600 rounded-2xl text-xl border border-emerald-400 transition active:scale-95';
+                document.getElementById('btnAvatarMan').className = 'p-3 bg-slate-800 rounded-2xl text-xl border border-slate-700 transition active:scale-95';
             }
         }
 
