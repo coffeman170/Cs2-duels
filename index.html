@@ -126,7 +126,6 @@
     <div class="bg-glow-2"></div>
     <div class="bg-grid"></div>
 
-    <!-- КНОПКИ УПРАВЛЕНИЯ ЗВУКОМ И МУЗЫКОЙ -->
     <div class="fixed top-4 right-4 z-50 flex flex-col gap-2 items-end">
         <button onclick="toggleSound()" id="soundToggleBtn" class="px-3 py-1.5 bg-slate-900/90 hover:bg-slate-800 border border-slate-800 rounded-xl text-xs font-bold text-slate-300 transition shadow-lg active:scale-95">
             🔊 Звук: ВКЛ
@@ -136,7 +135,6 @@
         </button>
     </div>
 
-    <!-- МОДАЛЬНОЕ ОКНО НОВОГО МУЗЫКАЛЬНОГО ПЛЕЕРА -->
     <div id="musicModal" class="fixed inset-0 bg-black/80 backdrop-blur-md flex flex-col items-center justify-center z-50 hidden p-4">
         <div class="relative w-full max-w-xl bg-slate-900/90 backdrop-blur-xl rounded-2xl p-6 shadow-2xl border border-slate-800/80 ring-1 ring-white/10 space-y-4">
             <button onclick="closeMusicModal()" class="absolute top-4 right-4 text-slate-400 hover:text-white text-lg font-bold">✕</button>
@@ -162,7 +160,7 @@
                 </div>
             </div>
 
-            <audio id="bgAudioPlayer" class="hidden"></audio>
+            <audio id="bgAudioPlayer" class="hidden" preload="auto"></audio>
 
             <div class="space-y-3 bg-slate-950/30 p-3.5 rounded-xl border border-slate-800/40">
                 <div class="space-y-1">
@@ -189,7 +187,7 @@
 
             <div class="space-y-3">
                 <div class="flex bg-slate-950 p-1 rounded-xl border border-slate-800 gap-1 text-xs font-bold">
-                    <button id="tabBtnSearch" onclick="switchMusicTab('search')" class="flex-1 py-1.5 rounded-lg bg-indigo-600 text-white transition">🔍 Все треки (33)</button>
+                    <button id="tabBtnSearch" onclick="switchMusicTab('search')" class="flex-1 py-1.5 rounded-lg bg-indigo-600 text-white transition">🔍 Все треки (34)</button>
                     <button id="tabBtnFav" onclick="switchMusicTab('favorites')" class="flex-1 py-1.5 rounded-lg text-slate-400 hover:text-white transition">⭐ Избранное</button>
                 </div>
 
@@ -207,20 +205,17 @@
         </div>
     </div>
 
-    <!-- МОДАЛЬНОЕ ОКНО РЕЗУЛЬТАТОВ БРОСКА КУБИКОВ -->
     <div id="diceResultModal" class="fixed inset-0 bg-black/90 backdrop-blur-md flex flex-col items-center justify-center z-50 hidden space-y-4 p-4 text-center">
         <div id="diceModalTitle" class="text-4xl md:text-5xl font-black uppercase tracking-wider"></div>
         <div id="diceModalDesc" class="text-sm md:text-base text-slate-300 font-bold max-w-md leading-relaxed bg-slate-900/90 p-5 rounded-2xl border border-slate-700 shadow-xl"></div>
     </div>
 
-    <!-- МОДАЛЬНОЕ ОКНО АНИМАЦИИ КНБ -->
     <div id="rpsResultModal" class="fixed inset-0 bg-black/90 backdrop-blur-md flex flex-col items-center justify-center z-50 hidden space-y-4 pointer-events-none">
         <div id="rpsResultTitle" class="text-5xl font-black uppercase tracking-wider"></div>
         <div id="rpsResultTeam" class="text-xl font-bold text-slate-300"></div>
         <div id="fallingContainer"></div>
     </div>
 
-    <!-- МОДАЛЬНОЕ ОКНО ПОБЕДЫ В АУКЦИОНЕ -->
     <div id="goldWinModal" class="fixed inset-0 bg-black/80 backdrop-blur-sm flex flex-col items-center justify-center z-50 hidden space-y-3 pointer-events-none">
         <div class="text-4xl md:text-6xl font-black text-amber-400 uppercase tracking-wider drop-shadow-[0_0_25px_#f59e0b] text-center animate-bounce">
             🎉 ВЫ ВЫИГРАЛИ В АУКЦИОНЕ!
@@ -232,7 +227,6 @@
         <div id="goldFallingContainer"></div>
     </div>
 
-    <!-- МОДАЛЬНОЕ ОКНО ДЛЯ ТОГО, КТО ОТДАЛ ПРЕДМЕТ -->
     <div id="giveItemModal" class="fixed inset-0 bg-black/80 backdrop-blur-sm flex flex-col items-center justify-center z-50 hidden space-y-3 pointer-events-none">
         <div class="text-3xl md:text-5xl font-black text-rose-400 uppercase tracking-wider drop-shadow-[0_0_25px_#f43f5e] text-center">
             🤝 ПРЕДМЕТ ОТДАН ОППОНЕНТУ
@@ -242,7 +236,6 @@
         </div>
     </div>
 
-    <!-- ГЛАВНОЕ МЕНЮ -->
     <div id="mainMenu" class="relative max-w-md w-full bg-slate-900/80 backdrop-blur-xl p-8 rounded-3xl border border-slate-800/80 text-center space-y-8 shadow-2xl shadow-cyan-950/20">
         
         <div class="absolute top-4 right-4 flex items-center gap-2 px-3 py-1 bg-emerald-950/60 border border-emerald-800/50 rounded-full">
@@ -287,7 +280,6 @@
         </div>
     </div>
 
-    <!-- ТАКТИЧЕСКАЯ ДУЭЛЬ: СОЗДАНИЕ И ВХОД -->
     <div id="csSpinScreen" class="hidden max-w-md w-full bg-slate-900/90 backdrop-blur-xl p-6 rounded-3xl border border-slate-800 space-y-6 shadow-2xl">
         <div class="flex justify-between items-center border-b border-slate-800 pb-4">
             <h2 class="text-cyan-400 text-base font-black uppercase flex items-center gap-2">⚔️ Тактическая Дуэль</h2>
@@ -313,7 +305,6 @@
         </div>
     </div>
 
-    <!-- ЛОББИ ДУЭЛИ -->
     <div id="lobbyScreen" class="hidden max-w-md w-full bg-slate-900/90 backdrop-blur-xl p-6 rounded-3xl border border-slate-800 space-y-6 shadow-2xl text-center">
         <div class="space-y-2">
             <h2 class="text-cyan-400 text-base font-black uppercase">⚔️ Комната: <span id="displayRoomCode" class="text-white"></span></h2>
@@ -343,7 +334,6 @@
         </div>
     </div>
 
-    <!-- ИГРОВОЙ ЭКРАН ДУЭЛИ -->
     <div id="gameScreen" class="hidden max-w-4xl w-full space-y-5">
         <div class="bg-slate-900/90 backdrop-blur-xl p-4 rounded-2xl border border-slate-800/80 flex justify-between items-center shadow-lg">
             <div class="text-sm font-black text-cyan-400 uppercase">⚔️ CS2 DUEL CENTER</div>
@@ -454,7 +444,6 @@
         </div>
     </div>
 
-    <!-- MINI GAME 20$ МЕНЮ -->
     <div id="miniGameMenu" class="hidden max-w-md w-full bg-slate-900/90 backdrop-blur-xl p-6 rounded-3xl border border-slate-800 space-y-6 shadow-2xl">
         <div class="flex justify-between items-center border-b border-slate-800 pb-4">
             <h2 class="text-emerald-400 text-base font-black uppercase flex items-center gap-2">🎲 MINI GAME 20$ (Аукцион)</h2>
@@ -487,7 +476,6 @@
         </div>
     </div>
 
-    <!-- MINI GAME 20$ ИГРОВОЙ ЭКРАН -->
     <div id="miniGameScreen" class="hidden max-w-4xl w-full space-y-5">
         <div class="bg-slate-900/90 backdrop-blur-xl p-4 rounded-2xl border border-slate-800 flex justify-between items-center shadow-lg">
             <div class="text-sm font-black text-emerald-400 uppercase">🎲 MINI GAME 20$ | Комната: <span id="mgDisplayCode" class="text-white"></span></div>
@@ -597,64 +585,69 @@
             document.getElementById('soundToggleBtn').innerText = soundEnabled ? '🔊 Звук: ВКЛ' : '🔇 Звук: ВЫКЛ';
         }
 
-        const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        let audioCtx = null;
         function playSound(type) {
             if(!soundEnabled) return;
-            if(audioCtx.state === 'suspended') audioCtx.resume();
-            const osc = audioCtx.createOscillator();
-            const gain = audioCtx.createGain();
-            osc.connect(gain);
-            gain.connect(audioCtx.destination);
+            try {
+                if(!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+                if(audioCtx.state === 'suspended') audioCtx.resume();
+                const osc = audioCtx.createOscillator();
+                const gain = audioCtx.createGain();
+                osc.connect(gain);
+                gain.connect(audioCtx.destination);
 
-            if(type === 'click') {
-                osc.frequency.setValueAtTime(400, audioCtx.currentTime);
-                gain.gain.setValueAtTime(0.05, audioCtx.currentTime);
-                gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.05);
-                osc.start(); osc.stop(audioCtx.currentTime + 0.05);
-            } else if(type === 'spin') {
-                osc.frequency.setValueAtTime(600, audioCtx.currentTime);
-                gain.gain.setValueAtTime(0.03, audioCtx.currentTime);
-                gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.08);
-                osc.start(); osc.stop(audioCtx.currentTime + 0.08);
-            } else if(type === 'win') {
-                osc.frequency.setValueAtTime(523.25, audioCtx.currentTime);
-                osc.frequency.setValueAtTime(659.25, audioCtx.currentTime + 0.1);
-                osc.frequency.setValueAtTime(783.99, audioCtx.currentTime + 0.2);
-                gain.gain.setValueAtTime(0.1, audioCtx.currentTime);
-                gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.4);
-                osc.start(); osc.stop(audioCtx.currentTime + 0.4);
-            }
+                if(type === 'click') {
+                    osc.frequency.setValueAtTime(400, audioCtx.currentTime);
+                    gain.gain.setValueAtTime(0.05, audioCtx.currentTime);
+                    gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.05);
+                    osc.start(); osc.stop(audioCtx.currentTime + 0.05);
+                } else if(type === 'spin') {
+                    osc.frequency.setValueAtTime(600, audioCtx.currentTime);
+                    gain.gain.setValueAtTime(0.03, audioCtx.currentTime);
+                    gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.08);
+                    osc.start(); osc.stop(audioCtx.currentTime + 0.08);
+                } else if(type === 'win') {
+                    osc.frequency.setValueAtTime(523.25, audioCtx.currentTime);
+                    osc.frequency.setValueAtTime(659.25, audioCtx.currentTime + 0.1);
+                    osc.frequency.setValueAtTime(783.99, audioCtx.currentTime + 0.2);
+                    gain.gain.setValueAtTime(0.1, audioCtx.currentTime);
+                    gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.4);
+                    osc.start(); osc.stop(audioCtx.currentTime + 0.4);
+                }
+            } catch(e) {}
         }
 
-        const defaultCover = "https://images.unsplash.com/photo-1514525253161-7a46d19cd819?w=300&auto=format&fit=crop&q=80";
+        /* --- ССЫЛКИ НА ОБЛОЖКИ --- */
+        const defaultCover = "https://raw.githubusercontent.com/coffeman170/rap-music/main/" + encodeURIComponent("кузнецкий сквад.png");
         const newlightchildCover = "https://raw.githubusercontent.com/coffeman170/rap-music/main/newlightchild.png";
-        const krakenCover = "https://raw.githubusercontent.com/coffeman170/rap-music/main/%D0%BA%D1%80%D0%B0%D0%BA%D0%B5%D0%BD.png";
-        const fortunaCover = "https://raw.githubusercontent.com/coffeman170/rap-music/main/%D1%84%D0%BE%D1%80%D1%82%D1%83%D0%BD%D0%B0%20812.png";
-        const madkidPrinceCover = "https://raw.githubusercontent.com/coffeman170/rap-music/main/%D0%BC%D0%B5%D0%B4%D0%BA%D0%B8%D0%B4%20%D0%B8%20%D1%82%D0%B5%D0%BC%D0%BD%D0%B8%D0%B9%20%D0%BF%D1%80%D0%B8%D0%BD%D1%86.png";
+        const krakenCover = "https://raw.githubusercontent.com/coffeman170/rap-music/main/" + encodeURIComponent("кракен.png");
+        const fortunaCover = "https://raw.githubusercontent.com/coffeman170/rap-music/main/" + encodeURIComponent("фортуна 812.png");
+        const madkidPrinceCover = "https://raw.githubusercontent.com/coffeman170/rap-music/main/" + encodeURIComponent("медкид и темний принс.png");
         const xxxmaneraCover = "https://raw.githubusercontent.com/coffeman170/rap-music/main/xxxmanera.png";
-        const ogBudaCover = "https://raw.githubusercontent.com/coffeman170/rap-music/main/og%20buda.png";
-        const blagoWhiteCover = "https://raw.githubusercontent.com/coffeman170/rap-music/main/%D0%B1%D0%BB%D0%B0%D0%B3%D0%BE%20%D0%B2%D0%B0%D0%B9%D1%82.png";
-        const kizaruCover = "https://raw.githubusercontent.com/coffeman170/rap-music/main/%D0%BA%D0%B8%D0%B7%D0%B0%D1%80%D1%83.png";
-        const kuzneckiiSquadCover = "https://raw.githubusercontent.com/coffeman170/rap-music/main/%D0%BA%D1%83%D0%B7%D0%BD%D0%B5%D1%86%D0%BA%D0%B8%D0%B9%20%D1%81%D0%BA%D0%B2%D0%B0%D0%B4.png";
+        const ogBudaCover = "https://raw.githubusercontent.com/coffeman170/rap-music/main/" + encodeURIComponent("og buda.png");
+        const blagoWhiteCover = "https://raw.githubusercontent.com/coffeman170/rap-music/main/" + encodeURIComponent("благо вайт.png");
+        const kizaruCover = "https://raw.githubusercontent.com/coffeman170/rap-music/main/" + encodeURIComponent("кизару.png");
+        const kuzneckiiSquadCover = defaultCover;
+        const bigpluggCover = "https://raw.githubusercontent.com/coffeman170/rap-music/main/" + encodeURIComponent("bigpluggssd, YouRunPlugg & exxxor - Пойдем со мною.png");
 
+        /* --- ПЛЕЙЛИСТ (34 ТРЕКА) --- */
         const SAMPLE_TRACKS = [
             { id: 1, title: "rich-forever-2", artist: "kuzneckii-skvad", preview: "https://raw.githubusercontent.com/coffeman170/rap-music/main/kuzneckii-skvad-rich-forever-2.mp3", cover: kuzneckiiSquadCover },
-            { id: 2, title: "riskuyu", artist: "veyst", preview: "https://raw.githubusercontent.com/coffeman170/rap-music/main/veyst-riskuyu.mp3", cover: defaultCover },
-            { id: 3, title: "Первый", artist: "Kuznetsky Squad", preview: "https://raw.githubusercontent.com/coffeman170/rap-music/main/Kuznetsky%20Squad%20%E2%80%94%20%D0%9F%D0%B5%D1%80%D0%B2%D1%8B%D0%B9%20(audset.ru).mp3", cover: kuzneckiiSquadCover },
-            { id: 4, title: "Кожура", artist: "OM.", preview: "https://raw.githubusercontent.com/coffeman170/rap-music/main/OM.%20%E2%80%94%20%D0%9A%D0%BE%D0%B6%D1%83%D1%80%D0%B0%20(audset.ru).mp3", cover: defaultCover },
-            { id: 5, title: "8 миля", artist: "madk1d & VILLIAN", preview: "https://raw.githubusercontent.com/coffeman170/rap-music/main/%5Bmuzrecord.com%5D%20madk1d%20%26%20VILLIAN%20-%208%20%D0%BC%D0%B8%D0%BB%D1%8F.mp3", cover: madkidPrinceCover },
-            { id: 6, title: "LABIRINT", artist: "FACE", preview: "https://raw.githubusercontent.com/coffeman170/rap-music/main/FACE-LABIRINT-spaces.im.mp3", cover: "https://raw.githubusercontent.com/coffeman170/rap-music/main/%D1%84%D0%B5%D0%B9%D1%81.png" },
+            { id: 3, title: "Первый", artist: "Kuznetsky Squad", preview: "https://raw.githubusercontent.com/coffeman170/rap-music/main/" + encodeURIComponent("Kuznetsky Squad — Первый (audset.ru).mp3"), cover: kuzneckiiSquadCover },
+            { id: 4, title: "Кожура", artist: "OM.", preview: "https://raw.githubusercontent.com/coffeman170/rap-music/main/" + encodeURIComponent("OM. — Кожура (audset.ru).mp3"), cover: defaultCover },
+            { id: 5, title: "8 миля", artist: "madk1d & VILLIAN", preview: "https://raw.githubusercontent.com/coffeman170/rap-music/main/" + encodeURIComponent("[muzrecord.com] madk1d & VILLIAN - 8 миля.mp3"), cover: madkidPrinceCover },
+            { id: 6, title: "LABIRINT", artist: "FACE", preview: "https://raw.githubusercontent.com/coffeman170/rap-music/main/FACE-LABIRINT-spaces.im.mp3", cover: "https://raw.githubusercontent.com/coffeman170/rap-music/main/" + encodeURIComponent("фейс.png") },
             { id: 7, title: "dezhavju", artist: "kizaru", preview: "https://raw.githubusercontent.com/coffeman170/rap-music/main/kizaru-dezhavju_muzrecord.net.mp3", cover: kizaruCover },
             { id: 8, title: "zerkalo", artist: "kizaru", preview: "https://raw.githubusercontent.com/coffeman170/rap-music/main/kizaru-zerkalo.mp3", cover: kizaruCover },
-            { id: 9, title: "Million", artist: "Big Baby Tape & Kizaru", preview: "https://raw.githubusercontent.com/coffeman170/rap-music/main/Big_Baby_Tape_Kizaru-Million-spaces.im.mp3", cover: "https://raw.githubusercontent.com/coffeman170/rap-music/main/%D0%BA%D0%B8%D0%B7%D0%B0%D1%80%D1%83%20%D0%B1%D0%B5%D0%B9%D0%B1%D0%B8%D1%82%D0%B5%D0%B9%D0%BF.png" },
+            { id: 9, title: "Million", artist: "Big Baby Tape & Kizaru", preview: "https://raw.githubusercontent.com/coffeman170/rap-music/main/Big_Baby_Tape_Kizaru-Million-spaces.im.mp3", cover: "https://raw.githubusercontent.com/coffeman170/rap-music/main/" + encodeURIComponent("кизару бейбитейп.png") },
             { id: 10, title: "fuck_off", artist: "NEWLIGHTCHILD", preview: "https://raw.githubusercontent.com/coffeman170/rap-music/main/NEWLIGHTCHILD-fuck_off-spaces.im.mp3", cover: newlightchildCover },
             { id: 11, title: "dance-floor", artist: "newlightchild", preview: "https://raw.githubusercontent.com/coffeman170/rap-music/main/newlightchild-dance-floor.mp3", cover: newlightchildCover },
             { id: 12, title: "vampir", artist: "scally milano & uglystephan", preview: "https://raw.githubusercontent.com/coffeman170/rap-music/main/scally-milano-uglystephan-vampir.mp3", cover: defaultCover },
-            { id: 13, title: "Дайте Дури", artist: "kraken", preview: "https://raw.githubusercontent.com/coffeman170/rap-music/main/Painhatedyou%20-%20%D0%94%D0%B0%D0%B9%D1%82%D0%B5%20%D0%94%D1%83%D1%80%D0%B8.mp3", cover: krakenCover },
-            { id: 14, title: "Бывший Воздух И Подонок", artist: "Кракен", preview: "https://raw.githubusercontent.com/coffeman170/rap-music/main/%D0%9A%D1%80%D0%B0%D0%BA%D0%B5%D0%BD%20-%20%D0%91%D1%8B%D0%B2%D1%88%D0%B8%D0%B9%20%D0%92%D0%BE%D0%B7%D0%B4%D1%83%D1%85%20%D0%98%20%D0%9F%D0%BE%D0%B4%D0%BE%D0%B4%D0%BE%D0%BD%D0%BE%D0%BA.mp3", cover: krakenCover },
+            { id: 13, title: "Дайте Дури", artist: "kraken", preview: "https://raw.githubusercontent.com/coffeman170/rap-music/main/" + encodeURIComponent("Painhatedyou - Дайте Дури.mp3"), cover: krakenCover },
+            { id: 14, title: "Бывший Воздух И Подонок", artist: "Кракен", preview: "https://raw.githubusercontent.com/coffeman170/rap-music/main/" + encodeURIComponent("Кракен - Бывший Воздух И Подонок.mp3"), cover: krakenCover },
             { id: 15, title: "Fake_ID", artist: "kizaru & ICEGERGERT", preview: "https://raw.githubusercontent.com/coffeman170/rap-music/main/kizaru_ICEGERGERT-Fake_ID-spaces.im.mp3", cover: kizaruCover },
-            { id: 16, title: "morgenshtern-cadillac", artist: "MORGENSHTERN & Элджей", preview: "https://raw.githubusercontent.com/coffeman170/rap-music/main/morgenshtern-cadillac.mp3", cover: "https://raw.githubusercontent.com/coffeman170/rap-music/main/%D0%BC%D0%BE%D1%80%D0%B3%D0%B5%D0%BD%D1%88%D1%82%D0%B5%D1%80%D0%BD.png" },
-            { id: 17, title: "morgenshtern-crystal-moet", artist: "MORGENSHTERN", preview: "https://raw.githubusercontent.com/coffeman170/rap-music/main/morgenshtern-crystal-moet.mp3", cover: "https://raw.githubusercontent.com/coffeman170/rap-music/main/%D0%BC%D0%BE%D1%80%D0%B3%D0%B5%D0%BD%D1%88%D1%82%D0%B5%D1%80%D0%BD.png" },
+            { id: 16, title: "morgenshtern-cadillac", artist: "MORGENSHTERN & Элджей", preview: "https://raw.githubusercontent.com/coffeman170/rap-music/main/morgenshtern-cadillac.mp3", cover: "https://raw.githubusercontent.com/coffeman170/rap-music/main/" + encodeURIComponent("моргенштерн.png") },
+            { id: 17, title: "morgenshtern-crystal-moet", artist: "MORGENSHTERN", preview: "https://raw.githubusercontent.com/coffeman170/rap-music/main/morgenshtern-crystal-moet.mp3", cover: "https://raw.githubusercontent.com/coffeman170/rap-music/main/" + encodeURIComponent("моргенштерн.png") },
             { id: 18, title: "og-buda-bandana", artist: "OG Buda", preview: "https://raw.githubusercontent.com/coffeman170/rap-music/main/og-buda-bandana.mp3", cover: ogBudaCover },
             { id: 19, title: "mayot-moroz", artist: "MAYOT", preview: "https://raw.githubusercontent.com/coffeman170/rap-music/main/mayot-moroz.mp3", cover: defaultCover },
             { id: 20, title: "blago-white-ika", artist: "Blago White", preview: "https://raw.githubusercontent.com/coffeman170/rap-music/main/blago-white-ika.mp3", cover: blagoWhiteCover },
@@ -663,14 +656,15 @@
             { id: 23, title: "thomas-mraz-doroga", artist: "Thomas Mraz", preview: "https://raw.githubusercontent.com/coffeman170/rap-music/main/thomas-mraz-doroga.mp3", cover: defaultCover },
             { id: 24, title: "boulevard-depo-blunt", artist: "Boulevard Depo", preview: "https://raw.githubusercontent.com/coffeman170/rap-music/main/boulevard-depo-blunt.mp3", cover: defaultCover },
             { id: 25, title: "saluki-fiesta", artist: "SALUKI", preview: "https://raw.githubusercontent.com/coffeman170/rap-music/main/saluki-fiesta.mp3", cover: defaultCover },
-            { id: 26, title: "ДИНАСТИЯ", artist: "VILLIAN & madk1d", preview: "https://raw.githubusercontent.com/coffeman170/rap-music/main/VILLIAN%2C%20madk1d%20%E2%80%94%20%D0%94%D0%98%D0%9D%D0%90%D0%A1%D0%A2%D0%98%D0%AF%20(audset.ru).mp3", cover: madkidPrinceCover },
-            { id: 27, title: "Ты че обиделась", artist: "Madk1d & Тёмный принц", preview: "https://raw.githubusercontent.com/coffeman170/rap-music/main/[muzrecord.com]%20Madk1d%20%26%20%D0%A2%D1%91%D0%BC%D0%BD%D1%8B%D0%B9%20%D0%BF%D1%80%D0%B8%D0%BD%D1%86%20-%20%D0%A2%D1%8B%20%D1%87%D0%B5%20%D0%BE%D0%B1%D0%B8%D0%B4%D0%B5%D0%BB%D0%B0%D1%81%D1%8C.mp3", cover: madkidPrinceCover },
-            { id: 28, title: "(не) уходи", artist: "fallen777angel & mapt0v", preview: "https://raw.githubusercontent.com/coffeman170/rap-music/main/fallen777angel%2C%20mapt0v%20-%20(%D0%BD%D0%B5)%20%D1%83%D1%85%D0%BE%D0%B4%D0%B8_(muzdevil.net).mp3", cover: defaultCover },
+            { id: 26, title: "ДИНАСТИЯ", artist: "VILLIAN & madk1d", preview: "https://raw.githubusercontent.com/coffeman170/rap-music/main/" + encodeURIComponent("VILLIAN, madk1d — ДИНАСТИЯ (audset.ru).mp3"), cover: madkidPrinceCover },
+            { id: 27, title: "Ты че обиделась", artist: "Madk1d & Тёмный принц", preview: "https://raw.githubusercontent.com/coffeman170/rap-music/main/" + encodeURIComponent("[muzrecord.com] Madk1d & Тёмный принц- Ты че обиделась.mp3"), cover: madkidPrinceCover },
+            { id: 28, title: "(не) уходи", artist: "fallen777angel & mapt0v", preview: "https://raw.githubusercontent.com/coffeman170/rap-music/main/" + encodeURIComponent("fallen777angel, mapt0v - (не) уходи_(muzdevil.net).mp3"), cover: defaultCover },
             { id: 29, title: "Gladiator", artist: "fallen777angel", preview: "https://raw.githubusercontent.com/coffeman170/rap-music/main/fallen777angel_Gladiator_rycar.mp3", cover: defaultCover },
             { id: 30, title: "parislove", artist: "fortuna 812", preview: "https://raw.githubusercontent.com/coffeman170/rap-music/main/fortuna-812-parislove.mp3", cover: fortunaCover },
             { id: 31, title: "Скажи мне кто ты", artist: "xxxmanera", preview: "https://raw.githubusercontent.com/coffeman170/rap-music/main/xxxmanera-skazhi-mne-kto-ty_(mobplay.run).mp3", cover: xxxmaneraCover },
-            { id: 32, title: "Больно", artist: "fleurnothappy", preview: "https://raw.githubusercontent.com/coffeman170/rap-music/main/%D0%B1%D0%BE%D0%BB%D1%8C%D0%BD%D0%BE%20-%20fleurnothappy.mp3", cover: defaultCover },
-            { id: 33, title: "Trytofriend", artist: "фортуна 812", preview: "https://raw.githubusercontent.com/coffeman170/rap-music/main/%D1%84%D0%BE%D1%80%D1%82%D1%83%D0%BD%D0%B0%20812%20-%20Trytofriend.mp3", cover: fortunaCover }
+            { id: 32, title: "Больно", artist: "fleurnothappy", preview: "https://raw.githubusercontent.com/coffeman170/rap-music/main/" + encodeURIComponent("больно - fleurnothappy.mp3"), cover: defaultCover },
+            { id: 33, title: "Trytofriend", artist: "фортуна 812", preview: "https://raw.githubusercontent.com/coffeman170/rap-music/main/" + encodeURIComponent("фортуна 812 - Trytofriend.mp3"), cover: fortunaCover },
+            { id: 34, title: "Пойдем со мною", artist: "bigpluggssd, YouRunPlugg & exxxor", preview: "https://raw.githubusercontent.com/coffeman170/rap-music/main/bigpluggssd_YouRunPlugg_exxxor_Pojdem_so_mnoyu.mp3", cover: bigpluggCover }
         ];
 
         let favorites = JSON.parse(localStorage.getItem('cs2_music_favs') || '[]');
@@ -730,7 +724,7 @@
                 return `
                     <div class="bg-slate-950/60 p-2.5 rounded-xl border border-slate-800/80 flex items-center justify-between hover:border-indigo-500/50 transition">
                         <div class="flex items-center gap-2.5 truncate max-w-[220px]">
-                            <img src="${track.cover}" class="w-8 h-8 rounded-lg object-cover flex-shrink-0 border border-slate-700/50">
+                            <img src="${track.cover}" class="w-8 h-8 rounded-lg object-cover flex-shrink-0 border border-slate-700/50" onerror="this.src='${defaultCover}'">
                             <div class="truncate">
                                 <div class="font-bold text-white truncate text-xs">${track.title}</div>
                                 <div class="text-[10px] text-slate-400 truncate">${track.artist}</div>
@@ -762,7 +756,8 @@
                 document.getElementById('pause-icon').classList.remove('hidden');
                 document.getElementById('currentTrackBadge').classList.remove('hidden');
             }).catch(e => {
-                alert("Кликните в любом месте страницы, чтобы разрешить воспроизведение аудио!");
+                document.getElementById('play-icon').classList.remove('hidden');
+                document.getElementById('pause-icon').classList.add('hidden');
             });
         }
 
@@ -772,9 +767,10 @@
                 if(!bgAudioPlayer.src && SAMPLE_TRACKS.length > 0) {
                     loadAndPlayTrack(0);
                 } else {
-                    bgAudioPlayer.play().catch(() => {});
-                    document.getElementById('play-icon').classList.add('hidden');
-                    document.getElementById('pause-icon').classList.remove('hidden');
+                    bgAudioPlayer.play().then(() => {
+                        document.getElementById('play-icon').classList.add('hidden');
+                        document.getElementById('pause-icon').classList.remove('hidden');
+                    }).catch(e => {});
                 }
             } else {
                 bgAudioPlayer.pause();
@@ -800,6 +796,7 @@
         });
 
         function formatTime(seconds) {
+            if(isNaN(seconds)) return "0:00";
             const mins = Math.floor(seconds / 60);
             const secs = Math.floor(seconds % 60);
             return `${mins}:${secs < 10 ? '0' : ''}${secs}`;
@@ -853,7 +850,7 @@
                 return `
                     <div class="bg-slate-950/60 p-2.5 rounded-xl border border-slate-800/80 flex items-center justify-between hover:border-indigo-500/50 transition">
                         <div class="flex items-center gap-2.5 truncate max-w-[220px]">
-                            <img src="${track.cover}" class="w-8 h-8 rounded-lg object-cover flex-shrink-0 border border-slate-700/50">
+                            <img src="${track.cover}" class="w-8 h-8 rounded-lg object-cover flex-shrink-0 border border-slate-700/50" onerror="this.src='${defaultCover}'">
                             <div class="truncate">
                                 <div class="font-bold text-white truncate text-xs">${track.title}</div>
                                 <div class="text-[10px] text-slate-400 truncate">${track.artist}</div>
@@ -895,72 +892,113 @@
         let isSpinningWeaponCT = false, isSpinningWeaponT = false;
         let isSpinningArmorCT = false, isSpinningArmorT = false;
 
+        const imgUSP = "https://raw.githubusercontent.com/coffeman170/rap-music/main/USP-S.png";
+        const imgGlock = "https://raw.githubusercontent.com/coffeman170/rap-music/main/Glock-18.png";
+        const imgDeagle = "https://raw.githubusercontent.com/coffeman170/rap-music/main/Desert%20Eagle.png";
+        const imgAK = "https://raw.githubusercontent.com/coffeman170/rap-music/main/AK-47.png";
+        const imgM4A4 = "https://raw.githubusercontent.com/coffeman170/rap-music/main/M4A4.png";
+        const imgM4A1 = "https://raw.githubusercontent.com/coffeman170/rap-music/main/M4A1-S.png";
+        const imgAWP = "https://raw.githubusercontent.com/coffeman170/rap-music/main/AWP.png";
+        const imgSmoke = "https://raw.githubusercontent.com/coffeman170/rap-music/main/" + encodeURIComponent("флешка.png");
+        const imgFlash = "https://raw.githubusercontent.com/coffeman170/rap-music/main/" + encodeURIComponent("флешка.png");
+        const imgHE = "https://raw.githubusercontent.com/coffeman170/rap-music/main/" + encodeURIComponent("хаешка граната.png");
+        const imgMolotov = "https://raw.githubusercontent.com/coffeman170/rap-music/main/" + encodeURIComponent("молик молотов.png");
+        const imgDecoy = "https://raw.githubusercontent.com/coffeman170/rap-music/main/" + encodeURIComponent("Decoy - ложная граната.png");
+        const imgCZ75 = "https://raw.githubusercontent.com/coffeman170/rap-music/main/CZ75-Auto.png";
+        const imgFiveSeveN = "https://raw.githubusercontent.com/coffeman170/rap-music/main/Five-SeveN.png";
+        const imgP2000 = "https://raw.githubusercontent.com/coffeman170/rap-music/main/P2000.png";
+        const imgP250 = "https://raw.githubusercontent.com/coffeman170/rap-music/main/P250.png";
+        const imgTec9 = "https://raw.githubusercontent.com/coffeman170/rap-music/main/TEC-9.png";
+        const imgZeus = "https://raw.githubusercontent.com/coffeman170/rap-music/main/Zeus%20x27.png";
+        const imgDualBerettas = "https://raw.githubusercontent.com/coffeman170/rap-music/main/dual%20berettas.png";
+        const imgR8 = "https://raw.githubusercontent.com/coffeman170/rap-music/main/" + encodeURIComponent("Револьвер R8.png");
+        const imgM249 = "https://raw.githubusercontent.com/coffeman170/rap-music/main/M249.png";
+        const imgNova = "https://raw.githubusercontent.com/coffeman170/rap-music/main/Nova.png";
+        const imgXM1014 = "https://raw.githubusercontent.com/coffeman170/rap-music/main/XM1014.png";
+        const imgNegev = "https://raw.githubusercontent.com/coffeman170/rap-music/main/" + encodeURIComponent("Негев.png");
+        const imgSawedOff = "https://raw.githubusercontent.com/coffeman170/rap-music/main/" + encodeURIComponent("обрез.png");
+        const imgBizon = "https://raw.githubusercontent.com/coffeman170/rap-music/main/" + encodeURIComponent("ПП-19 Бизон.png");
+        const imgAUG = "https://raw.githubusercontent.com/coffeman170/rap-music/main/AUG.png";
+        const imgG3SG1 = "https://raw.githubusercontent.com/coffeman170/rap-music/main/G3SG1.png";
+        const imgSCAR20 = "https://raw.githubusercontent.com/coffeman170/rap-music/main/SCAR-20.png";
+        const imgSG553 = "https://raw.githubusercontent.com/coffeman170/rap-music/main/SG%20553.png";
+        const imgSSG08 = "https://raw.githubusercontent.com/coffeman170/rap-music/main/SSG%2008.png";
+        const imgUMP45 = "https://raw.githubusercontent.com/coffeman170/rap-music/main/UMP-45.png";
+        const imgGalil = "https://raw.githubusercontent.com/coffeman170/rap-music/main/" + encodeURIComponent("Автомат Галиль.png");
+        const imgFAMAS = "https://raw.githubusercontent.com/coffeman170/rap-music/main/FAMAS.png";
+        const imgMAC10 = "https://raw.githubusercontent.com/coffeman170/rap-music/main/MAC-10.png";
+        const imgMAG7 = "https://raw.githubusercontent.com/coffeman170/rap-music/main/MAG-7.png";
+        const imgMP5SD = "https://raw.githubusercontent.com/coffeman170/rap-music/main/MP5-SD.png";
+        const imgMP7 = "https://raw.githubusercontent.com/coffeman170/rap-music/main/MP7.png";
+        const imgMP9 = "https://raw.githubusercontent.com/coffeman170/rap-music/main/MP9.png";
+        const imgP90 = "https://raw.githubusercontent.com/coffeman170/rap-music/main/P90.png";
+
         const WEAPONS_CT = [
-            { title: 'USP-S', price: 200, category: 'secondary', label: 'Вторичное', color: 'border-blue-500/50 bg-blue-950/30' },
-            { title: 'P2000', price: 200, category: 'secondary', label: 'Вторичное', color: 'border-blue-500/50 bg-blue-950/30' },
-            { title: 'Dual Berettas', price: 300, category: 'secondary', label: 'Вторичное', color: 'border-cyan-500/50 bg-cyan-950/30' },
-            { title: 'P250', price: 300, category: 'secondary', label: 'Вторичное', color: 'border-cyan-500/50 bg-cyan-950/30' },
-            { title: 'Five-SeveN', price: 500, category: 'secondary', label: 'Вторичное', color: 'border-teal-500/50 bg-teal-950/30' },
-            { title: 'CZ75-Auto', price: 500, category: 'secondary', label: 'Вторичное', color: 'border-teal-500/50 bg-teal-950/30' },
-            { title: 'Desert Eagle', price: 700, category: 'secondary', label: 'Вторичное', color: 'border-purple-500/50 bg-purple-950/30' },
-            { title: 'R8 Revolver', price: 600, category: 'secondary', label: 'Вторичное', color: 'border-rose-500/50 bg-rose-950/30' },
-            { title: 'MP9', price: 1250, category: 'primary', label: 'Основное', color: 'border-emerald-500/50 bg-emerald-950/30' },
-            { title: 'MP7', price: 1500, category: 'primary', label: 'Основное', color: 'border-emerald-500/50 bg-emerald-950/30' },
-            { title: 'MP5-SD', price: 1500, category: 'primary', label: 'Основное', color: 'border-emerald-500/50 bg-emerald-950/30' },
-            { title: 'UMP-45', price: 1200, category: 'primary', label: 'Основное', color: 'border-emerald-500/50 bg-emerald-950/30' },
-            { title: 'P90', price: 2350, category: 'primary', label: 'Основное', color: 'border-emerald-500/50 bg-emerald-950/30' },
-            { title: 'PP-Bizon', price: 1400, category: 'primary', label: 'Основное', color: 'border-emerald-500/50 bg-emerald-950/30' },
-            { title: 'Nova', price: 1050, category: 'primary', label: 'Основное', color: 'border-orange-500/50 bg-orange-950/30' },
-            { title: 'XM1014', price: 2000, category: 'primary', label: 'Основное', color: 'border-orange-500/50 bg-orange-950/30' },
-            { title: 'MAG-7', price: 1300, category: 'primary', label: 'Основное', color: 'border-orange-500/50 bg-orange-950/30' },
-            { title: 'M249', price: 5200, category: 'primary', label: 'Основное', color: 'border-teal-500/50 bg-teal-950/30' },
-            { title: 'Negev', price: 1700, category: 'primary', label: 'Основное', color: 'border-teal-500/50 bg-teal-950/30' },
-            { title: 'FAMAS', price: 2050, category: 'primary', label: 'Основное', color: 'border-cyan-500/50 bg-cyan-950/30' },
-            { title: 'M4A4', price: 3100, category: 'primary', label: 'Основное', color: 'border-cyan-500/50 bg-cyan-950/30' },
-            { title: 'M4A1-S', price: 2900, category: 'primary', label: 'Основное', color: 'border-cyan-500/50 bg-cyan-950/30' },
-            { title: 'AUG', price: 3300, category: 'primary', label: 'Основное', color: 'border-cyan-500/50 bg-cyan-950/30' },
-            { title: 'SSG 08', price: 1700, category: 'primary', label: 'Основное', color: 'border-amber-500/50 bg-amber-950/30' },
-            { title: 'AWP', price: 4750, category: 'primary', label: 'Основное', color: 'border-amber-500/50 bg-amber-950/30' },
-            { title: 'SCAR-20', price: 5000, category: 'primary', label: 'Основное', color: 'border-amber-500/50 bg-amber-950/30' },
-            { title: 'Zeus x27', price: 200, category: 'secondary', label: 'Спецсредство', color: 'border-yellow-500/50 bg-yellow-950/30' },
-            { title: 'Smoke', price: 300, category: 'grenade', label: 'Граната', color: 'border-emerald-500/50 bg-emerald-950/30' },
-            { title: 'Flashbang', price: 200, category: 'grenade', label: 'Граната', color: 'border-yellow-500/50 bg-yellow-950/30' },
-            { title: 'HE Grenade', price: 300, category: 'grenade', label: 'Граната', color: 'border-red-500/50 bg-red-950/30' },
-            { title: 'Incendiary Grenade', price: 600, category: 'grenade', label: 'Граната', color: 'border-orange-600/50 bg-orange-950/30' },
-            { title: 'Decoy', price: 50, category: 'grenade', label: 'Граната', color: 'border-slate-500/50 bg-slate-950/30' }
+            { title: 'USP-S', price: 200, category: 'secondary', label: 'Вторичное', color: 'border-blue-500/50 bg-blue-950/30', img: imgUSP },
+            { title: 'P2000', price: 200, category: 'secondary', label: 'Вторичное', color: 'border-blue-500/50 bg-blue-950/30', img: imgP2000 },
+            { title: 'Dual Berettas', price: 300, category: 'secondary', label: 'Вторичное', color: 'border-cyan-500/50 bg-cyan-950/30', img: imgDualBerettas },
+            { title: 'P250', price: 300, category: 'secondary', label: 'Вторичное', color: 'border-cyan-500/50 bg-cyan-950/30', img: imgP250 },
+            { title: 'Five-SeveN', price: 500, category: 'secondary', label: 'Вторичное', color: 'border-teal-500/50 bg-teal-950/30', img: imgFiveSeveN },
+            { title: 'CZ75-Auto', price: 500, category: 'secondary', label: 'Вторичное', color: 'border-teal-500/50 bg-teal-950/30', img: imgCZ75 },
+            { title: 'Desert Eagle', price: 700, category: 'secondary', label: 'Вторичное', color: 'border-purple-500/50 bg-purple-950/30', img: imgDeagle },
+            { title: 'R8 Revolver', price: 600, category: 'secondary', label: 'Вторичное', color: 'border-rose-500/50 bg-rose-950/30', img: imgR8 },
+            { title: 'MP9', price: 1250, category: 'primary', label: 'Основное', color: 'border-emerald-500/50 bg-emerald-950/30', img: imgMP9 },
+            { title: 'MP7', price: 1500, category: 'primary', label: 'Основное', color: 'border-emerald-500/50 bg-emerald-950/30', img: imgMP7 },
+            { title: 'MP5-SD', price: 1500, category: 'primary', label: 'Основное', color: 'border-emerald-500/50 bg-emerald-950/30', img: imgMP5SD },
+            { title: 'UMP-45', price: 1200, category: 'primary', label: 'Основное', color: 'border-emerald-500/50 bg-emerald-950/30', img: imgUMP45 },
+            { title: 'P90', price: 2350, category: 'primary', label: 'Основное', color: 'border-emerald-500/50 bg-emerald-950/30', img: imgP90 },
+            { title: 'PP-Bizon', price: 1400, category: 'primary', label: 'Основное', color: 'border-emerald-500/50 bg-emerald-950/30', img: imgBizon },
+            { title: 'Nova', price: 1050, category: 'primary', label: 'Основное', color: 'border-orange-500/50 bg-orange-950/30', img: imgNova },
+            { title: 'XM1014', price: 2000, category: 'primary', label: 'Основное', color: 'border-orange-500/50 bg-orange-950/30', img: imgXM1014 },
+            { title: 'MAG-7', price: 1300, category: 'primary', label: 'Основное', color: 'border-orange-500/50 bg-orange-950/30', img: imgMAG7 },
+            { title: 'M249', price: 5200, category: 'primary', label: 'Основное', color: 'border-teal-500/50 bg-teal-950/30', img: imgM249 },
+            { title: 'Negev', price: 1700, category: 'primary', label: 'Основное', color: 'border-teal-500/50 bg-teal-950/30', img: imgNegev },
+            { title: 'FAMAS', price: 2050, category: 'primary', label: 'Основное', color: 'border-cyan-500/50 bg-cyan-950/30', img: imgFAMAS },
+            { title: 'M4A4', price: 3100, category: 'primary', label: 'Основное', color: 'border-cyan-500/50 bg-cyan-950/30', img: imgM4A4 },
+            { title: 'M4A1-S', price: 2900, category: 'primary', label: 'Основное', color: 'border-cyan-500/50 bg-cyan-950/30', img: imgM4A1 },
+            { title: 'AUG', price: 3300, category: 'primary', label: 'Основное', color: 'border-cyan-500/50 bg-cyan-950/30', img: imgAUG },
+            { title: 'SSG 08', price: 1700, category: 'primary', label: 'Основное', color: 'border-amber-500/50 bg-amber-950/30', img: imgSSG08 },
+            { title: 'AWP', price: 4750, category: 'primary', label: 'Основное', color: 'border-amber-500/50 bg-amber-950/30', img: imgAWP },
+            { title: 'SCAR-20', price: 5000, category: 'primary', label: 'Основное', color: 'border-amber-500/50 bg-amber-950/30', img: imgSCAR20 },
+            { title: 'Zeus x27', price: 200, category: 'secondary', label: 'Спецсредство', color: 'border-yellow-500/50 bg-yellow-950/30', img: imgZeus },
+            { title: 'Smoke', price: 300, category: 'grenade', label: 'Граната', color: 'border-emerald-500/50 bg-emerald-950/30', img: imgSmoke },
+            { title: 'Flashbang', price: 200, category: 'grenade', label: 'Граната', color: 'border-yellow-500/50 bg-yellow-950/30', img: imgFlash },
+            { title: 'HE Grenade', price: 300, category: 'grenade', label: 'Граната', color: 'border-red-500/50 bg-red-950/30', img: imgHE },
+            { title: 'Incendiary Grenade', price: 600, category: 'grenade', label: 'Граната', color: 'border-orange-600/50 bg-orange-950/30', img: imgMolotov },
+            { title: 'Decoy', price: 50, category: 'grenade', label: 'Граната', color: 'border-slate-500/50 bg-slate-950/30', img: imgDecoy }
         ];
 
         const WEAPONS_T = [
-            { title: 'Glock-18', price: 200, category: 'secondary', label: 'Вторичное', color: 'border-cyan-500/50 bg-cyan-950/30' },
-            { title: 'Dual Berettas', price: 300, category: 'secondary', label: 'Вторичное', color: 'border-cyan-500/50 bg-cyan-950/30' },
-            { title: 'P250', price: 300, category: 'secondary', label: 'Вторичное', color: 'border-cyan-500/50 bg-cyan-950/30' },
-            { title: 'Tec-9', price: 500, category: 'secondary', label: 'Вторичное', color: 'border-yellow-500/50 bg-yellow-950/30' },
-            { title: 'CZ75-Auto', price: 500, category: 'secondary', label: 'Вторичное', color: 'border-yellow-500/50 bg-yellow-950/30' },
-            { title: 'Desert Eagle', price: 700, category: 'secondary', label: 'Вторичное', color: 'border-purple-500/50 bg-purple-950/30' },
-            { title: 'R8 Revolver', price: 600, category: 'secondary', label: 'Вторичное', color: 'border-rose-500/50 bg-rose-950/30' },
-            { title: 'MAC-10', price: 1050, category: 'primary', label: 'Основное', color: 'border-emerald-500/50 bg-emerald-950/30' },
-            { title: 'MP7', price: 1500, category: 'primary', label: 'Основное', color: 'border-emerald-500/50 bg-emerald-950/30' },
-            { title: 'MP5-SD', price: 1500, category: 'primary', label: 'Основное', color: 'border-emerald-500/50 bg-emerald-950/30' },
-            { title: 'UMP-45', price: 1200, category: 'primary', label: 'Основное', color: 'border-emerald-500/50 bg-emerald-950/30' },
-            { title: 'P90', price: 2350, category: 'primary', label: 'Основное', color: 'border-emerald-500/50 bg-emerald-950/30' },
-            { title: 'PP-Bizon', price: 1400, category: 'primary', label: 'Основное', color: 'border-emerald-500/50 bg-emerald-950/30' },
-            { title: 'Nova', price: 1050, category: 'primary', label: 'Основное', color: 'border-orange-500/50 bg-orange-950/30' },
-            { title: 'XM1014', price: 2000, category: 'primary', label: 'Основное', color: 'border-orange-500/50 bg-orange-950/30' },
-            { title: 'Sawed-Off', price: 1100, category: 'primary', label: 'Основное', color: 'border-orange-500/50 bg-orange-950/30' },
-            { title: 'M249', price: 5200, category: 'primary', label: 'Основное', color: 'border-teal-500/50 bg-teal-950/30' },
-            { title: 'Negev', price: 1700, category: 'primary', label: 'Основное', color: 'border-teal-500/50 bg-teal-950/30' },
-            { title: 'Galil AR', price: 1800, category: 'primary', label: 'Основное', color: 'border-emerald-500/50 bg-emerald-950/30' },
-            { title: 'AK-47', price: 2700, category: 'primary', label: 'Основное', color: 'border-rose-500/50 bg-rose-950/30' },
-            { title: 'SG 553', price: 3000, category: 'primary', label: 'Основное', color: 'border-rose-500/50 bg-rose-950/30' },
-            { title: 'SSG 08', price: 1700, category: 'primary', label: 'Основное', color: 'border-amber-500/50 bg-amber-950/30' },
-            { title: 'AWP', price: 4750, category: 'primary', label: 'Основное', color: 'border-amber-500/50 bg-amber-950/30' },
-            { title: 'G3SG1', price: 5000, category: 'primary', label: 'Основное', color: 'border-amber-500/50 bg-amber-950/30' },
-            { title: 'Zeus x27', price: 200, category: 'secondary', label: 'Спецсредство', color: 'border-yellow-500/50 bg-yellow-950/30' },
-            { title: 'Smoke', price: 300, category: 'grenade', label: 'Граната', color: 'border-emerald-500/50 bg-emerald-950/30' },
-            { title: 'Flashbang', price: 200, category: 'grenade', label: 'Граната', color: 'border-yellow-500/50 bg-yellow-950/30' },
-            { title: 'HE Grenade', price: 300, category: 'grenade', label: 'Граната', color: 'border-red-500/50 bg-red-950/30' },
-            { title: 'Molotov', price: 400, category: 'grenade', label: 'Граната', color: 'border-orange-600/50 bg-orange-950/30' },
-            { title: 'Decoy', price: 50, category: 'grenade', label: 'Граната', color: 'border-slate-500/50 bg-slate-950/30' }
+            { title: 'Glock-18', price: 200, category: 'secondary', label: 'Вторичное', color: 'border-cyan-500/50 bg-cyan-950/30', img: imgGlock },
+            { title: 'Dual Berettas', price: 300, category: 'secondary', label: 'Вторичное', color: 'border-cyan-500/50 bg-cyan-950/30', img: imgDualBerettas },
+            { title: 'P250', price: 300, category: 'secondary', label: 'Вторичное', color: 'border-cyan-500/50 bg-cyan-950/30', img: imgP250 },
+            { title: 'Tec-9', price: 500, category: 'secondary', label: 'Вторичное', color: 'border-yellow-500/50 bg-yellow-950/30', img: imgTec9 },
+            { title: 'CZ75-Auto', price: 500, category: 'secondary', label: 'Вторичное', color: 'border-yellow-500/50 bg-yellow-950/30', img: imgCZ75 },
+            { title: 'Desert Eagle', price: 700, category: 'secondary', label: 'Вторичное', color: 'border-purple-500/50 bg-purple-950/30', img: imgDeagle },
+            { title: 'R8 Revolver', price: 600, category: 'secondary', label: 'Вторичное', color: 'border-rose-500/50 bg-rose-950/30', img: imgR8 },
+            { title: 'MAC-10', price: 1050, category: 'primary', label: 'Основное', color: 'border-emerald-500/50 bg-emerald-950/30', img: imgMAC10 },
+            { title: 'MP7', price: 1500, category: 'primary', label: 'Основное', color: 'border-emerald-500/50 bg-emerald-950/30', img: imgMP7 },
+            { title: 'MP5-SD', price: 1500, category: 'primary', label: 'Основное', color: 'border-emerald-500/50 bg-emerald-950/30', img: imgMP5SD },
+            { title: 'UMP-45', price: 1200, category: 'primary', label: 'Основное', color: 'border-emerald-500/50 bg-emerald-950/30', img: imgUMP45 },
+            { title: 'P90', price: 2350, category: 'primary', label: 'Основное', color: 'border-emerald-500/50 bg-emerald-950/30', img: imgP90 },
+            { title: 'PP-Bizon', price: 1400, category: 'primary', label: 'Основное', color: 'border-emerald-500/50 bg-emerald-950/30', img: imgBizon },
+            { title: 'Nova', price: 1050, category: 'primary', label: 'Основное', color: 'border-orange-500/50 bg-orange-950/30', img: imgNova },
+            { title: 'XM1014', price: 2000, category: 'primary', label: 'Основное', color: 'border-orange-500/50 bg-orange-950/30', img: imgXM1014 },
+            { title: 'Sawed-Off', price: 1100, category: 'primary', label: 'Основное', color: 'border-orange-500/50 bg-orange-950/30', img: imgSawedOff },
+            { title: 'M249', price: 5200, category: 'primary', label: 'Основное', color: 'border-teal-500/50 bg-teal-950/30', img: imgM249 },
+            { title: 'Negev', price: 1700, category: 'primary', label: 'Основное', color: 'border-teal-500/50 bg-teal-950/30', img: imgNegev },
+            { title: 'Galil AR', price: 1800, category: 'primary', label: 'Основное', color: 'border-emerald-500/50 bg-emerald-950/30', img: imgGalil },
+            { title: 'AK-47', price: 2700, category: 'primary', label: 'Основное', color: 'border-rose-500/50 bg-rose-950/30', img: imgAK },
+            { title: 'SG 553', price: 3000, category: 'primary', label: 'Основное', color: 'border-rose-500/50 bg-rose-950/30', img: imgSG553 },
+            { title: 'SSG 08', price: 1700, category: 'primary', label: 'Основное', color: 'border-amber-500/50 bg-amber-950/30', img: imgSSG08 },
+            { title: 'AWP', price: 4750, category: 'primary', label: 'Основное', color: 'border-amber-500/50 bg-amber-950/30', img: imgAWP },
+            { title: 'G3SG1', price: 5000, category: 'primary', label: 'Основное', color: 'border-amber-500/50 bg-amber-950/30', img: imgG3SG1 },
+            { title: 'Zeus x27', price: 200, category: 'secondary', label: 'Спецсредство', color: 'border-yellow-500/50 bg-yellow-950/30', img: imgZeus },
+            { title: 'Smoke', price: 300, category: 'grenade', label: 'Граната', color: 'border-emerald-500/50 bg-emerald-950/30', img: imgSmoke },
+            { title: 'Flashbang', price: 200, category: 'grenade', label: 'Граната', color: 'border-yellow-500/50 bg-yellow-950/30', img: imgFlash },
+            { title: 'HE Grenade', price: 300, category: 'grenade', label: 'Граната', color: 'border-red-500/50 bg-red-950/30', img: imgHE },
+            { title: 'Molotov', price: 400, category: 'grenade', label: 'Граната', color: 'border-orange-600/50 bg-orange-950/30', img: imgMolotov },
+            { title: 'Decoy', price: 50, category: 'grenade', label: 'Граната', color: 'border-slate-500/50 bg-slate-950/30', img: imgDecoy }
         ];
 
         const ARMOR_ITEMS = [
@@ -1360,12 +1398,29 @@
             roomRef.update(updates);
         }
 
+        /* --- ПОЛНОСТЬЮ РАСТЯНУТОЕ ОРУЖИЕ ПОД КОНТУР --- */
         function createCard(item) {
             const div = document.createElement('div');
-            div.className = `flex-shrink-0 flex flex-col items-center justify-center p-2 rounded-xl border ${item.color} text-center`;
+            div.className = `relative flex-shrink-0 flex flex-col items-center justify-between rounded-xl border ${item.color} text-center overflow-hidden bg-slate-950`;
             div.style.width = '120px';
-            const labelText = item.label ? `<div class="text-[9px] text-slate-400 font-medium">${item.label}</div>` : '';
-            div.innerHTML = `<div class="text-xs font-bold text-white truncate w-full">${item.title}</div>${labelText}<div class="text-[10px] text-emerald-400 font-black">$${item.price}</div>`;
+            div.style.height = '96px';
+            
+            const imgHTML = item.img 
+                ? `<div class="absolute inset-0 w-full h-full flex items-center justify-center overflow-hidden">
+                     <img src="${item.img}" class="w-full h-full object-cover opacity-90 transition-transform hover:scale-110">
+                     <div class="absolute inset-0 bg-gradient-to-t from-slate-950 via-transparent to-slate-950/60 pointer-events-none"></div>
+                   </div>`
+                : `<div class="w-full h-12 flex items-center justify-center text-[10px] text-slate-500 font-bold uppercase">${item.label || 'CS2'}</div>`;
+
+            const labelText = item.label ? `<div class="text-[8px] text-slate-400 font-medium leading-tight truncate">${item.label}</div>` : '';
+            div.innerHTML = `
+                <div class="text-[11px] font-bold text-white truncate w-full z-10 pt-1 drop-shadow">${item.title}</div>
+                ${imgHTML}
+                <div class="w-full flex justify-between items-center px-2 pb-1 z-10">
+                    ${labelText}
+                    <div class="text-[10px] text-emerald-400 font-black ml-auto drop-shadow">$${item.price}</div>
+                </div>
+            `;
             return div;
         }
 
@@ -1507,8 +1562,15 @@
                     const isSelected = selectedList.includes(i);
                     if(item) {
                         const blinkClass = (isAllSpun && !isSelected) ? 'blink-slot' : '';
-                        div.className = `h-14 rounded-xl border ${item.color} ${blinkClass} p-1 flex flex-col justify-center text-center cursor-pointer transition ${isSelected ? 'ring-2 ring-amber-400 scale-105 shadow-lg shadow-amber-500/20 opacity-100' : 'opacity-80 hover:opacity-100'}`;
-                        div.innerHTML = `<div class="text-xs font-bold text-white truncate w-full">${item.title}</div><div class="text-[9px] text-slate-400">${item.label || ''}</div><div class="text-[10px] text-emerald-400 font-bold">$${item.price}</div>`;
+                        const slotImg = item.img ? `<img src="${item.img}" class="h-6 object-contain">` : '';
+                        div.className = `h-14 rounded-xl border ${item.color} ${blinkClass} p-1 flex items-center justify-between px-2 cursor-pointer transition ${isSelected ? 'ring-2 ring-amber-400 scale-105 shadow-lg shadow-amber-500/20 opacity-100' : 'opacity-80 hover:opacity-100'}`;
+                        div.innerHTML = `
+                            <div class="truncate">
+                                <div class="text-[11px] font-bold text-white truncate">${item.title}</div>
+                                <div class="text-[9px] text-emerald-400 font-bold">$${item.price}</div>
+                            </div>
+                            ${slotImg}
+                        `;
                         div.onclick = () => selectSlot(side, i);
                     } else {
                         div.className = 'h-14 bg-slate-950 rounded-xl border border-slate-800 flex items-center justify-center text-xs text-slate-600';
@@ -1790,7 +1852,7 @@
                 const loser = winner === p1 ? p2 : p1;
                 const auctionItem = data.currentAuctionItem;
                 const winInventory = players[winner].inventory || [];
-                winInventory.push({ title: auctionItem.title, price: auctionItem.price, label: auctionItem.label, color: auctionItem.color });
+                winInventory.push({ title: auctionItem.title, price: auctionItem.price, label: auctionItem.label, color: auctionItem.color, img: auctionItem.img });
 
                 const chat = data.chat || [];
                 chat.push({ user: 'Сервер', text: `⏰ Время вышло! Победитель аукциона: ${winner} (ставка: $${bids[winner] || 0}). Деньги сгорели.` });
@@ -1808,12 +1870,16 @@
             const container = document.getElementById(containerId);
             if(!container) return;
             if(!inventory || inventory.length === 0) { container.innerHTML = '<div class="text-[10px] text-slate-600">Пусто</div>'; return; }
-            container.innerHTML = inventory.map(item => `
-                <div class="px-2 py-1 rounded bg-slate-950 border ${item.color} text-[10px] flex flex-col items-center">
-                    <span class="font-bold text-white">${item.title}</span>
-                    <span class="text-emerald-400 font-black">$${item.price}</span>
-                </div>
-            `).join('');
+            container.innerHTML = inventory.map(item => {
+                const invImg = item.img ? `<img src="${item.img}" class="h-5 object-contain my-0.5">` : '';
+                return `
+                    <div class="px-2 py-1 rounded bg-slate-950 border ${item.color} text-[10px] flex flex-col items-center">
+                        <span class="font-bold text-white">${item.title}</span>
+                        ${invImg}
+                        <span class="text-emerald-400 font-black">$${item.price}</span>
+                    </div>
+                `;
+            }).join('');
         }
 
         function rollDice() {
@@ -1851,11 +1917,7 @@
                 fillMgTrack();
                 const targetIdx = 30;
                 if(track.children[targetIdx]) {
-                    const winDiv = document.createElement('div');
-                    winDiv.className = `flex-shrink-0 flex flex-col items-center justify-center p-2 rounded-xl border ${act.item.color} text-center`;
-                    winDiv.style.width = '120px';
-                    winDiv.innerHTML = `<div class="text-xs font-bold text-white truncate w-full">${act.item.title}</div><div class="text-[10px] text-emerald-400 font-black">$${act.item.price}</div>`;
-                    track.children[targetIdx].replaceWith(winDiv);
+                    track.children[targetIdx].replaceWith(createCard(act.item));
                 }
 
                 const cardWidth = 120;
@@ -1913,10 +1975,10 @@
                 const myRefundedBalance = (players[mgName].balance || 0) + myCurrentBid;
 
                 const oppInventory = players[opponentName].inventory || [];
-                oppInventory.push({ title: auctionItem.title, price: auctionItem.price, label: auctionItem.label, color: auctionItem.color });
+                oppInventory.push({ title: auctionItem.title, price: auctionItem.price, label: auctionItem.label, color: auctionItem.color, img: auctionItem.img });
 
                 const chat = data.chat || [];
-                chat.push({ user: mgName, text: `отдал лот оппоненту (ставка $${myCurrentBid} возвращена).` });
+                chat.push({ user: mgName, text: `отдал лот оппоненту (ставка возвращена).` });
 
                 mgRef.update({
                     [`players/${mgName}/balance`]: myRefundedBalance,
@@ -1939,11 +2001,7 @@
             track.innerHTML = '';
             for(let i=0; i<60; i++) {
                 const item = ALL_CS2_ITEMS[i % ALL_CS2_ITEMS.length];
-                const div = document.createElement('div');
-                div.className = `flex-shrink-0 flex flex-col items-center justify-center p-2 rounded-xl border ${item.color} text-center`;
-                div.style.width = '120px';
-                div.innerHTML = `<div class="text-xs font-bold text-white truncate w-full">${item.title}</div><div class="text-[10px] text-emerald-400 font-black">$${item.price}</div>`;
-                track.appendChild(div);
+                track.appendChild(createCard(item));
             }
         }
 
