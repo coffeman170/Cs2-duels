@@ -133,7 +133,7 @@
     </div>
 
     <!-- МОДАЛЬНОЕ ОКНО АНИМАЦИИ КНБ -->
-    <div id="rpsResultModal" class="fixed inset-0 bg-black/90 backdrop-blur-md flex flex-col items-center justify-center z-50 hidden space-y-4">
+    <div id="rpsResultModal" class="fixed inset-0 bg-black/90 backdrop-blur-md flex flex-col items-center justify-center z-50 hidden space-y-4 pointer-events-none">
         <div id="rpsResultTitle" class="text-5xl font-black uppercase tracking-wider"></div>
         <div id="rpsResultTeam" class="text-xl font-bold text-slate-300"></div>
         <div id="fallingContainer"></div>
@@ -142,9 +142,12 @@
     <!-- МОДАЛЬНОЕ ОКНО ПОБЕДЫ В АУКЦИОНЕ (ДЛЯ ПОЛУЧАТЕЛЯ) -->
     <div id="goldWinModal" class="fixed inset-0 bg-black/80 backdrop-blur-sm flex flex-col items-center justify-center z-50 hidden space-y-3 pointer-events-none">
         <div class="text-4xl md:text-6xl font-black text-amber-400 uppercase tracking-wider drop-shadow-[0_0_25px_#f59e0b] text-center animate-bounce">
-            ✨ ВЫ ВЫИГРАЛИ ПРЕДМЕТ! ✨
+            🎉 ВЫ ВЫИГРАЛИ В АУКЦИОНЕ!
         </div>
-        <div id="goldWinItemName" class="text-lg text-white font-bold bg-slate-900/90 px-6 py-3 rounded-2xl border border-amber-500/50 shadow-xl"></div>
+        <div id="goldWinItemName" class="text-lg text-white font-bold bg-slate-900/90 px-6 py-3 rounded-2xl border border-amber-500/50 shadow-xl text-center"></div>
+        <div class="text-sm text-emerald-400 font-bold bg-slate-950/80 px-4 py-2 rounded-xl border border-emerald-500/30">
+            Предмет перемещен в ваш инвентарь, а деньги списались со счета
+        </div>
         <div id="goldFallingContainer"></div>
     </div>
 
@@ -550,10 +553,11 @@
         }
 
         let currentRoomCode = '', playerName = '', playerSide = '', roomRef = null, lastProcessedTimestamp = 0;
-        let isSpinningCT = false, isSpinningT = false; // РАЗДЕЛЬНЫЕ ФЛАГИ ДЛЯ КАЖДОЙ СТОРОНЫ
+        let isSpinningCT = false, isSpinningT = false;
         let mgCode = '', mgName = 'Player', mgAvatar = '👨', mgRef = null, isMgSpinning = false, mgLastTs = 0;
         let timerInterval = null;
         let hasShownDiceModal = false;
+        let lastAuctionWinner = '';
 
         const WEAPONS_CT = [
             { title: 'M4A1-S', price: 2900, category: 'primary', label: 'Основное', color: 'border-cyan-500/50 bg-cyan-950/30' },
@@ -724,16 +728,44 @@
             container.innerHTML = '';
             modal.classList.remove('hidden');
             const isWinner = (playerName === winner);
+
             if(isWinner) {
-                titleEl.className = 'text-6xl font-black uppercase text-emerald-400 drop-shadow-[0_0_20px_#10b981]';
+                playSound('win');
+                titleEl.className = 'text-6xl font-black uppercase text-emerald-400 drop-shadow-[0_0_25px_#10b981] animate-bounce';
                 titleEl.innerText = 'ПОБЕДА!';
                 teamEl.innerText = `Вы играете за сторону: ${sides[playerName]}`;
+                
+                const winIcons = ['🎉', '🏆', '✨', '🔥', '💎', '👑'];
+                for(let i = 0; i < 25; i++) {
+                    const el = document.createElement('div');
+                    el.className = 'falling-element';
+                    el.innerText = winIcons[Math.floor(Math.random() * winIcons.length)];
+                    el.style.left = Math.random() * 100 + 'vw';
+                    el.style.animationDuration = (1.8 + Math.random() * 2) + 's';
+                    el.style.animationDelay = (Math.random() * 1.2) + 's';
+                    container.appendChild(el);
+                }
             } else {
-                titleEl.className = 'text-6xl font-black uppercase text-rose-500 drop-shadow-[0_0_20px_#f43f5e]';
+                titleEl.className = 'text-6xl font-black uppercase text-rose-500 drop-shadow-[0_0_25px_#f43f5e]';
                 titleEl.innerText = 'ПОРАЖЕНИЕ';
                 teamEl.innerText = `Вам досталась сторона: ${sides[playerName]}`;
+
+                const loseIcons = ['💔', '💀', '❌', '😭', '🥀'];
+                for(let i = 0; i < 20; i++) {
+                    const el = document.createElement('div');
+                    el.className = 'falling-element';
+                    el.innerText = loseIcons[Math.floor(Math.random() * loseIcons.length)];
+                    el.style.left = Math.random() * 100 + 'vw';
+                    el.style.animationDuration = (2 + Math.random() * 2) + 's';
+                    el.style.animationDelay = (Math.random() * 1.2) + 's';
+                    container.appendChild(el);
+                }
             }
-            setTimeout(() => { modal.classList.add('hidden'); roomRef.update({ status: 'ready', gameStarted: true }); }, 4000);
+
+            setTimeout(() => { 
+                modal.classList.add('hidden'); 
+                roomRef.update({ status: 'ready', gameStarted: true }); 
+            }, 4500);
         }
 
         function voteComplication(type) {
@@ -897,14 +929,11 @@
         function triggerSpin(type) {
             playSound('click');
             
-            // ПРОВЕРКА: БЛОКИРУЕМ ТОЛЬКО ВРАЩЕНИЕ СВОЕЙ КОМАНДЫ ЕСЛИ ОНА УЖЕ КРУТИТ
             if ((type === 'CT' || type === 'ARMOR_CT') && isSpinningCT) return;
             if ((type === 'T' || type === 'ARMOR_T') && isSpinningT) return;
 
-            if(type === 'CT' && playerSide !== 'CT') { alert('Вы играете за Т!'); return; }
-            if(type === 'T' && playerSide !== 'T') { alert('Вы играете за CT!'); return; }
-            if(type === 'ARMOR_CT' && playerSide !== 'CT') { alert('Вы играете за Т!'); return; }
-            if(type === 'ARMOR_T' && playerSide !== 'T') { alert('Вы играете за CT!'); return; }
+            if ((type === 'CT' || type === 'ARMOR_CT') && playerSide !== 'CT') return;
+            if ((type === 'T' || type === 'ARMOR_T') && playerSide !== 'T') return;
 
             if(type === 'CT' && spinCountCT >= 3) { alert('Оружие за КТ можно крутить максимум 3 раза!'); return; }
             if(type === 'T' && spinCountT >= 3) { alert('Оружие за Т можно крутить максимум 3 раза!'); return; }
@@ -1067,11 +1096,13 @@
             document.getElementById('countCT').innerText = spinCountCT;
             document.getElementById('countT').innerText = spinCountT;
             
-            // КНОПКИ БЛОКИРУЮТСЯ ТОЛЬКО ПО КОМАНДАМ И СВОИМ ЛИМИТАМ
-            document.getElementById('spinCTBtn').disabled = (spinCountCT >= 3 || isSpinningCT);
-            document.getElementById('spinTBtn').disabled = (spinCountT >= 3 || isSpinningT);
-            document.getElementById('spinArmorCTBtn').disabled = (hasSpunArmorCT || isSpinningCT);
-            document.getElementById('spinArmorTBtn').disabled = (hasSpunArmorT || isSpinningT);
+            const isCT = (playerSide === 'CT');
+            const isT = (playerSide === 'T');
+
+            document.getElementById('spinCTBtn').disabled = (!isCT || spinCountCT >= 3 || isSpinningCT);
+            document.getElementById('spinTBtn').disabled = (!isT || spinCountT >= 3 || isSpinningT);
+            document.getElementById('spinArmorCTBtn').disabled = (!isCT || hasSpunArmorCT || isSpinningCT);
+            document.getElementById('spinArmorTBtn').disabled = (!isT || hasSpunArmorT || isSpinningT);
 
             const renderSlots = (items, containerId, side, selectedList, currentSpinCount) => {
                 const container = document.getElementById(containerId);
@@ -1165,6 +1196,7 @@
             mgRef.set({
                 players: { [mgName]: { name: mgName, avatar: mgAvatar, balance: 20, dice: 0, inventory: [] } },
                 turn: '', phase: 'waiting', currentAuctionItem: null, bidsOnCurrentItem: {}, firstBidDone: false, itemEndTime: 0,
+                lastAuctionWinnerData: null,
                 chat: [{ user: 'Сервер', text: 'Комната создана. Ожидание соперника...' }]
             }).then(() => { showMgScreen(mgCode); listenMg(); });
         }
@@ -1199,7 +1231,7 @@
             const itemEl = document.getElementById('goldWinItemName');
             const container = document.getElementById('goldFallingContainer');
             container.innerHTML = '';
-            itemEl.innerText = `Получен предмет в инвентарь: ${itemName}`;
+            itemEl.innerText = `${itemName}`;
             modal.classList.remove('hidden');
 
             for(let i=0; i<20; i++) {
@@ -1211,7 +1243,7 @@
                 el.style.animationDelay = (Math.random() * 1) + 's';
                 container.appendChild(el);
             }
-            setTimeout(() => { modal.classList.add('hidden'); }, 4000);
+            setTimeout(() => { modal.classList.add('hidden'); }, 4500);
         }
 
         function triggerGiveItemModal() {
@@ -1247,6 +1279,14 @@
 
                 if(pKeys.length === 2 && data.phase === 'waiting') {
                     document.getElementById('diceSection').classList.remove('hidden');
+                }
+
+                // ПРОВЕРКА УВЕДОМЛЕНИЯ О ПОБЕДЕ В АУКЦИОНЕ
+                if(data.lastAuctionWinnerData && data.lastAuctionWinnerData.ts !== lastAuctionWinner) {
+                    lastAuctionWinner = data.lastAuctionWinnerData.ts;
+                    if(data.lastAuctionWinnerData.winner === mgName) {
+                        triggerGoldWinAnimation(data.lastAuctionWinnerData.itemName);
+                    }
                 }
 
                 if(data.phase === 'auction' && !hasShownDiceModal) {
@@ -1368,7 +1408,8 @@
                 mgRef.update({
                     [`players/${winner}/inventory`]: winInventory,
                     currentAuctionItem: null, bidsOnCurrentItem: {}, itemEndTime: 0,
-                    turn: loser, chat: chat
+                    turn: loser, chat: chat,
+                    lastAuctionWinnerData: { winner: winner, itemName: auctionItem.title, ts: Date.now() }
                 });
             });
         }
@@ -1494,7 +1535,8 @@
                     bidsOnCurrentItem: {}, 
                     itemEndTime: 0,
                     turn: opponentName, 
-                    chat: chat
+                    chat: chat,
+                    lastAuctionWinnerData: { winner: opponentName, itemName: auctionItem.title, ts: Date.now() }
                 }).then(() => {
                     triggerGiveItemModal();
                 });
