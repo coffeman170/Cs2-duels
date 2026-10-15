@@ -126,6 +126,12 @@
         🔊 Звук: ВКЛ
     </button>
 
+    <!-- МОДАЛЬНОЕ ОКНО РЕЗУЛЬТАТОВ БРОСКА КУБИКОВ -->
+    <div id="diceResultModal" class="fixed inset-0 bg-black/90 backdrop-blur-md flex flex-col items-center justify-center z-50 hidden space-y-4 p-4 text-center">
+        <div id="diceModalTitle" class="text-4xl md:text-5xl font-black uppercase tracking-wider"></div>
+        <div id="diceModalDesc" class="text-sm md:text-base text-slate-300 font-bold max-w-md leading-relaxed bg-slate-900/90 p-5 rounded-2xl border border-slate-700 shadow-xl"></div>
+    </div>
+
     <!-- МОДАЛЬНОЕ ОКНО АНИМАЦИИ КНБ -->
     <div id="rpsResultModal" class="fixed inset-0 bg-black/90 backdrop-blur-md flex flex-col items-center justify-center z-50 hidden space-y-4">
         <div id="rpsResultTitle" class="text-5xl font-black uppercase tracking-wider"></div>
@@ -133,13 +139,23 @@
         <div id="fallingContainer"></div>
     </div>
 
-    <!-- МОДАЛЬНОЕ ОКНО ПОБЕДЫ В АУКЦИОНЕ -->
+    <!-- МОДАЛЬНОЕ ОКНО ПОБЕДЫ В АУКЦИОНЕ (ДЛЯ ПОЛУЧАТЕЛЯ) -->
     <div id="goldWinModal" class="fixed inset-0 bg-black/80 backdrop-blur-sm flex flex-col items-center justify-center z-50 hidden space-y-3 pointer-events-none">
         <div class="text-4xl md:text-6xl font-black text-amber-400 uppercase tracking-wider drop-shadow-[0_0_25px_#f59e0b] text-center animate-bounce">
             ✨ ВЫ ВЫИГРАЛИ ПРЕДМЕТ! ✨
         </div>
         <div id="goldWinItemName" class="text-lg text-white font-bold bg-slate-900/90 px-6 py-3 rounded-2xl border border-amber-500/50 shadow-xl"></div>
         <div id="goldFallingContainer"></div>
+    </div>
+
+    <!-- МОДАЛЬНОЕ ОКНО ДЛЯ ТОГО, КТО ОТДАЛ ПРЕДМЕТ -->
+    <div id="giveItemModal" class="fixed inset-0 bg-black/80 backdrop-blur-sm flex flex-col items-center justify-center z-50 hidden space-y-3 pointer-events-none">
+        <div class="text-3xl md:text-5xl font-black text-rose-400 uppercase tracking-wider drop-shadow-[0_0_25px_#f43f5e] text-center">
+            🤝 ПРЕДМЕТ ОТДАН ОППОНЕНТУ
+        </div>
+        <div class="text-sm md:text-base text-slate-200 font-bold bg-slate-900/90 px-6 py-4 rounded-2xl border border-rose-500/50 shadow-xl text-center max-w-md leading-relaxed">
+            Вы отдали предмет оппоненту.<br>Ваши деньги за поставленную ставку вернулись вам на баланс!
+        </div>
     </div>
 
     <!-- ГЛАВНОЕ МЕНЮ -->
@@ -361,7 +377,7 @@
         </div>
         <div class="space-y-4 text-xs text-slate-300">
             <p class="bg-slate-950/60 p-3 rounded-2xl border border-slate-800/80 leading-relaxed">
-                <b>Правила:</b> У каждого по $20. Первый поставивший крутит рулетку. Владелец обязан поставить ставку за 10 секунд, иначе предмет автоматически отдается оппоненту!
+                <b>Правила:</b> Сервер выставляет лот. Оба игрока торгуются на свои $20. Кто поставил больше — забирает лот, а его деньги сгорают. Кнопка «Отдать оппоненту» возвращает вашу ставку вам, а предмет уходит сопернику!
             </p>
             <div>
                 <label class="block text-slate-400 font-bold mb-1.5">Ваш никнейм:</label>
@@ -440,21 +456,22 @@
         <div id="auctionSection" class="hidden grid grid-cols-1 md:grid-cols-3 gap-5">
             <div class="md:col-span-2 bg-slate-900/90 backdrop-blur-xl p-5 rounded-2xl border border-slate-800 space-y-4 shadow-xl">
                 <div class="flex justify-between items-center border-b border-slate-800 pb-3">
-                    <h2 class="text-emerald-400 font-black text-sm uppercase">🎰 Рулетка всех предметов CS2</h2>
+                    <h2 class="text-emerald-400 font-black text-sm uppercase">🎰 Серверная рулетка предметов CS2</h2>
                     <span id="turnIndicator" class="text-xs font-bold text-amber-400">Ход: -</span>
                 </div>
                 <div class="roulette-container h-28"><div class="pointer"></div><div id="mgTrack" class="roulette-track h-full"></div></div>
                 <button id="mgSpinBtn" onclick="mgSpinWheel()" class="w-full py-3 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 rounded-xl font-black text-sm uppercase transition text-white shadow-lg spin-btn">
-                    🎲 Крутить рулетку предмета
+                    🎲 Крутить рулетку (Сервер)
                 </button>
             </div>
 
             <div class="bg-slate-900/90 backdrop-blur-xl p-5 rounded-2xl border border-slate-800 flex flex-col justify-between space-y-4 shadow-xl">
                 <div>
-                    <h3 class="text-xs font-black uppercase text-slate-400 mb-2">🏷️ Аукцион <span id="timerDisplay" class="text-amber-400 font-bold"></span></h3>
+                    <h3 class="text-xs font-black uppercase text-slate-400 mb-2">🏷️ Аукцион сервера <span id="timerDisplay" class="text-amber-400 font-bold"></span></h3>
                     <div id="currentAuctionItem" class="p-3 bg-slate-950 rounded-xl border border-slate-800 text-center text-xs text-slate-300">
-                        Предмет не выбран
+                        Лот не выставлен
                     </div>
+                    <div id="currentBidsDisplay" class="mt-2 text-[11px] text-cyan-400 text-center font-bold"></div>
                 </div>
                 <div class="space-y-2">
                     <div class="flex gap-2">
@@ -532,9 +549,11 @@
             alert('Команды скопированы! Вставьте в консоль CS2 (~).');
         }
 
-        let currentRoomCode = '', playerName = '', playerSide = '', roomRef = null, isSpinning = false, lastProcessedTimestamp = 0;
+        let currentRoomCode = '', playerName = '', playerSide = '', roomRef = null, lastProcessedTimestamp = 0;
+        let isSpinningCT = false, isSpinningT = false; // РАЗДЕЛЬНЫЕ ФЛАГИ ДЛЯ КАЖДОЙ СТОРОНЫ
         let mgCode = '', mgName = 'Player', mgAvatar = '👨', mgRef = null, isMgSpinning = false, mgLastTs = 0;
         let timerInterval = null;
+        let hasShownDiceModal = false;
 
         const WEAPONS_CT = [
             { title: 'M4A1-S', price: 2900, category: 'primary', label: 'Основное', color: 'border-cyan-500/50 bg-cyan-950/30' },
@@ -605,7 +624,7 @@
             document.getElementById('miniGameScreen').classList.add('hidden');
             document.getElementById('mainMenu').classList.remove('hidden');
             if (roomRef) { roomRef.off(); roomRef = null; currentRoomCode = ''; }
-            if (mgRef) { mgRef.off(); mgRef = null; mgCode = ''; }
+            if (mgRef) { mgRef.off(); mgRef = null; mgCode = ''; hasShownDiceModal = false; }
             if (timerInterval) clearInterval(timerInterval);
         }
 
@@ -840,7 +859,7 @@
 
             roomRef.child('action').on('value', (snapshot) => {
                 const action = snapshot.val();
-                if (action && action.timestamp > lastProcessedTimestamp && !isSpinning) {
+                if (action && action.timestamp > lastProcessedTimestamp) {
                     lastProcessedTimestamp = action.timestamp;
                     runAnimation(action);
                 }
@@ -877,7 +896,11 @@
 
         function triggerSpin(type) {
             playSound('click');
-            if (isSpinning) return;
+            
+            // ПРОВЕРКА: БЛОКИРУЕМ ТОЛЬКО ВРАЩЕНИЕ СВОЕЙ КОМАНДЫ ЕСЛИ ОНА УЖЕ КРУТИТ
+            if ((type === 'CT' || type === 'ARMOR_CT') && isSpinningCT) return;
+            if ((type === 'T' || type === 'ARMOR_T') && isSpinningT) return;
+
             if(type === 'CT' && playerSide !== 'CT') { alert('Вы играете за Т!'); return; }
             if(type === 'T' && playerSide !== 'T') { alert('Вы играете за CT!'); return; }
             if(type === 'ARMOR_CT' && playerSide !== 'CT') { alert('Вы играете за Т!'); return; }
@@ -986,18 +1009,23 @@
         }
 
         async function runAnimation(action) {
-            isSpinning = true;
             let item = action.winner;
 
             if (action.type === 'CT' || action.type === 'T') {
                 const side = action.type;
+                if (side === 'CT') isSpinningCT = true;
+                else isSpinningT = true;
+
                 const pool = side === 'CT' ? WEAPONS_CT : WEAPONS_T;
                 await animateTrackWithWinner(`trackWeapon${side}`, pool, item);
                 
                 if (action.player === playerName) {
                     let currentItems = side === 'CT' ? [...itemsCT] : [...itemsT];
                     let count = side === 'CT' ? spinCountCT : spinCountT;
-                    if(count >= 3) { isSpinning = false; return; }
+                    if(count >= 3) { 
+                        if (side === 'CT') isSpinningCT = false; else isSpinningT = false;
+                        return; 
+                    }
                     currentItems[count] = item;
                     count++;
                     
@@ -1010,8 +1038,15 @@
 
                     if (count === 3) autoSelectNonConflictingItems(side, currentItems);
                 }
+
+                if (side === 'CT') isSpinningCT = false;
+                else isSpinningT = false;
+
             } else if (action.type === 'ARMOR_CT' || action.type === 'ARMOR_T') {
                 const side = action.type === 'ARMOR_CT' ? 'CT' : 'T';
+                if (side === 'CT') isSpinningCT = true;
+                else isSpinningT = true;
+
                 await animateTrackWithWinner(`trackArmor${side}`, ARMOR_ITEMS, item);
                 
                 if (action.player === playerName) {
@@ -1022,17 +1057,21 @@
                     updates.feedList = newFeed;
                     roomRef.update(updates);
                 }
+
+                if (side === 'CT') isSpinningCT = false;
+                else isSpinningT = false;
             }
-            isSpinning = false;
         }
 
         function renderState() {
             document.getElementById('countCT').innerText = spinCountCT;
             document.getElementById('countT').innerText = spinCountT;
-            document.getElementById('spinCTBtn').disabled = (spinCountCT >= 3);
-            document.getElementById('spinTBtn').disabled = (spinCountT >= 3);
-            document.getElementById('spinArmorCTBtn').disabled = hasSpunArmorCT;
-            document.getElementById('spinArmorTBtn').disabled = hasSpunArmorT;
+            
+            // КНОПКИ БЛОКИРУЮТСЯ ТОЛЬКО ПО КОМАНДАМ И СВОИМ ЛИМИТАМ
+            document.getElementById('spinCTBtn').disabled = (spinCountCT >= 3 || isSpinningCT);
+            document.getElementById('spinTBtn').disabled = (spinCountT >= 3 || isSpinningT);
+            document.getElementById('spinArmorCTBtn').disabled = (hasSpunArmorCT || isSpinningCT);
+            document.getElementById('spinArmorTBtn').disabled = (hasSpunArmorT || isSpinningT);
 
             const renderSlots = (items, containerId, side, selectedList, currentSpinCount) => {
                 const container = document.getElementById(containerId);
@@ -1121,11 +1160,12 @@
             playSound('click');
             mgName = document.getElementById('mgUsername').value.trim() || 'Player';
             mgCode = Math.random().toString(36).substring(2, 8).toUpperCase();
+            hasShownDiceModal = false;
             mgRef = db.ref('mgRooms/' + mgCode);
             mgRef.set({
                 players: { [mgName]: { name: mgName, avatar: mgAvatar, balance: 20, dice: 0, inventory: [] } },
                 turn: '', phase: 'waiting', currentAuctionItem: null, bidsOnCurrentItem: {}, firstBidDone: false, itemEndTime: 0,
-                chat: [{ user: 'Система', text: 'Комната аукциона создана. Ожидание соперника...' }]
+                chat: [{ user: 'Сервер', text: 'Комната создана. Ожидание соперника...' }]
             }).then(() => { showMgScreen(mgCode); listenMg(); });
         }
 
@@ -1134,6 +1174,7 @@
             mgName = document.getElementById('mgUsername').value.trim() || 'Player';
             mgCode = document.getElementById('mgRoomCodeInput').value.trim().toUpperCase();
             if(!mgCode) { alert('Введите код комнаты!'); return; }
+            hasShownDiceModal = false;
             mgRef = db.ref('mgRooms/' + mgCode);
             mgRef.once('value').then(snapshot => {
                 if(snapshot.exists()) {
@@ -1158,7 +1199,7 @@
             const itemEl = document.getElementById('goldWinItemName');
             const container = document.getElementById('goldFallingContainer');
             container.innerHTML = '';
-            itemEl.innerText = `Вам в инвентарь добавлен предмет: ${itemName}`;
+            itemEl.innerText = `Получен предмет в инвентарь: ${itemName}`;
             modal.classList.remove('hidden');
 
             for(let i=0; i<20; i++) {
@@ -1171,6 +1212,15 @@
                 container.appendChild(el);
             }
             setTimeout(() => { modal.classList.add('hidden'); }, 4000);
+        }
+
+        function triggerGiveItemModal() {
+            playSound('click');
+            const modal = document.getElementById('giveItemModal');
+            modal.classList.remove('hidden');
+            setTimeout(() => {
+                modal.classList.add('hidden');
+            }, 3500);
         }
 
         function listenMg() {
@@ -1199,6 +1249,35 @@
                     document.getElementById('diceSection').classList.remove('hidden');
                 }
 
+                if(data.phase === 'auction' && !hasShownDiceModal) {
+                    hasShownDiceModal = true;
+                    const pNames = Object.keys(players);
+                    const me = mgName;
+                    const opponent = pNames.find(p => p !== me);
+                    const myDice = players[me]?.dice || 0;
+                    const oppDice = players[opponent]?.dice || 0;
+                    const isWinner = data.turn === me;
+
+                    const modal = document.getElementById('diceResultModal');
+                    const titleEl = document.getElementById('diceModalTitle');
+                    const descEl = document.getElementById('diceModalDesc');
+
+                    if(isWinner) {
+                        titleEl.className = 'text-4xl md:text-5xl font-black uppercase text-emerald-400 drop-shadow-[0_0_20px_#10b981]';
+                        titleEl.innerText = '🎉 ВЫ ВЫИГРАЛИ БРОСОК!';
+                        descEl.innerHTML = `Вы выиграли в бросках кубика!<br>Ваше число: <b>${myDice}</b>, число противника (${opponent}): <b>${oppDice}</b>.<br><span class="text-cyan-400">Вы крутите рулетку первым!</span>`;
+                    } else {
+                        titleEl.className = 'text-4xl md:text-5xl font-black uppercase text-rose-500 drop-shadow-[0_0_20px_#f43f5e]';
+                        titleEl.innerText = '❌ ВЫ ПРОИГРАЛИ БРОСОК';
+                        descEl.innerHTML = `Вы проиграли в броске кубика.<br>Ваше число: <b>${myDice}</b>, число противника (${opponent}): <b>${oppDice}</b>.<br><span class="text-amber-400">Вы крутите рулетку после вашего противника.</span>`;
+                    }
+
+                    modal.classList.remove('hidden');
+                    setTimeout(() => {
+                        modal.classList.add('hidden');
+                    }, 5000);
+                }
+
                 if(data.phase === 'auction') {
                     document.getElementById('diceSection').classList.add('hidden');
                     document.getElementById('auctionSection').classList.remove('hidden');
@@ -1207,24 +1286,23 @@
                     const spinBtn = document.getElementById('mgSpinBtn');
                     const placeBidBtn = document.getElementById('placeBidBtn');
                     const giveBtn = document.getElementById('giveItemBtn');
+                    const bids = data.bidsOnCurrentItem || {};
+
+                    let bidsText = Object.keys(bids).map(p => `${p}: $${bids[p]}`).join(' | ');
+                    document.getElementById('currentBidsDisplay').innerText = bidsText ? `Текущие ставки — ${bidsText}` : 'Ставок пока нет';
 
                     if(data.currentAuctionItem) {
-                        document.getElementById('currentAuctionItem').innerHTML = `<b>${data.currentAuctionItem.title}</b> ($${data.currentAuctionItem.price}) выставил ${data.currentAuctionItem.owner}`;
+                        document.getElementById('currentAuctionItem').innerHTML = `<b>${data.currentAuctionItem.title}</b> ($${data.currentAuctionItem.price}) выставил Сервер`;
                         spinBtn.disabled = true;
-                        
-                        const isOwner = (data.currentAuctionItem.owner === mgName);
-                        const isMyTurn = (data.turn === mgName);
-
-                        placeBidBtn.disabled = (!data.firstBidDone && !isOwner);
-                        
-                        // ИСПРАВЛЕННЫЙ БАГ: Кнопка "Отдать оппоненту" теперь доступна, если владелец лота вы или сейчас ваш ход
-                        giveBtn.disabled = !(isOwner || isMyTurn);
-
-                        manageTimer(data.itemEndTime, data.currentAuctionItem.owner);
-                    } else {
-                        document.getElementById('currentAuctionItem').innerText = 'Предмет не выбран';
-                        spinBtn.disabled = (data.turn !== mgName);
                         placeBidBtn.disabled = false;
+                        giveBtn.disabled = false;
+
+                        manageTimer(data.itemEndTime);
+                    } else {
+                        document.getElementById('currentAuctionItem').innerText = 'Лот не выставлен';
+                        document.getElementById('currentBidsDisplay').innerText = '';
+                        spinBtn.disabled = (data.turn !== mgName);
+                        placeBidBtn.disabled = true;
                         giveBtn.disabled = true;
                         document.getElementById('timerDisplay').innerText = '';
                         if(timerInterval) clearInterval(timerInterval);
@@ -1247,7 +1325,7 @@
             });
         }
 
-        function manageTimer(endTime, ownerName) {
+        function manageTimer(endTime) {
             if(timerInterval) clearInterval(timerInterval);
             if(!endTime) return;
             timerInterval = setInterval(() => {
@@ -1255,34 +1333,42 @@
                 document.getElementById('timerDisplay').innerText = `(${timeLeft}с)`;
                 if(timeLeft <= 0) {
                     clearInterval(timerInterval);
-                    if(ownerName === mgName) autoGiveItemTimeout();
+                    if(mgName === Object.keys(mgRef.root.child('players').val?.() || {})[0]) {
+                        finishAuctionTimeout();
+                    }
                 }
             }, 1000);
         }
 
-        function autoGiveItemTimeout() {
+        function finishAuctionTimeout() {
             mgRef.once('value', snap => {
                 const data = snap.val();
                 if(!data || !data.currentAuctionItem) return;
-                const auctionItem = data.currentAuctionItem;
-                if(auctionItem.owner !== mgName) return;
-
+                const bids = data.bidsOnCurrentItem || {};
                 const players = data.players || {};
-                const opponentName = Object.keys(players).find(p => p !== mgName);
-                if(!opponentName) return;
+                const pNames = Object.keys(players);
+                if(pNames.length < 2) return;
 
-                const refundedBalance = (players[mgName].balance || 0) + (data.bidsOnCurrentItem?.[mgName] || 0);
-                const oppInventory = players[opponentName].inventory || [];
-                oppInventory.push({ title: auctionItem.title, price: auctionItem.price, label: auctionItem.label, color: auctionItem.color });
+                const p1 = pNames[0], p2 = pNames[1];
+                const bid1 = bids[p1] || 0;
+                const bid2 = bids[p2] || 0;
+
+                let winner = p1;
+                if(bid2 > bid1) winner = p2;
+                else if(bid1 === bid2) winner = data.turn;
+
+                const loser = winner === p1 ? p2 : p1;
+                const auctionItem = data.currentAuctionItem;
+                const winInventory = players[winner].inventory || [];
+                winInventory.push({ title: auctionItem.title, price: auctionItem.price, label: auctionItem.label, color: auctionItem.color });
 
                 const chat = data.chat || [];
-                chat.push({ user: 'Система', text: `⏰ Время истекло! Предмет автоматически отдан оппоненту.` });
+                chat.push({ user: 'Сервер', text: `⏰ Время вышло! Победитель аукциона: ${winner} (ставка: $${bids[winner] || 0}). Деньги сгорели.` });
 
                 mgRef.update({
-                    [`players/${mgName}/balance`]: refundedBalance,
-                    [`players/${opponentName}/inventory`]: oppInventory,
-                    currentAuctionItem: null, bidsOnCurrentItem: {}, firstBidDone: false, itemEndTime: 0,
-                    turn: opponentName, chat: chat
+                    [`players/${winner}/inventory`]: winInventory,
+                    currentAuctionItem: null, bidsOnCurrentItem: {}, itemEndTime: 0,
+                    turn: loser, chat: chat
                 });
             });
         }
@@ -1320,8 +1406,8 @@
             if(isMgSpinning) return;
             mgRef.once('value', snap => {
                 const data = snap.val();
-                if(data.turn !== mgName) { alert('Сейчас не ваш ход!'); return; }
-                if(data.currentAuctionItem) { alert('Сначала разберитесь с текущим лотом!'); return; }
+                if(data.turn !== mgName) { alert('Сейчас не ваш ход крутить рулетку!'); return; }
+                if(data.currentAuctionItem) { alert('Лот уже выставлен!'); return; }
                 const winnerItem = ALL_CS2_ITEMS[Math.floor(Math.random() * ALL_CS2_ITEMS.length)];
                 mgRef.child('action').set({ type: 'SPIN', item: winnerItem, player: mgName, timestamp: Date.now() });
             });
@@ -1354,8 +1440,8 @@
                     clearInterval(soundInterval);
                     playSound('win');
                     mgRef.update({
-                        currentAuctionItem: { ...act.item, owner: act.player },
-                        bidsOnCurrentItem: {}, firstBidDone: false, itemEndTime: Date.now() + 10000
+                        currentAuctionItem: act.item,
+                        bidsOnCurrentItem: {}, itemEndTime: Date.now() + 10000
                     });
                     isMgSpinning = false;
                 }, 4100);
@@ -1375,44 +1461,42 @@
                 mgRef.update({
                     [`players/${mgName}/balance`]: currentBalance - val,
                     [`bidsOnCurrentItem/${mgName}`]: (data.bidsOnCurrentItem?.[mgName] || 0) + val,
-                    firstBidDone: true, itemEndTime: 0
+                    itemEndTime: Date.now() + 10000
                 });
                 document.getElementById('bidInput').value = '';
             });
         }
 
-        // ИСПРАВЛЕННАЯ ФУНКЦИЯ ПЕРЕДАЧИ ПРЕДМЕТА
         function giveItem() {
             playSound('click');
             mgRef.once('value', snap => {
                 const data = snap.val();
-                if(!data) return;
-
-                const auctionItem = data.currentAuctionItem;
-                if(!auctionItem) return;
+                if(!data || !data.currentAuctionItem) return;
 
                 const players = data.players || {};
                 const opponentName = Object.keys(players).find(p => p !== mgName);
                 if(!opponentName) return;
 
-                const refundedBalance = (players[mgName].balance || 0) + (data.bidsOnCurrentItem?.[mgName] || 0);
+                const auctionItem = data.currentAuctionItem;
+                const myCurrentBid = data.bidsOnCurrentItem?.[mgName] || 0;
+                const myRefundedBalance = (players[mgName].balance || 0) + myCurrentBid;
+
                 const oppInventory = players[opponentName].inventory || [];
                 oppInventory.push({ title: auctionItem.title, price: auctionItem.price, label: auctionItem.label, color: auctionItem.color });
 
                 const chat = data.chat || [];
-                chat.push({ user: mgName, text: `передал предмет оппоненту!` });
+                chat.push({ user: mgName, text: `отдал лот оппоненту (ставка $${myCurrentBid} возвращена).` });
 
                 mgRef.update({
-                    [`players/${mgName}/balance`]: refundedBalance,
+                    [`players/${mgName}/balance`]: myRefundedBalance,
                     [`players/${opponentName}/inventory`]: oppInventory,
                     currentAuctionItem: null, 
                     bidsOnCurrentItem: {}, 
-                    firstBidDone: false, 
                     itemEndTime: 0,
                     turn: opponentName, 
                     chat: chat
                 }).then(() => {
-                    triggerGoldWinAnimation(auctionItem.title);
+                    triggerGiveItemModal();
                 });
             });
         }
