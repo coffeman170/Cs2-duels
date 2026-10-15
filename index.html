@@ -234,7 +234,12 @@
 
     <!-- ЛОББИ ДУЭЛИ -->
     <div id="lobbyScreen" class="hidden max-w-md w-full bg-slate-900/90 backdrop-blur-xl p-6 rounded-3xl border border-slate-800 space-y-6 shadow-2xl text-center">
-        <h2 class="text-cyan-400 text-base font-black uppercase">⚔️ Комната: <span id="displayRoomCode" class="text-white"></span></h2>
+        <div class="space-y-2">
+            <h2 class="text-cyan-400 text-base font-black uppercase">⚔️ Комната: <span id="displayRoomCode" class="text-white"></span></h2>
+            <button onclick="copyRoomCode()" class="inline-flex items-center gap-1.5 px-3 py-1 bg-slate-800 hover:bg-slate-700 border border-slate-700 rounded-lg text-xs font-bold text-slate-300 transition active:scale-95">
+                📋 Скопировать код
+            </button>
+        </div>
         <div id="playersList" class="text-xs text-slate-300 font-bold">Ожидание второго игрока...</div>
         
         <div id="sideSelectSection" class="hidden space-y-3 pt-4 border-t border-slate-800">
@@ -552,8 +557,14 @@
             alert('Команды скопированы! Вставьте в консоль CS2 (~).');
         }
 
+        function copyRoomCode() {
+            playSound('click');
+            if(!currentRoomCode) return;
+            navigator.clipboard.writeText(currentRoomCode);
+            alert(`Код комнаты (${currentRoomCode}) скопирован!`);
+        }
+
         let currentRoomCode = '', playerName = '', playerSide = '', roomRef = null, lastProcessedTimestamp = 0;
-        let isSpinningCT = false, isSpinningT = false;
         let mgCode = '', mgName = 'Player', mgAvatar = '👨', mgRef = null, isMgSpinning = false, mgLastTs = 0;
         let timerInterval = null;
         let hasShownDiceModal = false;
@@ -929,9 +940,7 @@
         function triggerSpin(type) {
             playSound('click');
             
-            if ((type === 'CT' || type === 'ARMOR_CT') && isSpinningCT) return;
-            if ((type === 'T' || type === 'ARMOR_T') && isSpinningT) return;
-
+            // СТРОГАЯ ПРОВЕРКА ПО СТОРОНЕ И ЛИМИТАМ (БЕЗ ОЖИДАНИЯ ЧУЖИХ СПИНОВ)
             if ((type === 'CT' || type === 'ARMOR_CT') && playerSide !== 'CT') return;
             if ((type === 'T' || type === 'ARMOR_T') && playerSide !== 'T') return;
 
@@ -1037,24 +1046,20 @@
             roomRef.update(updates);
         }
 
-        async function runAnimation(action) {
+        function runAnimation(action) {
             let item = action.winner;
 
             if (action.type === 'CT' || action.type === 'T') {
                 const side = action.type;
-                if (side === 'CT') isSpinningCT = true;
-                else isSpinningT = true;
-
                 const pool = side === 'CT' ? WEAPONS_CT : WEAPONS_T;
-                await animateTrackWithWinner(`trackWeapon${side}`, pool, item);
+                
+                // АНИМАЦИЯ ВЫПОЛНЯЕТСЯ ПАРАЛЛЕЛЬНО, НЕ БЛОКИРУЯ ИНТЕРФЕЙС
+                animateTrackWithWinner(`trackWeapon${side}`, pool, item);
                 
                 if (action.player === playerName) {
                     let currentItems = side === 'CT' ? [...itemsCT] : [...itemsT];
                     let count = side === 'CT' ? spinCountCT : spinCountT;
-                    if(count >= 3) { 
-                        if (side === 'CT') isSpinningCT = false; else isSpinningT = false;
-                        return; 
-                    }
+                    if(count >= 3) return;
                     currentItems[count] = item;
                     count++;
                     
@@ -1063,20 +1068,15 @@
                     if(side === 'CT') { updates.itemsCT = currentItems; updates.spinCountCT = count; }
                     else { updates.itemsT = currentItems; updates.spinCountT = count; }
                     updates.feedList = newFeed;
-                    await roomRef.update(updates);
+                    roomRef.update(updates);
 
                     if (count === 3) autoSelectNonConflictingItems(side, currentItems);
                 }
 
-                if (side === 'CT') isSpinningCT = false;
-                else isSpinningT = false;
-
             } else if (action.type === 'ARMOR_CT' || action.type === 'ARMOR_T') {
                 const side = action.type === 'ARMOR_CT' ? 'CT' : 'T';
-                if (side === 'CT') isSpinningCT = true;
-                else isSpinningT = true;
 
-                await animateTrackWithWinner(`trackArmor${side}`, ARMOR_ITEMS, item);
+                animateTrackWithWinner(`trackArmor${side}`, ARMOR_ITEMS, item);
                 
                 if (action.player === playerName) {
                     const newFeed = [{ player: action.player, title: `Снаряжение: ${item.title}`, price: item.price }, ...feedList];
@@ -1086,9 +1086,6 @@
                     updates.feedList = newFeed;
                     roomRef.update(updates);
                 }
-
-                if (side === 'CT') isSpinningCT = false;
-                else isSpinningT = false;
             }
         }
 
@@ -1099,10 +1096,11 @@
             const isCT = (playerSide === 'CT');
             const isT = (playerSide === 'T');
 
-            document.getElementById('spinCTBtn').disabled = (!isCT || spinCountCT >= 3 || isSpinningCT);
-            document.getElementById('spinTBtn').disabled = (!isT || spinCountT >= 3 || isSpinningT);
-            document.getElementById('spinArmorCTBtn').disabled = (!isCT || hasSpunArmorCT || isSpinningCT);
-            document.getElementById('spinArmorTBtn').disabled = (!isT || hasSpunArmorT || isSpinningT);
+            // КНОПКИ УПРАВЛЯЮТСЯ СТРОГО ПО СВОЕЙ СТОРОНЕ
+            document.getElementById('spinCTBtn').disabled = (!isCT || spinCountCT >= 3);
+            document.getElementById('spinTBtn').disabled = (!isT || spinCountT >= 3);
+            document.getElementById('spinArmorCTBtn').disabled = (!isCT || hasSpunArmorCT);
+            document.getElementById('spinArmorTBtn').disabled = (!isT || hasSpunArmorT);
 
             const renderSlots = (items, containerId, side, selectedList, currentSpinCount) => {
                 const container = document.getElementById(containerId);
@@ -1281,7 +1279,6 @@
                     document.getElementById('diceSection').classList.remove('hidden');
                 }
 
-                // ПРОВЕРКА УВЕДОМЛЕНИЯ О ПОБЕДЕ В АУКЦИОНЕ
                 if(data.lastAuctionWinnerData && data.lastAuctionWinnerData.ts !== lastAuctionWinner) {
                     lastAuctionWinner = data.lastAuctionWinnerData.ts;
                     if(data.lastAuctionWinnerData.winner === mgName) {
