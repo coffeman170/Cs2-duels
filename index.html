@@ -121,10 +121,63 @@
     <div class="bg-glow-2"></div>
     <div class="bg-grid"></div>
 
-    <!-- КНОПКА МУТА ЗВУКА -->
-    <button onclick="toggleSound()" id="soundToggleBtn" class="fixed top-4 right-4 z-50 px-3 py-1.5 bg-slate-900/80 hover:bg-slate-800 border border-slate-800 rounded-xl text-xs font-bold text-slate-400 transition">
-        🔊 Звук: ВКЛ
-    </button>
+    <!-- КНОПКИ УПРАВЛЕНИЯ ЗВУКОМ И МУЗЫКОЙ -->
+    <div class="fixed top-4 right-4 z-50 flex flex-col gap-2 items-end">
+        <button onclick="toggleSound()" id="soundToggleBtn" class="px-3 py-1.5 bg-slate-900/90 hover:bg-slate-800 border border-slate-800 rounded-xl text-xs font-bold text-slate-300 transition shadow-lg active:scale-95">
+            🔊 Звук: ВКЛ
+        </button>
+        <button onclick="openMusicModal()" id="musicMenuBtn" class="px-3 py-1.5 bg-cyan-950/90 hover:bg-cyan-900 border border-cyan-800/80 rounded-xl text-xs font-bold text-cyan-400 transition shadow-lg flex items-center gap-1.5 active:scale-95">
+            🎧 Музыка <span id="currentTrackBadge" class="hidden text-[10px] bg-cyan-500 text-black px-1.5 py-0.5 rounded-full font-black animate-pulse">▶</span>
+        </button>
+    </div>
+
+    <!-- МОДАЛЬНОЕ ОКНО МУЗЫКАЛЬНОГО ПЛЕЕРА -->
+    <div id="musicModal" class="fixed inset-0 bg-black/80 backdrop-blur-md flex flex-col items-center justify-center z-50 hidden p-4">
+        <div class="max-w-md w-full bg-slate-900 border border-slate-800 rounded-3xl p-5 space-y-4 shadow-2xl relative">
+            <button onclick="closeMusicModal()" class="absolute top-4 right-4 text-slate-400 hover:text-white text-lg font-bold">✕</button>
+            
+            <div class="space-y-1">
+                <h3 class="text-base font-black text-cyan-400 flex items-center gap-2">🎧 Фоновая Музыка</h3>
+                <p class="text-[11px] text-slate-400">Ищите русские рэп-треки или добавьте свои в Избранное</p>
+            </div>
+
+            <!-- ВКЛАДКИ -->
+            <div class="flex bg-slate-950 p-1 rounded-xl border border-slate-800 gap-1 text-xs font-bold">
+                <button id="tabBtnSearch" onclick="switchMusicTab('search')" class="flex-1 py-1.5 rounded-lg bg-cyan-600 text-white transition">🔍 Поиск</button>
+                <button id="tabBtnFav" onclick="switchMusicTab('favorites')" class="flex-1 py-1.5 rounded-lg text-slate-400 hover:text-white transition">⭐ Избранное (<span id="favCount">0</span>)</button>
+            </div>
+
+            <!-- ВКЛАДКА ПОИСКА -->
+            <div id="tabContentSearch" class="space-y-3">
+                <div class="flex gap-2">
+                    <input type="text" id="musicSearchInput" placeholder="Название трека / рэпера..." class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-cyan-500">
+                    <button onclick="searchMusic()" class="px-4 py-2 bg-cyan-600 hover:bg-cyan-500 rounded-xl text-xs font-bold transition">Искать</button>
+                </div>
+                <div id="searchResultsList" class="max-h-52 overflow-y-auto space-y-2 pr-1 hide-scrollbar text-xs">
+                    <div class="text-slate-500 text-center py-4">Введите запрос для поиска (например: <i>Miyagi, MACAN, Баста</i>)</div>
+                </div>
+            </div>
+
+            <!-- ВКЛАДКА ИЗБРАННОГО -->
+            <div id="tabContentFav" class="hidden space-y-3">
+                <div id="favResultsList" class="max-h-52 overflow-y-auto space-y-2 pr-1 hide-scrollbar text-xs">
+                    <div class="text-slate-500 text-center py-4">Избранных треков пока нет. Нажмите ⭐ возле трека, чтобы сохранить его!</div>
+                </div>
+            </div>
+
+            <!-- ПЛЕЕР ВНИЗУ ОКНА -->
+            <div id="activePlayerBar" class="hidden bg-slate-950 p-3 rounded-2xl border border-slate-800 space-y-2">
+                <div class="flex justify-between items-center text-xs">
+                    <div class="truncate max-w-[220px]">
+                        <span id="playingTitle" class="font-bold text-white block truncate">Трек</span>
+                        <span id="playingArtist" class="text-[10px] text-slate-400 block truncate">Артист</span>
+                    </div>
+                    <button onclick="stopMusic()" class="px-2.5 py-1 bg-rose-600 hover:bg-rose-500 rounded-lg text-[10px] font-bold">Стоп ⏹️</button>
+                </div>
+                <audio id="bgAudioPlayer" controls class="w-full h-8 rounded-lg bg-slate-900"></audio>
+            </div>
+        </div>
+    </div>
 
     <!-- МОДАЛЬНОЕ ОКНО РЕЗУЛЬТАТОВ БРОСКА КУБИКОВ -->
     <div id="diceResultModal" class="fixed inset-0 bg-black/90 backdrop-blur-md flex flex-col items-center justify-center z-50 hidden space-y-4 p-4 text-center">
@@ -550,6 +603,169 @@
             }
         }
 
+        /* --- ЛОГИКА МУЗЫКАЛЬНОГО ПЛЕЕРА И ИЗБРАННОГО --- */
+        let favorites = JSON.parse(localStorage.getItem('cs2_music_favs') || '[]');
+        updateFavCount();
+
+        function openMusicModal() {
+            playSound('click');
+            document.getElementById('musicModal').classList.remove('hidden');
+        }
+
+        function closeMusicModal() {
+            playSound('click');
+            document.getElementById('musicModal').classList.add('hidden');
+        }
+
+        function switchMusicTab(tab) {
+            playSound('click');
+            const btnSearch = document.getElementById('tabBtnSearch');
+            const btnFav = document.getElementById('tabBtnFav');
+            const contentSearch = document.getElementById('tabContentSearch');
+            const contentFav = document.getElementById('tabContentFav');
+
+            if (tab === 'search') {
+                btnSearch.className = "flex-1 py-1.5 rounded-lg bg-cyan-600 text-white transition";
+                btnFav.className = "flex-1 py-1.5 rounded-lg text-slate-400 hover:text-white transition";
+                contentSearch.classList.remove('hidden');
+                contentFav.classList.add('hidden');
+            } else {
+                btnFav.className = "flex-1 py-1.5 rounded-lg bg-cyan-600 text-white transition";
+                btnSearch.className = "flex-1 py-1.5 rounded-lg text-slate-400 hover:text-white transition";
+                contentFav.classList.remove('hidden');
+                contentSearch.classList.add('hidden');
+                renderFavorites();
+            }
+        }
+
+        async function searchMusic() {
+            playSound('click');
+            const query = document.getElementById('musicSearchInput').value.trim();
+            const resultsList = document.getElementById('searchResultsList');
+            if(!query) return;
+
+            resultsList.innerHTML = '<div class="text-cyan-400 text-center py-4">🔍 Ищем треки...</div>';
+
+            try {
+                const response = await fetch(`https://api.deezer.com/search?q=${encodeURIComponent(query)}&output=jsonp&callback=handleMusicResponse`);
+                // Используем JSONP для обхода CORS
+                const script = document.createElement('script');
+                script.src = `https://api.deezer.com/search?q=${encodeURIComponent(query)}&output=jsonp&callback=handleMusicResponse`;
+                document.body.appendChild(script);
+            } catch(e) {
+                resultsList.innerHTML = '<div class="text-rose-400 text-center py-4">Ошибка поиска музыкального API</div>';
+            }
+        }
+
+        function handleMusicResponse(data) {
+            const resultsList = document.getElementById('searchResultsList');
+            if(!data || !data.data || data.data.length === 0) {
+                resultsList.innerHTML = '<div class="text-slate-500 text-center py-4">Ничего не найдено. Попробуйте другой запрос</div>';
+                return;
+            }
+
+            resultsList.innerHTML = data.data.slice(0, 10).map(track => {
+                const isFav = favorites.some(f => f.id === track.id);
+                return `
+                    <div class="bg-slate-950 p-2.5 rounded-xl border border-slate-800/80 flex items-center justify-between hover:border-cyan-500/50 transition">
+                        <div class="flex items-center gap-2.5 truncate max-w-[200px]">
+                            <img src="${track.album.cover_small}" class="w-8 h-8 rounded-lg object-cover">
+                            <div class="truncate">
+                                <div class="font-bold text-white truncate">${track.title}</div>
+                                <div class="text-[10px] text-slate-400 truncate">${track.artist.name}</div>
+                            </div>
+                        </div>
+                        <div class="flex items-center gap-1.5">
+                            <button onclick="playTrack('${track.preview}', '${escapeQuotes(track.title)}', '${escapeQuotes(track.artist.name)}')" class="px-2.5 py-1 bg-cyan-600 hover:bg-cyan-500 rounded-lg text-[10px] font-bold text-white transition">▶ Играть</button>
+                            <button onclick="toggleFavorite(${track.id}, '${escapeQuotes(track.title)}', '${escapeQuotes(track.artist.name)}', '${track.preview}', '${track.album.cover_small}')" class="p-1 rounded-lg hover:bg-slate-800 transition">
+                                ${isFav ? '⭐' : '☆'}
+                            </button>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        function escapeQuotes(str) {
+            return str.replace(/'/g, "\\'").replace(/"/g, '&quot;');
+        }
+
+        function playTrack(url, title, artist) {
+            playSound('click');
+            const player = document.getElementById('bgAudioPlayer');
+            const playerBar = document.getElementById('activePlayerBar');
+            const badge = document.getElementById('currentTrackBadge');
+
+            document.getElementById('playingTitle').innerText = title;
+            document.getElementById('playingArtist').innerText = artist;
+
+            player.src = url;
+            player.loop = true;
+            player.play();
+
+            playerBar.classList.remove('hidden');
+            badge.classList.remove('hidden');
+        }
+
+        function stopMusic() {
+            playSound('click');
+            const player = document.getElementById('bgAudioPlayer');
+            const playerBar = document.getElementById('activePlayerBar');
+            const badge = document.getElementById('currentTrackBadge');
+
+            player.pause();
+            player.currentTime = 0;
+            playerBar.classList.add('hidden');
+            badge.classList.add('hidden');
+        }
+
+        function toggleFavorite(id, title, artist, preview, cover) {
+            playSound('click');
+            const idx = favorites.findIndex(f => f.id === id);
+            if(idx >= 0) {
+                favorites.splice(idx, 1);
+            } else {
+                favorites.push({ id, title, artist, preview, cover });
+            }
+            localStorage.setItem('cs2_music_favs', JSON.stringify(favorites));
+            updateFavCount();
+            
+            // Обновить визуально активный список
+            if (!document.getElementById('tabContentFav').classList.contains('hidden')) {
+                renderFavorites();
+            } else {
+                searchMusic();
+            }
+        }
+
+        function renderFavorites() {
+            const list = document.getElementById('favResultsList');
+            if(favorites.length === 0) {
+                list.innerHTML = '<div class="text-slate-500 text-center py-4">Избранных треков пока нет. Нажмите ⭐ возле трека, чтобы сохранить его!</div>';
+                return;
+            }
+
+            list.innerHTML = favorites.map(track => `
+                <div class="bg-slate-950 p-2.5 rounded-xl border border-slate-800/80 flex items-center justify-between hover:border-amber-500/50 transition">
+                    <div class="flex items-center gap-2.5 truncate max-w-[200px]">
+                        <img src="${track.cover}" class="w-8 h-8 rounded-lg object-cover">
+                        <div class="truncate">
+                            <div class="font-bold text-white truncate">${track.title}</div>
+                            <div class="text-[10px] text-slate-400 truncate">${track.artist}</div>
+                        </div>
+                    </div>
+                    <div class="flex items-center gap-1.5">
+                        <button onclick="playTrack('${track.preview}', '${escapeQuotes(track.title)}', '${escapeQuotes(track.artist)}')" class="px-2.5 py-1 bg-amber-600 hover:bg-amber-500 rounded-lg text-[10px] font-bold text-white transition">▶ Играть</button>
+                        <button onclick="toggleFavorite(${track.id})" class="p-1 rounded-lg hover:bg-slate-800 transition text-amber-400">⭐</button>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        function updateFavCount() {
+            document.getElementById('favCount').innerText = favorites.length;
+        }
+
         function copyHostConfig() {
             playSound('click');
             const cmd = 'mp_maxmoney 60000; mp_startmoney 60000';
@@ -573,9 +789,7 @@
         let isSpinningWeaponCT = false, isSpinningWeaponT = false;
         let isSpinningArmorCT = false, isSpinningArmorT = false;
 
-        // ПОЛНЫЙ АРСЕНАЛ ОРУЖИЯ CS2 (CT СТОРОНА)
         const WEAPONS_CT = [
-            // Пистолеты
             { title: 'USP-S', price: 200, category: 'secondary', label: 'Вторичное', color: 'border-blue-500/50 bg-blue-950/30' },
             { title: 'P2000', price: 200, category: 'secondary', label: 'Вторичное', color: 'border-blue-500/50 bg-blue-950/30' },
             { title: 'Dual Berettas', price: 300, category: 'secondary', label: 'Вторичное', color: 'border-cyan-500/50 bg-cyan-950/30' },
@@ -584,34 +798,24 @@
             { title: 'CZ75-Auto', price: 500, category: 'secondary', label: 'Вторичное', color: 'border-teal-500/50 bg-teal-950/30' },
             { title: 'Desert Eagle', price: 700, category: 'secondary', label: 'Вторичное', color: 'border-purple-500/50 bg-purple-950/30' },
             { title: 'R8 Revolver', price: 600, category: 'secondary', label: 'Вторичное', color: 'border-rose-500/50 bg-rose-950/30' },
-
-            // ПП (SMG)
             { title: 'MP9', price: 1250, category: 'primary', label: 'Основное', color: 'border-emerald-500/50 bg-emerald-950/30' },
             { title: 'MP7', price: 1500, category: 'primary', label: 'Основное', color: 'border-emerald-500/50 bg-emerald-950/30' },
             { title: 'MP5-SD', price: 1500, category: 'primary', label: 'Основное', color: 'border-emerald-500/50 bg-emerald-950/30' },
             { title: 'UMP-45', price: 1200, category: 'primary', label: 'Основное', color: 'border-emerald-500/50 bg-emerald-950/30' },
             { title: 'P90', price: 2350, category: 'primary', label: 'Основное', color: 'border-emerald-500/50 bg-emerald-950/30' },
             { title: 'PP-Bizon', price: 1400, category: 'primary', label: 'Основное', color: 'border-emerald-500/50 bg-emerald-950/30' },
-
-            // Дробовики и Пулеметы
             { title: 'Nova', price: 1050, category: 'primary', label: 'Основное', color: 'border-orange-500/50 bg-orange-950/30' },
             { title: 'XM1014', price: 2000, category: 'primary', label: 'Основное', color: 'border-orange-500/50 bg-orange-950/30' },
             { title: 'MAG-7', price: 1300, category: 'primary', label: 'Основное', color: 'border-orange-500/50 bg-orange-950/30' },
             { title: 'M249', price: 5200, category: 'primary', label: 'Основное', color: 'border-teal-500/50 bg-teal-950/30' },
             { title: 'Negev', price: 1700, category: 'primary', label: 'Основное', color: 'border-teal-500/50 bg-teal-950/30' },
-
-            // Штурмовые винтовки
             { title: 'FAMAS', price: 2050, category: 'primary', label: 'Основное', color: 'border-cyan-500/50 bg-cyan-950/30' },
             { title: 'M4A4', price: 3100, category: 'primary', label: 'Основное', color: 'border-cyan-500/50 bg-cyan-950/30' },
             { title: 'M4A1-S', price: 2900, category: 'primary', label: 'Основное', color: 'border-cyan-500/50 bg-cyan-950/30' },
             { title: 'AUG', price: 3300, category: 'primary', label: 'Основное', color: 'border-cyan-500/50 bg-cyan-950/30' },
-
-            // Снайперские винтовки
             { title: 'SSG 08', price: 1700, category: 'primary', label: 'Основное', color: 'border-amber-500/50 bg-amber-950/30' },
             { title: 'AWP', price: 4750, category: 'primary', label: 'Основное', color: 'border-amber-500/50 bg-amber-950/30' },
             { title: 'SCAR-20', price: 5000, category: 'primary', label: 'Основное', color: 'border-amber-500/50 bg-amber-950/30' },
-
-            // Гранаты и спецсредства
             { title: 'Zeus x27', price: 200, category: 'secondary', label: 'Спецсредство', color: 'border-yellow-500/50 bg-yellow-950/30' },
             { title: 'Smoke', price: 300, category: 'grenade', label: 'Граната', color: 'border-emerald-500/50 bg-emerald-950/30' },
             { title: 'Flashbang', price: 200, category: 'grenade', label: 'Граната', color: 'border-yellow-500/50 bg-yellow-950/30' },
@@ -620,9 +824,7 @@
             { title: 'Decoy', price: 50, category: 'grenade', label: 'Граната', color: 'border-slate-500/50 bg-slate-950/30' }
         ];
 
-        // ПОЛНЫЙ АРСЕНАЛ ОРУЖИЯ CS2 (T СТОРОНА)
         const WEAPONS_T = [
-            // Пистолеты
             { title: 'Glock-18', price: 200, category: 'secondary', label: 'Вторичное', color: 'border-cyan-500/50 bg-cyan-950/30' },
             { title: 'Dual Berettas', price: 300, category: 'secondary', label: 'Вторичное', color: 'border-cyan-500/50 bg-cyan-950/30' },
             { title: 'P250', price: 300, category: 'secondary', label: 'Вторичное', color: 'border-cyan-500/50 bg-cyan-950/30' },
@@ -630,33 +832,23 @@
             { title: 'CZ75-Auto', price: 500, category: 'secondary', label: 'Вторичное', color: 'border-yellow-500/50 bg-yellow-950/30' },
             { title: 'Desert Eagle', price: 700, category: 'secondary', label: 'Вторичное', color: 'border-purple-500/50 bg-purple-950/30' },
             { title: 'R8 Revolver', price: 600, category: 'secondary', label: 'Вторичное', color: 'border-rose-500/50 bg-rose-950/30' },
-
-            // ПП (SMG)
             { title: 'MAC-10', price: 1050, category: 'primary', label: 'Основное', color: 'border-emerald-500/50 bg-emerald-950/30' },
             { title: 'MP7', price: 1500, category: 'primary', label: 'Основное', color: 'border-emerald-500/50 bg-emerald-950/30' },
             { title: 'MP5-SD', price: 1500, category: 'primary', label: 'Основное', color: 'border-emerald-500/50 bg-emerald-950/30' },
             { title: 'UMP-45', price: 1200, category: 'primary', label: 'Основное', color: 'border-emerald-500/50 bg-emerald-950/30' },
             { title: 'P90', price: 2350, category: 'primary', label: 'Основное', color: 'border-emerald-500/50 bg-emerald-950/30' },
             { title: 'PP-Bizon', price: 1400, category: 'primary', label: 'Основное', color: 'border-emerald-500/50 bg-emerald-950/30' },
-
-            // Дробовики и Пулеметы
             { title: 'Nova', price: 1050, category: 'primary', label: 'Основное', color: 'border-orange-500/50 bg-orange-950/30' },
             { title: 'XM1014', price: 2000, category: 'primary', label: 'Основное', color: 'border-orange-500/50 bg-orange-950/30' },
             { title: 'Sawed-Off', price: 1100, category: 'primary', label: 'Основное', color: 'border-orange-500/50 bg-orange-950/30' },
             { title: 'M249', price: 5200, category: 'primary', label: 'Основное', color: 'border-teal-500/50 bg-teal-950/30' },
             { title: 'Negev', price: 1700, category: 'primary', label: 'Основное', color: 'border-teal-500/50 bg-teal-950/30' },
-
-            // Штурмовые винтовки
             { title: 'Galil AR', price: 1800, category: 'primary', label: 'Основное', color: 'border-emerald-500/50 bg-emerald-950/30' },
             { title: 'AK-47', price: 2700, category: 'primary', label: 'Основное', color: 'border-rose-500/50 bg-rose-950/30' },
             { title: 'SG 553', price: 3000, category: 'primary', label: 'Основное', color: 'border-rose-500/50 bg-rose-950/30' },
-
-            // Снайперские винтовки
             { title: 'SSG 08', price: 1700, category: 'primary', label: 'Основное', color: 'border-amber-500/50 bg-amber-950/30' },
             { title: 'AWP', price: 4750, category: 'primary', label: 'Основное', color: 'border-amber-500/50 bg-amber-950/30' },
             { title: 'G3SG1', price: 5000, category: 'primary', label: 'Основное', color: 'border-amber-500/50 bg-amber-950/30' },
-
-            // Гранаты и спецсредства
             { title: 'Zeus x27', price: 200, category: 'secondary', label: 'Спецсредство', color: 'border-yellow-500/50 bg-yellow-950/30' },
             { title: 'Smoke', price: 300, category: 'grenade', label: 'Граната', color: 'border-emerald-500/50 bg-emerald-950/30' },
             { title: 'Flashbang', price: 200, category: 'grenade', label: 'Граната', color: 'border-yellow-500/50 bg-yellow-950/30' },
@@ -665,7 +857,6 @@
             { title: 'Decoy', price: 50, category: 'grenade', label: 'Граната', color: 'border-slate-500/50 bg-slate-950/30' }
         ];
 
-        // ПОЛНЫЙ СПИСОК БРОНИ И СНАРЯЖЕНИЯ
         const ARMOR_ITEMS = [
             { title: 'Без брони', price: 0, category: 'armor', label: 'Снаряжение', color: 'border-slate-700 bg-slate-950/30' },
             { title: 'Броня', price: 650, category: 'armor', label: 'Снаряжение', color: 'border-blue-500/50 bg-blue-950/30' },
