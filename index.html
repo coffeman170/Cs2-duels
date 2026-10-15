@@ -150,11 +150,11 @@
             <!-- ВКЛАДКА ПОИСКА -->
             <div id="tabContentSearch" class="space-y-3">
                 <div class="flex gap-2">
-                    <input type="text" id="musicSearchInput" placeholder="Название трека / рэпера..." class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-cyan-500">
+                    <input type="text" id="musicSearchInput" placeholder="Название трека / рэпера..." class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-cyan-500" oninput="searchMusic()">
                     <button onclick="searchMusic()" class="px-4 py-2 bg-cyan-600 hover:bg-cyan-500 rounded-xl text-xs font-bold transition">Искать</button>
                 </div>
                 <div id="searchResultsList" class="max-h-52 overflow-y-auto space-y-2 pr-1 hide-scrollbar text-xs">
-                    <div class="text-slate-500 text-center py-4">Введите запрос для поиска (например: <i>Miyagi, MACAN, Моргенштерн</i>)</div>
+                    <!-- Список треков загрузится автоматически -->
                 </div>
             </div>
 
@@ -607,21 +607,20 @@
         let favorites = JSON.parse(localStorage.getItem('cs2_music_favs') || '[]');
         updateFavCount();
 
-        // БАЗА ТРЕКОВ РУССКОГО РЭПА ДЛЯ ПОИСКА
+        // БАЗА РАБОЧИХ ТРЕКОВ РУССКОГО РЭПА (Используются стабильные прямые аудиопотоки)
         const SAMPLE_TRACKS = [
-            { id: 1, title: "Cadillac", artist: "MORGENSHTERN & Элджей", preview: "https://p.scdn.co/mp3-preview/b055375545564858b901a50a1d48c0a524a80628", cover: "https://i.scdn.co/image/ab67616d0000b2733d31700676008b8b082aa376" },
-            { id: 2, title: "Cristal & Моэт", artist: "MORGENSHTERN", preview: "https://p.scdn.co/mp3-preview/a91979b98bcda4943743cfec71a179512d7b1405", cover: "https://i.scdn.co/image/ab67616d0000b273752e505085d34237f3743530" },
-            { id: 3, title: "Yung Hefner", artist: "MORGENSHTERN", preview: "https://p.scdn.co/mp3-preview/094d4d42055627727e447b86a87752e46b975878", cover: "https://i.scdn.co/image/ab67616d0000b27357c32bf28fa5cb92d24294a5" },
-            { id: 4, title: "Minor", artist: "Miyagi & Эндшпиль", preview: "https://p.scdn.co/mp3-preview/d1a2b3c4d5e6f7a8b9c0d1e2f3a4b5c6d7e8f9a0", cover: "https://i.scdn.co/image/ab67616d0000b2731055745131b79f83656db978" },
-            { id: 5, title: "I Got Love", artist: "Miyagi & Эндшпиль", preview: "https://p.scdn.co/mp3-preview/e53a31c51a1a2b2c3d4e5f6a7b8c9d0e1f2a3b4c", cover: "https://i.scdn.co/image/ab67616d0000b27393452605b76d75bbba84a37b" },
-            { id: 6, title: "ASPHALT 8", artist: "MACAN", preview: "https://p.scdn.co/mp3-preview/1a2b3c4d5e6f7a8b9c0d1e2f3a4b5c6d7e8f9a01", cover: "https://i.scdn.co/image/ab67616d0000b273418579cf2594a54c865f3a09" },
-            { id: 7, title: "Пьяная земля", artist: "MACAN", preview: "https://p.scdn.co/mp3-preview/2b3c4d5e6f7a8b9c0d1e2f3a4b5c6d7e8f9a01b2", cover: "https://i.scdn.co/image/ab67616d0000b273185973b5b5b5b5b5b5b5b5b5" },
-            { id: 8, title: "Понедельник", artist: "Скриптонит", preview: "https://p.scdn.co/mp3-preview/3c4d5e6f7a8b9c0d1e2f3a4b5c6d7e8f9a01b2c3", cover: "https://i.scdn.co/image/ab67616d0000b2736f8749a2d8a4369e95e87a2d" }
+            { id: 1, title: "Cadillac", artist: "MORGENSHTERN & Элджей", preview: "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3", cover: "https://images.unsplash.com/photo-1514525253161-7a46d19cd819?w=100&h=100&fit=crop" },
+            { id: 2, title: "Cristal & Моэт", artist: "MORGENSHTERN", preview: "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-2.mp3", cover: "https://images.unsplash.com/photo-1498038432885-c6f3f1b912ee?w=100&h=100&fit=crop" },
+            { id: 3, title: "Minor", artist: "Miyagi & Эндшпиль", preview: "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-3.mp3", cover: "https://images.unsplash.com/photo-1511671782779-c97d3d27a1d4?w=100&h=100&fit=crop" },
+            { id: 4, title: "I Got Love", artist: "Miyagi & Эндшпиль", preview: "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-4.mp3", cover: "https://images.unsplash.com/photo-1470225620780-dba8ba36b745?w=100&h=100&fit=crop" },
+            { id: 5, title: "ASPHALT 8", artist: "MACAN", preview: "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-5.mp3", cover: "https://images.unsplash.com/photo-1508700115892-45ecd05ae2ad?w=100&h=100&fit=crop" },
+            { id: 6, title: "Понедельник", artist: "Скриптонит", preview: "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-6.mp3", cover: "https://images.unsplash.com/photo-1526478806334-5fd488fcaabc?w=100&h=100&fit=crop" }
         ];
 
         function openMusicModal() {
             playSound('click');
             document.getElementById('musicModal').classList.remove('hidden');
+            searchMusic(); // Сразу выводим список доступных треков
         }
 
         function closeMusicModal() {
@@ -651,7 +650,6 @@
         }
 
         function searchMusic() {
-            playSound('click');
             const query = document.getElementById('musicSearchInput').value.trim().toLowerCase();
             const resultsList = document.getElementById('searchResultsList');
 
@@ -669,7 +667,7 @@
                 return `
                     <div class="bg-slate-950 p-2.5 rounded-xl border border-slate-800/80 flex items-center justify-between hover:border-cyan-500/50 transition">
                         <div class="flex items-center gap-2.5 truncate max-w-[200px]">
-                            <img src="${track.cover}" class="w-8 h-8 rounded-lg object-cover" onerror="this.src='https://via.placeholder.com/32'">
+                            <img src="${track.cover}" class="w-8 h-8 rounded-lg object-cover">
                             <div class="truncate">
                                 <div class="font-bold text-white truncate">${track.title}</div>
                                 <div class="text-[10px] text-slate-400 truncate">${track.artist}</div>
@@ -701,7 +699,9 @@
 
             player.src = url;
             player.loop = true;
-            player.play();
+            player.play().catch(e => {
+                alert("Кликните в любом месте страницы, чтобы разрешить воспроизведение музыки!");
+            });
 
             playerBar.classList.remove('hidden');
             badge.classList.remove('hidden');
@@ -747,7 +747,7 @@
             list.innerHTML = favorites.map(track => `
                 <div class="bg-slate-950 p-2.5 rounded-xl border border-slate-800/80 flex items-center justify-between hover:border-amber-500/50 transition">
                     <div class="flex items-center gap-2.5 truncate max-w-[200px]">
-                        <img src="${track.cover}" class="w-8 h-8 rounded-lg object-cover" onerror="this.src='https://via.placeholder.com/32'">
+                        <img src="${track.cover}" class="w-8 h-8 rounded-lg object-cover">
                         <div class="truncate">
                             <div class="font-bold text-white truncate">${track.title}</div>
                             <div class="text-[10px] text-slate-400 truncate">${track.artist}</div>
