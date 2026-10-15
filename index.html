@@ -84,6 +84,23 @@
             opacity: 0.5;
             cursor: not-allowed !important;
         }
+
+        @keyframes blinkChoice {
+            0%, 100% { 
+                border-color: #f59e0b; 
+                box-shadow: 0 0 15px rgba(245, 158, 11, 0.8);
+                transform: scale(1.02);
+            }
+            50% { 
+                border-color: #3b82f6; 
+                box-shadow: 0 0 5px rgba(59, 130, 246, 0.3);
+                transform: scale(1);
+            }
+        }
+        .blink-slot {
+            animation: blinkChoice 1.2s infinite ease-in-out;
+        }
+
         @keyframes fall {
             0% { transform: translateY(-30px) rotate(0deg); opacity: 1; }
             100% { transform: translateY(100vh) rotate(360deg); opacity: 0; }
@@ -104,6 +121,11 @@
     <div class="bg-glow-2"></div>
     <div class="bg-grid"></div>
 
+    <!-- КНОПКА МУТА ЗВУКА -->
+    <button onclick="toggleSound()" id="soundToggleBtn" class="fixed top-4 right-4 z-50 px-3 py-1.5 bg-slate-900/80 hover:bg-slate-800 border border-slate-800 rounded-xl text-xs font-bold text-slate-400 transition">
+        🔊 Звук: ВКЛ
+    </button>
+
     <!-- МОДАЛЬНОЕ ОКНО АНИМАЦИИ КНБ -->
     <div id="rpsResultModal" class="fixed inset-0 bg-black/90 backdrop-blur-md flex flex-col items-center justify-center z-50 hidden space-y-4">
         <div id="rpsResultTitle" class="text-5xl font-black uppercase tracking-wider"></div>
@@ -111,9 +133,24 @@
         <div id="fallingContainer"></div>
     </div>
 
+    <!-- МОДАЛЬНОЕ ОКНО ПОБЕДЫ В АУКЦИОНЕ -->
+    <div id="goldWinModal" class="fixed inset-0 bg-black/80 backdrop-blur-sm flex flex-col items-center justify-center z-50 hidden space-y-3 pointer-events-none">
+        <div class="text-4xl md:text-6xl font-black text-amber-400 uppercase tracking-wider drop-shadow-[0_0_25px_#f59e0b] text-center animate-bounce">
+            ✨ ВЫ ВЫИГРАЛИ ПРЕДМЕТ! ✨
+        </div>
+        <div id="goldWinItemName" class="text-lg text-white font-bold bg-slate-900/90 px-6 py-3 rounded-2xl border border-amber-500/50 shadow-xl"></div>
+        <div id="goldFallingContainer"></div>
+    </div>
+
     <!-- ГЛАВНОЕ МЕНЮ -->
-    <div id="mainMenu" class="max-w-md w-full bg-slate-900/80 backdrop-blur-xl p-8 rounded-3xl border border-slate-800/80 text-center space-y-8 shadow-2xl shadow-cyan-950/20">
-        <div class="space-y-2">
+    <div id="mainMenu" class="relative max-w-md w-full bg-slate-900/80 backdrop-blur-xl p-8 rounded-3xl border border-slate-800/80 text-center space-y-8 shadow-2xl shadow-cyan-950/20">
+        
+        <div class="absolute top-4 right-4 flex items-center gap-2 px-3 py-1 bg-emerald-950/60 border border-emerald-800/50 rounded-full">
+            <span class="w-2.5 h-2.5 rounded-full bg-emerald-400 animate-pulse shadow-[0_0_8px_#10b981]"></span>
+            <span id="onlineCounter" class="text-[11px] font-black text-emerald-400 tracking-wide">1 Онлайн</span>
+        </div>
+
+        <div class="space-y-2 pt-2">
             <div class="inline-flex items-center gap-2 px-3 py-1 bg-cyan-950/50 border border-cyan-800/40 rounded-full text-[11px] font-bold text-cyan-400 uppercase tracking-widest">
                 <span class="w-2 h-2 rounded-full bg-cyan-400 animate-pulse"></span> Игровой хаб
             </div>
@@ -184,8 +221,8 @@
         <div id="sideSelectSection" class="hidden space-y-3 pt-4 border-t border-slate-800">
             <p class="text-xs text-slate-300">Выберите сторону для игры:</p>
             <div class="flex gap-3">
-                <button onclick="chooseSide('CT')" id="lobbyBtnCT" class="flex-1 py-3 bg-blue-600 hover:bg-blue-500 rounded-xl text-xs font-bold uppercase transition">💙 CT</button>
-                <button onclick="chooseSide('T')" id="lobbyBtnT" class="flex-1 py-3 bg-amber-600 hover:bg-amber-500 rounded-xl text-xs font-bold uppercase transition">💛 T</button>
+                <button onclick="chooseSide('CT')" id="lobbyBtnCT" class="flex-1 py-3 bg-blue-600 hover:bg-blue-500 rounded-xl text-xs font-bold uppercase transition">🛡️ CT</button>
+                <button onclick="chooseSide('T')" id="lobbyBtnT" class="flex-1 py-3 bg-amber-600 hover:bg-amber-500 rounded-xl text-xs font-bold uppercase transition">⚔️ T</button>
             </div>
             <div id="sideStatusText" class="text-xs text-slate-400"></div>
         </div>
@@ -206,7 +243,28 @@
         <div class="bg-slate-900/90 backdrop-blur-xl p-4 rounded-2xl border border-slate-800/80 flex justify-between items-center shadow-lg">
             <div class="text-sm font-black text-cyan-400 uppercase">⚔️ CS2 DUEL CENTER</div>
             <div class="text-xs text-slate-400">Комната: <span id="gameRoomCode" class="text-white font-bold"></span> | Ваша сторона: <span id="mySideDisplay" class="font-bold"></span></div>
-            <button onclick="backToMenu()" class="px-3 py-1 bg-slate-800 hover:bg-slate-700 rounded-lg text-xs font-bold transition">Выйти</button>
+            <div class="flex gap-2">
+                <button onclick="resetRound()" id="resetRoundBtn" class="px-3 py-1 bg-purple-600 hover:bg-purple-500 rounded-lg text-xs font-bold transition text-white">🔄 Новый раунд (0/2)</button>
+                <button onclick="backToMenu()" class="px-3 py-1 bg-slate-800 hover:bg-slate-700 rounded-lg text-xs font-bold transition">Выйти</button>
+            </div>
+        </div>
+
+        <!-- БЛОК НАСТРОЕК СЕРВЕРА ДЛЯ ЛИДЕРА ЛОББИ -->
+        <div class="bg-slate-900/90 backdrop-blur-xl p-4 rounded-2xl border border-amber-500/30 space-y-2 shadow-lg">
+            <div class="flex justify-between items-center">
+                <h3 class="text-xs font-black uppercase text-amber-400 flex items-center gap-1.5">
+                    ⚙️ Настройка денег на сервере (Лидеру лобби)
+                </h3>
+                <button onclick="copyHostConfig()" class="px-3 py-1 bg-amber-600/20 hover:bg-amber-600/40 border border-amber-500/40 rounded-lg text-[11px] font-bold text-amber-300 transition active:scale-95">
+                    📋 Скопировать команды
+                </button>
+            </div>
+            <p class="text-[11px] text-slate-400 leading-relaxed">
+                Лидер лобби прописывает это 1 раз в консоль CS2 (<code>~</code>). Это снимет лимит и даст каждому по $60,000 в начале каждого раунда, чтобы вы свободно покупали выбитые пушки:
+            </p>
+            <div class="bg-slate-950 px-3 py-2 rounded-xl border border-slate-800 text-[11px] font-mono text-cyan-300 select-all">
+                mp_maxmoney 60000; mp_startmoney 60000
+            </div>
         </div>
 
         <!-- БЛОК УСЛОВИЙ -->
@@ -225,7 +283,7 @@
             <!-- CT СТОРОНА -->
             <div class="bg-slate-900/80 backdrop-blur-xl p-5 rounded-2xl border border-blue-900/50 space-y-4 shadow-xl">
                 <div class="flex justify-between items-center border-b border-slate-800 pb-3">
-                    <h2 class="text-blue-400 font-black text-sm uppercase">💙 CT (Контр-террористы)</h2>
+                    <h2 class="text-blue-400 font-black text-sm uppercase">🛡️ CT (Контр-террористы)</h2>
                     <span id="playerCTName" class="text-xs font-bold text-slate-300">-</span>
                 </div>
                 <div class="space-y-2">
@@ -249,7 +307,7 @@
             <!-- T СТОРОНА -->
             <div class="bg-slate-900/80 backdrop-blur-xl p-5 rounded-2xl border border-amber-900/50 space-y-4 shadow-xl">
                 <div class="flex justify-between items-center border-b border-slate-800 pb-3">
-                    <h2 class="text-amber-400 font-black text-sm uppercase">💛 T (Террористы)</h2>
+                    <h2 class="text-amber-400 font-black text-sm uppercase">⚔️ T (Террористы)</h2>
                     <span id="playerTName" class="text-xs font-bold text-slate-300">-</span>
                 </div>
                 <div class="space-y-2">
@@ -272,7 +330,6 @@
         </div>
 
         <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <!-- ВЫБОР ИГРОКА С ИТОГОВОЙ СТОИМОСТЬЮ -->
             <div class="md:col-span-1 bg-slate-900/90 backdrop-blur-xl p-4 rounded-2xl border border-slate-800/80 space-y-3">
                 <h4 class="text-xs font-black uppercase text-slate-400">📋 Выбор игроков</h4>
                 <div id="summaryChallenge" class="space-y-2 text-xs">
@@ -287,7 +344,6 @@
                 </div>
             </div>
 
-            <!-- ЛЕНТА СОБЫТИЙ -->
             <div class="md:col-span-2 bg-slate-900/90 backdrop-blur-xl p-4 rounded-2xl border border-slate-800/80 space-y-2">
                 <h4 class="text-xs font-black uppercase text-slate-400">📢 Лента событий (Синхронно)</h4>
                 <div id="feedContainer" class="space-y-1 max-h-24 overflow-y-auto hide-scrollbar text-xs">
@@ -338,7 +394,6 @@
         </div>
 
         <div class="grid grid-cols-2 gap-4">
-            <!-- Игрок 1 -->
             <div class="bg-slate-900/90 backdrop-blur-xl p-4 rounded-2xl border border-slate-800 space-y-3 shadow-xl">
                 <div class="flex items-center justify-between">
                     <div class="flex items-center gap-3">
@@ -355,7 +410,6 @@
                     <div id="mgP1Inventory" class="flex flex-wrap gap-1.5 min-h-[32px]"></div>
                 </div>
             </div>
-            <!-- Игрок 2 -->
             <div class="bg-slate-900/90 backdrop-blur-xl p-4 rounded-2xl border border-slate-800 space-y-3 shadow-xl">
                 <div class="flex items-center justify-between">
                     <div class="flex items-center gap-3">
@@ -425,11 +479,63 @@
         }
         const db = firebase.database();
 
+        // СЧЕТЧИК ОНЛАЙНА
+        const myPresenceRef = db.ref('presence/' + Math.random().toString(36).substring(2, 9));
+        myPresenceRef.set(true);
+        myPresenceRef.onDisconnect().remove();
+
+        db.ref('presence').on('value', (snap) => {
+            const count = snap.numChildren() || 1;
+            const counterEl = document.getElementById('onlineCounter');
+            if(counterEl) counterEl.innerText = `${count} Онлайн`;
+        });
+
+        let soundEnabled = true;
+        function toggleSound() {
+            soundEnabled = !soundEnabled;
+            document.getElementById('soundToggleBtn').innerText = soundEnabled ? '🔊 Звук: ВКЛ' : '🔇 Звук: ВЫКЛ';
+        }
+
+        const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        function playSound(type) {
+            if(!soundEnabled) return;
+            if(audioCtx.state === 'suspended') audioCtx.resume();
+            const osc = audioCtx.createOscillator();
+            const gain = audioCtx.createGain();
+            osc.connect(gain);
+            gain.connect(audioCtx.destination);
+
+            if(type === 'click') {
+                osc.frequency.setValueAtTime(400, audioCtx.currentTime);
+                gain.gain.setValueAtTime(0.05, audioCtx.currentTime);
+                gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.05);
+                osc.start(); osc.stop(audioCtx.currentTime + 0.05);
+            } else if(type === 'spin') {
+                osc.frequency.setValueAtTime(600, audioCtx.currentTime);
+                gain.gain.setValueAtTime(0.03, audioCtx.currentTime);
+                gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.08);
+                osc.start(); osc.stop(audioCtx.currentTime + 0.08);
+            } else if(type === 'win') {
+                osc.frequency.setValueAtTime(523.25, audioCtx.currentTime);
+                osc.frequency.setValueAtTime(659.25, audioCtx.currentTime + 0.1);
+                osc.frequency.setValueAtTime(783.99, audioCtx.currentTime + 0.2);
+                gain.gain.setValueAtTime(0.1, audioCtx.currentTime);
+                gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.4);
+                osc.start(); osc.stop(audioCtx.currentTime + 0.4);
+            }
+        }
+
+        function copyHostConfig() {
+            playSound('click');
+            const cmd = 'mp_maxmoney 60000; mp_startmoney 60000';
+            navigator.clipboard.writeText(cmd);
+            alert('Команды скопированы! Вставьте в консоль CS2 (~).');
+        }
+
         let currentRoomCode = '', playerName = '', playerSide = '', roomRef = null, isSpinning = false, lastProcessedTimestamp = 0;
         let mgCode = '', mgName = 'Player', mgAvatar = '👨', mgRef = null, isMgSpinning = false, mgLastTs = 0;
         let timerInterval = null;
 
-        // РАЗДЕЛЕНИЕ НА КАТЕГОРИИ: 'primary' (основное), 'secondary' (вторичное), 'grenade' (граната)
         const WEAPONS_CT = [
             { title: 'M4A1-S', price: 2900, category: 'primary', label: 'Основное', color: 'border-cyan-500/50 bg-cyan-950/30' },
             { title: 'AWP', price: 4750, category: 'primary', label: 'Основное', color: 'border-amber-500/50 bg-amber-950/30' },
@@ -473,13 +579,8 @@
             { title: 'Броня + Шлем', price: 1000, category: 'armor', label: 'Снаряжение', color: 'border-amber-500/50 bg-amber-950/30' }
         ];
 
-        const ALL_CS2_ITEMS = [
-            ...WEAPONS_CT, ...WEAPONS_T, ...ARMOR_ITEMS
-        ];
-
-        const GENERAL_COMPLICATIONS = [
-            "Без шифта", "Без прыжков", "Без звука", "Ноу-скопом", "Свап на нож при выстреле", "Только ван-тапы", "Перезарядка на 0 патрон в обойме"
-        ];
+        const ALL_CS2_ITEMS = [...WEAPONS_CT, ...WEAPONS_T, ...ARMOR_ITEMS];
+        const GENERAL_COMPLICATIONS = ["Без шифта", "Без прыжков", "Без звука", "Ноу-скопом", "Свап на нож при выстреле", "Только ван-тапы", "Перезарядка на 0 патрон в обойме"];
 
         let spinCountCT = 0, spinCountT = 0;
         let itemsCT = [null, null, null], itemsT = [null, null, null];
@@ -489,15 +590,14 @@
         let feedList = [];
 
         function openGame(type) {
+            playSound('click');
             document.getElementById('mainMenu').classList.add('hidden');
-            if(type === 'csSpin') {
-                document.getElementById('csSpinScreen').classList.remove('hidden');
-            } else if(type === 'miniGame') {
-                document.getElementById('miniGameMenu').classList.remove('hidden');
-            }
+            if(type === 'csSpin') document.getElementById('csSpinScreen').classList.remove('hidden');
+            else if(type === 'miniGame') document.getElementById('miniGameMenu').classList.remove('hidden');
         }
 
         function backToMenu() {
+            playSound('click');
             document.getElementById('csSpinScreen').classList.add('hidden');
             document.getElementById('lobbyScreen').classList.add('hidden');
             document.getElementById('gameScreen').classList.add('hidden');
@@ -509,8 +609,8 @@
             if (timerInterval) clearInterval(timerInterval);
         }
 
-        /* --- ТАКТИЧЕСКАЯ ДУЭЛЬ ЛОГИКА --- */
         function createRoom() {
+            playSound('click');
             playerName = document.getElementById('usernameInput').value.trim() || 'User';
             currentRoomCode = Math.random().toString(36).substring(2, 8).toUpperCase();
             roomRef = db.ref('rooms/' + currentRoomCode);
@@ -519,13 +619,16 @@
                 sides: {}, spinCountCT: 0, spinCountT: 0,
                 itemsCT: [null, null, null], itemsT: [null, null, null],
                 selectedCTIndices: [], selectedTIndices: [],
+                armorCTItem: null, armorTItem: null,
                 hasSpunArmorCT: false, hasSpunArmorT: false,
                 feedList: [], status: 'waiting',
-                complicationState: 'RANDOM', complicationVotes: {}, complicationResult: ''
+                complicationState: 'RANDOM', complicationVotes: {}, complicationResult: '',
+                resetVotes: {}
             }).then(() => { showLobby(currentRoomCode, 'Ожидание второго игрока...'); listenRoom(); });
         }
 
         function joinRoom() {
+            playSound('click');
             playerName = document.getElementById('usernameInput').value.trim() || 'User';
             const code = document.getElementById('roomCodeInput').value.trim().toUpperCase();
             if(!code) { alert('Введите код комнаты!'); return; }
@@ -552,6 +655,7 @@
         }
 
         function chooseSide(side) {
+            playSound('click');
             if(!roomRef) return;
             roomRef.child('sides/' + playerName).set(side);
             document.getElementById('sideSelectSection').classList.add('hidden');
@@ -561,16 +665,14 @@
                 const sides = data.sides || {};
                 const players = Object.keys(data.players || {});
                 if(players.length === 2 && players.every(p => sides[p])) {
-                    if(sides[players[0]] === sides[players[1]]) {
-                        roomRef.update({ status: 'conflict' });
-                    } else {
-                        roomRef.update({ status: 'ready', gameStarted: true });
-                    }
+                    if(sides[players[0]] === sides[players[1]]) roomRef.update({ status: 'conflict' });
+                    else roomRef.update({ status: 'ready', gameStarted: true });
                 }
             });
         }
 
         function playRPS(choice) {
+            playSound('click');
             if(!roomRef) return;
             roomRef.child('rps/' + playerName).set(choice);
             document.getElementById('rpsStatus').innerText = `Вы выбрали: ${choice}. Ожидание соперника...`;
@@ -590,10 +692,7 @@
                     const sides = data.sides || {};
                     const winningSide = sides[winner] || 'CT';
                     const losingSide = winningSide === 'CT' ? 'T' : 'CT';
-                    const newSides = {};
-                    newSides[winner] = winningSide;
-                    newSides[loser] = losingSide;
-                    roomRef.update({ sides: newSides, status: 'show_rps_result', rpsWinner: winner, rpsLoser: loser });
+                    roomRef.update({ sides: { [winner]: winningSide, [loser]: losingSide }, status: 'show_rps_result', rpsWinner: winner, rpsLoser: loser });
                 }
             });
         }
@@ -604,74 +703,33 @@
             const teamEl = document.getElementById('rpsResultTeam');
             const container = document.getElementById('fallingContainer');
             container.innerHTML = '';
-
             modal.classList.remove('hidden');
             const isWinner = (playerName === winner);
-            const myAssignedSide = sides[playerName];
-
             if(isWinner) {
                 titleEl.className = 'text-6xl font-black uppercase text-emerald-400 drop-shadow-[0_0_20px_#10b981]';
                 titleEl.innerText = 'ПОБЕДА!';
-                teamEl.innerText = `Вы играете за сторону: ${myAssignedSide}`;
-                for(let i=0; i<15; i++) {
-                    const el = document.createElement('div');
-                    el.className = 'falling-element';
-                    el.innerText = '🏆';
-                    el.style.left = Math.random() * 100 + 'vw';
-                    el.style.animationDuration = (2 + Math.random() * 2) + 's';
-                    el.style.animationDelay = (Math.random() * 1.5) + 's';
-                    container.appendChild(el);
-                }
+                teamEl.innerText = `Вы играете за сторону: ${sides[playerName]}`;
             } else {
                 titleEl.className = 'text-6xl font-black uppercase text-rose-500 drop-shadow-[0_0_20px_#f43f5e]';
                 titleEl.innerText = 'ПОРАЖЕНИЕ';
-                teamEl.innerText = `Вам досталась сторона: ${myAssignedSide}`;
-                for(let i=0; i<15; i++) {
-                    const el = document.createElement('div');
-                    el.className = 'falling-element';
-                    el.innerText = '💀';
-                    el.style.left = Math.random() * 100 + 'vw';
-                    el.style.animationDuration = (2 + Math.random() * 2) + 's';
-                    el.style.animationDelay = (Math.random() * 1.5) + 's';
-                    container.appendChild(el);
-                }
+                teamEl.innerText = `Вам досталась сторона: ${sides[playerName]}`;
             }
-
-            setTimeout(() => {
-                modal.classList.add('hidden');
-                roomRef.update({ status: 'ready', gameStarted: true });
-            }, 5000);
+            setTimeout(() => { modal.classList.add('hidden'); roomRef.update({ status: 'ready', gameStarted: true }); }, 4000);
         }
 
         function voteComplication(type) {
+            playSound('click');
             if(!roomRef) return;
             roomRef.once('value', snap => {
                 const data = snap.val() || {};
                 const votes = data.complicationVotes || {};
                 votes[playerName] = type;
-                
                 const players = Object.keys(data.players || {});
                 if(players.length === 2 && players.every(p => votes[p])) {
                     const randType = Math.random();
-                    let newState = '';
-                    let resultText = '';
-
-                    if(randType < 0.4) {
-                        newState = 'NONE';
-                        resultText = '🎲 Выпало: Без усложнений!';
-                    } else if(randType < 0.75) {
-                        newState = 'GENERAL_WAIT';
-                        resultText = '🎲 Выпало: Общее усложнение! Нажмите кнопку ниже.';
-                    } else {
-                        newState = 'PERSONAL_WAIT';
-                        resultText = '🎲 Выпало: Личные усложнения! Выберите усложнение для своей стороны.';
-                    }
-
-                    roomRef.update({
-                        complicationState: newState,
-                        complicationVotes: {},
-                        complicationResult: resultText
-                    });
+                    let newState = randType < 0.4 ? 'NONE' : randType < 0.75 ? 'GENERAL_WAIT' : 'PERSONAL_WAIT';
+                    let resultText = newState === 'NONE' ? '🎲 Выпало: Без усложнений!' : newState === 'GENERAL_WAIT' ? '🎲 Выпало: Общее усложнение!' : '🎲 Выпало: Личные усложнения!';
+                    roomRef.update({ complicationState: newState, complicationVotes: {}, complicationResult: resultText });
                 } else {
                     roomRef.update({ complicationVotes: votes });
                 }
@@ -679,20 +737,16 @@
         }
 
         function voteGeneralComplication() {
+            playSound('click');
             if(!roomRef) return;
             roomRef.once('value', snap => {
                 const data = snap.val() || {};
                 const votes = data.complicationVotes || {};
                 votes[playerName] = 'GENERAL_READY';
                 const players = Object.keys(data.players || {});
-
                 if(players.length === 2 && players.every(p => votes[p])) {
                     const picked = GENERAL_COMPLICATIONS[Math.floor(Math.random() * GENERAL_COMPLICATIONS.length)];
-                    roomRef.update({
-                        complicationState: 'DONE',
-                        complicationVotes: {},
-                        complicationResult: `⚡ Общее усложнение раунда: ${picked}`
-                    });
+                    roomRef.update({ complicationState: 'DONE', complicationVotes: {}, complicationResult: `⚡ Общее усложнение раунда: ${picked}` });
                 } else {
                     roomRef.update({ complicationVotes: votes });
                 }
@@ -700,17 +754,37 @@
         }
 
         function choosePersonalComplication(side) {
+            playSound('click');
             if(side !== playerSide) { alert('Вы не можете крутить усложнение чужой стороны!'); return; }
             const picked = GENERAL_COMPLICATIONS[Math.floor(Math.random() * GENERAL_COMPLICATIONS.length)];
             roomRef.child(`personalComplications/${side}`).set(picked);
             roomRef.once('value', snap => {
                 const data = snap.val() || {};
                 const pers = data.personalComplications || {};
-                if(pers.CT && pers.T) {
+                if(pers.CT && pers.T) roomRef.update({ complicationState: 'DONE', complicationResult: `⚡ Усложнения: CT (${pers.CT}) | T (${pers.T})` });
+            });
+        }
+
+        function resetRound() {
+            playSound('click');
+            if(!roomRef) return;
+            roomRef.once('value', snap => {
+                const data = snap.val() || {};
+                const votes = data.resetVotes || {};
+                votes[playerName] = true;
+                const players = Object.keys(data.players || {});
+                if(players.length === 2 && players.every(p => votes[p])) {
                     roomRef.update({
-                        complicationState: 'DONE',
-                        complicationResult: `⚡ Усложнения: CT (${pers.CT}) | T (${pers.T})`
+                        spinCountCT: 0, spinCountT: 0,
+                        itemsCT: [null, null, null], itemsT: [null, null, null],
+                        selectedCTIndices: [], selectedTIndices: [],
+                        armorCTItem: null, armorTItem: null,
+                        hasSpunArmorCT: false, hasSpunArmorT: false,
+                        resetVotes: {},
+                        complicationState: 'RANDOM', complicationResult: '', complicationVotes: {}
                     });
+                } else {
+                    roomRef.update({ resetVotes: votes });
                 }
             });
         }
@@ -755,8 +829,10 @@
                     document.getElementById('mySideDisplay').className = playerSide === 'CT' ? 'font-bold text-blue-400' : 'font-bold text-amber-400';
                     document.getElementById('playerCTName').innerText = players.find(p => sides[p] === 'CT') || '-';
                     document.getElementById('playerTName').innerText = players.find(p => sides[p] === 'T') || '-';
-
                     renderComplicationsUI(data);
+
+                    const resetVotesCount = Object.keys(data.resetVotes || {}).length;
+                    document.getElementById('resetRoundBtn').innerText = `🔄 Новый раунд (${resetVotesCount}/2)`;
                 }
                 renderState();
                 renderFeed();
@@ -800,34 +876,27 @@
         }
 
         function triggerSpin(type) {
+            playSound('click');
             if (isSpinning) return;
             if(type === 'CT' && playerSide !== 'CT') { alert('Вы играете за Т!'); return; }
             if(type === 'T' && playerSide !== 'T') { alert('Вы играете за CT!'); return; }
             if(type === 'ARMOR_CT' && playerSide !== 'CT') { alert('Вы играете за Т!'); return; }
             if(type === 'ARMOR_T' && playerSide !== 'T') { alert('Вы играете за CT!'); return; }
 
+            if(type === 'CT' && spinCountCT >= 3) { alert('Оружие за КТ можно крутить максимум 3 раза!'); return; }
+            if(type === 'T' && spinCountT >= 3) { alert('Оружие за Т можно крутить максимум 3 раза!'); return; }
+
             if(type === 'ARMOR_CT' && hasSpunArmorCT) { alert('Броню за CT можно крутить только 1 раз!'); return; }
             if(type === 'ARMOR_T' && hasSpunArmorT) { alert('Броню за T можно крутить только 1 раз!'); return; }
 
             const pool = (type === 'CT') ? WEAPONS_CT : (type === 'T') ? WEAPONS_T : ARMOR_ITEMS;
-            
-            let winningItem;
-            let attempts = 0;
-            const existingItems = (type === 'CT') ? itemsCT : itemsT;
-            
-            do {
-                winningItem = pool[Math.floor(Math.random() * pool.length)];
-                attempts++;
-                if(type.includes('ARMOR')) break;
-                const alreadyExists = existingItems.some(slot => slot && slot.title === winningItem.title);
-                if (!alreadyExists || attempts > 20) break;
-            } while (true);
+            let winningItem = pool[Math.floor(Math.random() * pool.length)];
 
             roomRef.child('action').set({ type, winner: winningItem, player: playerName, timestamp: Date.now() });
         }
 
-        // ЛОГИКА ОГРАНИЧЕНИЙ ВЫБОРА ОРУЖИЯ И ГРАНАТ
         function selectSlot(side, index) {
+            playSound('click');
             if (side !== playerSide) return;
             const items = (side === 'CT') ? itemsCT : itemsT;
             const targetItem = items[index];
@@ -836,22 +905,17 @@
             let currentList = (side === 'CT') ? [...selectedCTIndices] : [...selectedTIndices];
 
             if(currentList.includes(index)) {
-                // Если с кликнутого предмета снимается галочка
                 currentList = currentList.filter(i => i !== index);
             } else {
-                // ПРОВЕРКА ОГРАНИЧЕНИЙ:
                 if (targetItem.category === 'primary') {
-                    // Нельзя брать 2 основных оружия (снимаем выбор с предыдущего основного)
                     currentList = currentList.filter(idx => items[idx] && items[idx].category !== 'primary');
                 } else if (targetItem.category === 'secondary') {
-                    // Нельзя брать 2 второстепенных оружия (снимаем выбор с предыдущего пистолета)
                     currentList = currentList.filter(idx => items[idx] && items[idx].category !== 'secondary');
                 } else if (targetItem.category === 'grenade') {
-                    // Проверка на одинаковые гранаты (кроме Flashbang)
                     if (targetItem.title !== 'Flashbang') {
                         const hasSameGrenade = currentList.some(idx => items[idx] && items[idx].title === targetItem.title);
                         if (hasSameGrenade) {
-                            alert(`Нельзя брать две одинаковые гранаты (${targetItem.title})! Это правило не распространяется только на Flashbang.`);
+                            alert(`Нельзя брать две одинаковые гранаты (${targetItem.title})!`);
                             return;
                         }
                     }
@@ -887,7 +951,7 @@
                 if(!track) return resolve(winner);
                 fillTrack(trackId, pool);
                 const targetIdx = 30;
-                if (track.children[targetIdx]) { track.children[targetIdx].replaceWith(createCard(winner)); }
+                if (track.children[targetIdx]) track.children[targetIdx].replaceWith(createCard(winner));
                 const cardWidth = 120;
                 const offset = (targetIdx * cardWidth) - (track.parentElement.clientWidth / 2) + (cardWidth / 2);
                 track.style.transition = 'none';
@@ -895,8 +959,30 @@
                 void track.offsetWidth;
                 track.style.transition = 'transform 4s cubic-bezier(0.15, 0.85, 0.15, 1)';
                 track.style.transform = `translateX(-${offset}px)`;
-                setTimeout(() => resolve(winner), 4100);
+
+                let soundInterval = setInterval(() => playSound('spin'), 200);
+                setTimeout(() => { clearInterval(soundInterval); playSound('win'); resolve(winner); }, 4100);
             });
+        }
+
+        function autoSelectNonConflictingItems(side, items) {
+            let autoSelected = [];
+            let seenCategories = new Set();
+            let seenGrenades = new Set();
+
+            for (let i = 0; i < 3; i++) {
+                const item = items[i];
+                if (!item) continue;
+                if (item.category === 'primary' || item.category === 'secondary') {
+                    if (!seenCategories.has(item.category)) { autoSelected.push(i); seenCategories.add(item.category); }
+                } else if (item.category === 'grenade') {
+                    if (item.title === 'Flashbang' || !seenGrenades.has(item.title)) { autoSelected.push(i); seenGrenades.add(item.title); }
+                }
+            }
+            const updates = {};
+            if (side === 'CT') updates.selectedCTIndices = autoSelected;
+            else updates.selectedTIndices = autoSelected;
+            roomRef.update(updates);
         }
 
         async function runAnimation(action) {
@@ -911,22 +997,18 @@
                 if (action.player === playerName) {
                     let currentItems = side === 'CT' ? [...itemsCT] : [...itemsT];
                     let count = side === 'CT' ? spinCountCT : spinCountT;
-                    if(count >= 3) { currentItems = [null, null, null]; count = 0; }
+                    if(count >= 3) { isSpinning = false; return; }
                     currentItems[count] = item;
                     count++;
                     
                     const newFeed = [{ player: action.player, title: item.title, price: item.price }, ...feedList];
-
                     const updates = {};
-                    if(side === 'CT') {
-                        updates.itemsCT = currentItems;
-                        updates.spinCountCT = count;
-                    } else {
-                        updates.itemsT = currentItems;
-                        updates.spinCountT = count;
-                    }
+                    if(side === 'CT') { updates.itemsCT = currentItems; updates.spinCountCT = count; }
+                    else { updates.itemsT = currentItems; updates.spinCountT = count; }
                     updates.feedList = newFeed;
-                    roomRef.update(updates);
+                    await roomRef.update(updates);
+
+                    if (count === 3) autoSelectNonConflictingItems(side, currentItems);
                 }
             } else if (action.type === 'ARMOR_CT' || action.type === 'ARMOR_T') {
                 const side = action.type === 'ARMOR_CT' ? 'CT' : 'T';
@@ -935,13 +1017,8 @@
                 if (action.player === playerName) {
                     const newFeed = [{ player: action.player, title: `Снаряжение: ${item.title}`, price: item.price }, ...feedList];
                     const updates = {};
-                    if(side === 'CT') {
-                        updates.armorCTItem = item;
-                        updates.hasSpunArmorCT = true;
-                    } else {
-                        updates.armorTItem = item;
-                        updates.hasSpunArmorT = true;
-                    }
+                    if(side === 'CT') { updates.armorCTItem = item; updates.hasSpunArmorCT = true; }
+                    else { updates.armorTItem = item; updates.hasSpunArmorT = true; }
                     updates.feedList = newFeed;
                     roomRef.update(updates);
                 }
@@ -952,19 +1029,23 @@
         function renderState() {
             document.getElementById('countCT').innerText = spinCountCT;
             document.getElementById('countT').innerText = spinCountT;
-
+            document.getElementById('spinCTBtn').disabled = (spinCountCT >= 3);
+            document.getElementById('spinTBtn').disabled = (spinCountT >= 3);
             document.getElementById('spinArmorCTBtn').disabled = hasSpunArmorCT;
             document.getElementById('spinArmorTBtn').disabled = hasSpunArmorT;
 
-            const renderSlots = (items, containerId, side, selectedList) => {
+            const renderSlots = (items, containerId, side, selectedList, currentSpinCount) => {
                 const container = document.getElementById(containerId);
                 container.innerHTML = '';
+                const isAllSpun = (currentSpinCount === 3);
+
                 for(let i=0; i<3; i++) {
                     const item = items[i];
                     const div = document.createElement('div');
                     const isSelected = selectedList.includes(i);
                     if(item) {
-                        div.className = `h-14 rounded-xl border ${item.color} p-1 flex flex-col justify-center text-center cursor-pointer transition ${isSelected ? 'ring-2 ring-amber-400 scale-105 shadow-lg shadow-amber-500/20' : 'opacity-80 hover:opacity-100'}`;
+                        const blinkClass = (isAllSpun && !isSelected) ? 'blink-slot' : '';
+                        div.className = `h-14 rounded-xl border ${item.color} ${blinkClass} p-1 flex flex-col justify-center text-center cursor-pointer transition ${isSelected ? 'ring-2 ring-amber-400 scale-105 shadow-lg shadow-amber-500/20 opacity-100' : 'opacity-80 hover:opacity-100'}`;
                         div.innerHTML = `<div class="text-xs font-bold text-white truncate w-full">${item.title}</div><div class="text-[9px] text-slate-400">${item.label || ''}</div><div class="text-[10px] text-emerald-400 font-bold">$${item.price}</div>`;
                         div.onclick = () => selectSlot(side, i);
                     } else {
@@ -974,25 +1055,21 @@
                     container.appendChild(div);
                 }
             };
-            renderSlots(itemsCT, 'slotsCT', 'CT', selectedCTIndices);
-            renderSlots(itemsT, 'slotsT', 'T', selectedTIndices);
+            renderSlots(itemsCT, 'slotsCT', 'CT', selectedCTIndices, spinCountCT);
+            renderSlots(itemsT, 'slotsT', 'T', selectedTIndices, spinCountT);
 
             const ctSelectedItems = selectedCTIndices.map(idx => itemsCT[idx]).filter(Boolean);
-            const ctSelectedNames = ctSelectedItems.map(it => it.title);
             let ctTotalPrice = ctSelectedItems.reduce((sum, item) => sum + (item.price || 0), 0);
             if(armorCTItem) ctTotalPrice += (armorCTItem.price || 0);
-
-            let ctSummaryText = ctSelectedNames.length > 0 ? ctSelectedNames.join(' + ') : 'Предметы не выбраны';
+            let ctSummaryText = ctSelectedItems.length > 0 ? ctSelectedItems.map(it => it.title).join(' + ') : 'Предметы не выбраны';
             if(armorCTItem) ctSummaryText += ` | 🛡️ ${armorCTItem.title}`;
             ctSummaryText += ` <span class="text-emerald-400 font-black ml-1">— Итого: $${ctTotalPrice}</span>`;
             document.getElementById('summaryCTText').innerHTML = ctSummaryText;
 
             const tSelectedItems = selectedTIndices.map(idx => itemsT[idx]).filter(Boolean);
-            const tSelectedNames = tSelectedItems.map(it => it.title);
             let tTotalPrice = tSelectedItems.reduce((sum, item) => sum + (item.price || 0), 0);
             if(armorTItem) tTotalPrice += (armorTItem.price || 0);
-
-            let tSummaryText = tSelectedNames.length > 0 ? tSelectedNames.join(' + ') : 'Предметы не выбраны';
+            let tSummaryText = tSelectedItems.length > 0 ? tSelectedItems.map(it => it.title).join(' + ') : 'Предметы не выбраны';
             if(armorTItem) tSummaryText += ` | 🛡️ ${armorTItem.title}`;
             tSummaryText += ` <span class="text-emerald-400 font-black ml-1">— Итого: $${tTotalPrice}</span>`;
             document.getElementById('summaryTText').innerHTML = tSummaryText;
@@ -1018,10 +1095,7 @@
 
         function renderFeed() {
             const container = document.getElementById('feedContainer');
-            if(!feedList || feedList.length === 0) {
-                container.innerHTML = '<div class="text-slate-500">Событий пока нет...</div>';
-                return;
-            }
+            if(!feedList || feedList.length === 0) { container.innerHTML = '<div class="text-slate-500">Событий пока нет...</div>'; return; }
             container.innerHTML = feedList.map(f => `
                 <div class="bg-slate-800/80 px-2 py-1 rounded border border-slate-700/80 flex justify-between items-center">
                     <div><span class="text-cyan-400 font-bold">${f.player}:</span> <span class="text-white">${f.title}</span></div>
@@ -1032,6 +1106,7 @@
 
         /* --- MINI GAME 20$ ЛОГИКА --- */
         function setAvatar(av) {
+            playSound('click');
             mgAvatar = av;
             if(av === '👨') {
                 document.getElementById('btnAvatarMan').className = 'p-3 bg-emerald-600 rounded-2xl text-xl border border-emerald-400 transition active:scale-95';
@@ -1043,45 +1118,30 @@
         }
 
         function createMgRoom() {
+            playSound('click');
             mgName = document.getElementById('mgUsername').value.trim() || 'Player';
             mgCode = Math.random().toString(36).substring(2, 8).toUpperCase();
             mgRef = db.ref('mgRooms/' + mgCode);
-
-            const roomData = {
+            mgRef.set({
                 players: { [mgName]: { name: mgName, avatar: mgAvatar, balance: 20, dice: 0, inventory: [] } },
-                turn: '',
-                phase: 'waiting',
-                currentAuctionItem: null,
-                bidsOnCurrentItem: {},
-                firstBidDone: false,
-                itemEndTime: 0,
+                turn: '', phase: 'waiting', currentAuctionItem: null, bidsOnCurrentItem: {}, firstBidDone: false, itemEndTime: 0,
                 chat: [{ user: 'Система', text: 'Комната аукциона создана. Ожидание соперника...' }]
-            };
-
-            mgRef.set(roomData).then(() => {
-                showMgScreen(mgCode);
-                listenMg();
-            });
+            }).then(() => { showMgScreen(mgCode); listenMg(); });
         }
 
         function joinMgRoom() {
+            playSound('click');
             mgName = document.getElementById('mgUsername').value.trim() || 'Player';
             mgCode = document.getElementById('mgRoomCodeInput').value.trim().toUpperCase();
             if(!mgCode) { alert('Введите код комнаты!'); return; }
-
             mgRef = db.ref('mgRooms/' + mgCode);
             mgRef.once('value').then(snapshot => {
                 if(snapshot.exists()) {
                     const data = snapshot.val();
                     const players = data.players || {};
                     players[mgName] = { name: mgName, avatar: mgAvatar, balance: 20, dice: 0, inventory: [] };
-                    mgRef.child('players').set(players).then(() => {
-                        showMgScreen(mgCode);
-                        listenMg();
-                    });
-                } else {
-                    alert('Комната не найдена!');
-                }
+                    mgRef.child('players').set(players).then(() => { showMgScreen(mgCode); listenMg(); });
+                } else { alert('Комната не найдена!'); }
             });
         }
 
@@ -1090,6 +1150,27 @@
             document.getElementById('miniGameScreen').classList.remove('hidden');
             document.getElementById('mgDisplayCode').innerText = code;
             fillMgTrack();
+        }
+
+        function triggerGoldWinAnimation(itemName) {
+            playSound('win');
+            const modal = document.getElementById('goldWinModal');
+            const itemEl = document.getElementById('goldWinItemName');
+            const container = document.getElementById('goldFallingContainer');
+            container.innerHTML = '';
+            itemEl.innerText = `Вам в инвентарь добавлен предмет: ${itemName}`;
+            modal.classList.remove('hidden');
+
+            for(let i=0; i<20; i++) {
+                const el = document.createElement('div');
+                el.className = 'falling-element';
+                el.innerText = '🪙';
+                el.style.left = Math.random() * 100 + 'vw';
+                el.style.animationDuration = (1.5 + Math.random() * 2) + 's';
+                el.style.animationDelay = (Math.random() * 1) + 's';
+                container.appendChild(el);
+            }
+            setTimeout(() => { modal.classList.add('hidden'); }, 4000);
         }
 
         function listenMg() {
@@ -1104,7 +1185,6 @@
                     document.getElementById('mgP1Name').innerText = p1.name;
                     document.getElementById('mgP1Avatar').innerText = p1.avatar;
                     document.getElementById('mgP1Balance').innerText = '$' + p1.balance;
-                    document.getElementById('mgP1Balance').className = p1.balance > 0 ? 'text-lg font-black text-emerald-400' : 'text-lg font-black text-rose-500';
                     renderInventory('mgP1Inventory', p1.inventory);
                 }
                 if(pKeys.length > 1) {
@@ -1112,7 +1192,6 @@
                     document.getElementById('mgP2Name').innerText = p2.name;
                     document.getElementById('mgP2Avatar').innerText = p2.avatar;
                     document.getElementById('mgP2Balance').innerText = '$' + p2.balance;
-                    document.getElementById('mgP2Balance').className = p2.balance > 0 ? 'text-lg font-black text-emerald-400' : 'text-lg font-black text-rose-500';
                     renderInventory('mgP2Inventory', p2.inventory);
                 }
 
@@ -1127,30 +1206,26 @@
                     
                     const spinBtn = document.getElementById('mgSpinBtn');
                     const placeBidBtn = document.getElementById('placeBidBtn');
-                    const giveItemBtn = document.getElementById('giveItemBtn');
+                    const giveBtn = document.getElementById('giveItemBtn');
 
                     if(data.currentAuctionItem) {
-                        document.getElementById('currentAuctionItem').innerHTML = `<b>${data.currentAuctionItem.title}</b> (${data.currentAuctionItem.label || ''} | $${data.currentAuctionItem.price}) выставил ${data.currentAuctionItem.owner}`;
+                        document.getElementById('currentAuctionItem').innerHTML = `<b>${data.currentAuctionItem.title}</b> ($${data.currentAuctionItem.price}) выставил ${data.currentAuctionItem.owner}`;
                         spinBtn.disabled = true;
-
+                        
                         const isOwner = (data.currentAuctionItem.owner === mgName);
-                        const firstDone = data.firstBidDone;
+                        const isMyTurn = (data.turn === mgName);
 
-                        if(!firstDone && !isOwner) {
-                            placeBidBtn.disabled = true;
-                            giveItemBtn.disabled = true;
-                        } else {
-                            placeBidBtn.disabled = false;
-                            giveItemBtn.disabled = false;
-                        }
+                        placeBidBtn.disabled = (!data.firstBidDone && !isOwner);
+                        
+                        // ИСПРАВЛЕННЫЙ БАГ: Кнопка "Отдать оппоненту" теперь доступна, если владелец лота вы или сейчас ваш ход
+                        giveBtn.disabled = !(isOwner || isMyTurn);
 
                         manageTimer(data.itemEndTime, data.currentAuctionItem.owner);
-
                     } else {
                         document.getElementById('currentAuctionItem').innerText = 'Предмет не выбран';
                         spinBtn.disabled = (data.turn !== mgName);
                         placeBidBtn.disabled = false;
-                        giveItemBtn.disabled = false;
+                        giveBtn.disabled = true;
                         document.getElementById('timerDisplay').innerText = '';
                         if(timerInterval) clearInterval(timerInterval);
                     }
@@ -1175,17 +1250,12 @@
         function manageTimer(endTime, ownerName) {
             if(timerInterval) clearInterval(timerInterval);
             if(!endTime) return;
-
             timerInterval = setInterval(() => {
-                const now = Date.now();
-                const timeLeft = Math.max(0, Math.ceil((endTime - now) / 1000));
+                const timeLeft = Math.max(0, Math.ceil((endTime - Date.now()) / 1000));
                 document.getElementById('timerDisplay').innerText = `(${timeLeft}с)`;
-
                 if(timeLeft <= 0) {
                     clearInterval(timerInterval);
-                    if(ownerName === mgName) {
-                        autoGiveItemTimeout();
-                    }
+                    if(ownerName === mgName) autoGiveItemTimeout();
                 }
             }, 1000);
         }
@@ -1198,30 +1268,21 @@
                 if(auctionItem.owner !== mgName) return;
 
                 const players = data.players || {};
-                const pKeys = Object.keys(players);
-                const opponentName = pKeys.find(p => p !== mgName);
+                const opponentName = Object.keys(players).find(p => p !== mgName);
                 if(!opponentName) return;
 
-                const currentBalance = players[mgName].balance || 0;
-                const bids = data.bidsOnCurrentItem || {};
-                const playerBids = bids[mgName] || 0;
-                const refundedBalance = currentBalance + playerBids;
-
+                const refundedBalance = (players[mgName].balance || 0) + (data.bidsOnCurrentItem?.[mgName] || 0);
                 const oppInventory = players[opponentName].inventory || [];
                 oppInventory.push({ title: auctionItem.title, price: auctionItem.price, label: auctionItem.label, color: auctionItem.color });
 
                 const chat = data.chat || [];
-                chat.push({ user: 'Система', text: `⏰ Время истекло (10 сек)! Предмет автоматически отдан оппоненту.` });
+                chat.push({ user: 'Система', text: `⏰ Время истекло! Предмет автоматически отдан оппоненту.` });
 
                 mgRef.update({
                     [`players/${mgName}/balance`]: refundedBalance,
                     [`players/${opponentName}/inventory`]: oppInventory,
-                    currentAuctionItem: null,
-                    bidsOnCurrentItem: {},
-                    firstBidDone: false,
-                    itemEndTime: 0,
-                    turn: opponentName,
-                    chat: chat
+                    currentAuctionItem: null, bidsOnCurrentItem: {}, firstBidDone: false, itemEndTime: 0,
+                    turn: opponentName, chat: chat
                 });
             });
         }
@@ -1229,20 +1290,17 @@
         function renderInventory(containerId, inventory) {
             const container = document.getElementById(containerId);
             if(!container) return;
-            if(!inventory || inventory.length === 0) {
-                container.innerHTML = '<div class="text-[10px] text-slate-600">Пусто</div>';
-                return;
-            }
+            if(!inventory || inventory.length === 0) { container.innerHTML = '<div class="text-[10px] text-slate-600">Пусто</div>'; return; }
             container.innerHTML = inventory.map(item => `
                 <div class="px-2 py-1 rounded bg-slate-950 border ${item.color} text-[10px] flex flex-col items-center">
                     <span class="font-bold text-white">${item.title}</span>
-                    <span class="text-[8px] text-slate-400">${item.label || ''}</span>
                     <span class="text-emerald-400 font-black">$${item.price}</span>
                 </div>
             `).join('');
         }
 
         function rollDice() {
+            playSound('click');
             const myDice = Math.floor(Math.random() * 6) + 1;
             mgRef.child(`players/${mgName}/dice`).set(myDice).then(() => {
                 document.getElementById('diceResultDisplay').innerText = `Вы выбросили: ${myDice}`;
@@ -1252,22 +1310,18 @@
                     if(pKeys.length === 2 && players[pKeys[0]].dice > 0 && players[pKeys[1]].dice > 0) {
                         const firstTurn = players[pKeys[0]].dice >= players[pKeys[1]].dice ? pKeys[0] : pKeys[1];
                         mgRef.update({ phase: 'auction', turn: firstTurn });
-                        mgRef.child('chat').once('value', s => {
-                            const chat = s.val() || [];
-                            chat.push({ user: 'Система', text: `Кубики брошены! Первый ходит ${firstTurn}` });
-                            mgRef.child('chat').set(chat);
-                        });
                     }
                 });
             });
         }
 
         function mgSpinWheel() {
+            playSound('click');
             if(isMgSpinning) return;
             mgRef.once('value', snap => {
                 const data = snap.val();
                 if(data.turn !== mgName) { alert('Сейчас не ваш ход!'); return; }
-                if(data.currentAuctionItem) { alert('Сначала продайте или отдайте текущий предмет!'); return; }
+                if(data.currentAuctionItem) { alert('Сначала разберитесь с текущим лотом!'); return; }
                 const winnerItem = ALL_CS2_ITEMS[Math.floor(Math.random() * ALL_CS2_ITEMS.length)];
                 mgRef.child('action').set({ type: 'SPIN', item: winnerItem, player: mgName, timestamp: Date.now() });
             });
@@ -1283,7 +1337,7 @@
                     const winDiv = document.createElement('div');
                     winDiv.className = `flex-shrink-0 flex flex-col items-center justify-center p-2 rounded-xl border ${act.item.color} text-center`;
                     winDiv.style.width = '120px';
-                    winDiv.innerHTML = `<div class="text-xs font-bold text-white truncate w-full">${act.item.title}</div><div class="text-[9px] text-slate-400">${act.item.label || ''}</div><div class="text-[10px] text-emerald-400 font-black">$${act.item.price}</div>`;
+                    winDiv.innerHTML = `<div class="text-xs font-bold text-white truncate w-full">${act.item.title}</div><div class="text-[10px] text-emerald-400 font-black">$${act.item.price}</div>`;
                     track.children[targetIdx].replaceWith(winDiv);
                 }
 
@@ -1295,19 +1349,13 @@
                 track.style.transition = 'transform 4s cubic-bezier(0.15, 0.85, 0.15, 1)';
                 track.style.transform = `translateX(-${offset}px)`;
 
+                let soundInterval = setInterval(() => playSound('spin'), 200);
                 setTimeout(() => {
-                    const itemWithOwner = { ...act.item, owner: act.player };
-                    const endTime = Date.now() + 10000;
-                    mgRef.update({ 
-                        currentAuctionItem: itemWithOwner,
-                        bidsOnCurrentItem: {},
-                        firstBidDone: false,
-                        itemEndTime: endTime
-                    });
-                    mgRef.child('chat').once('value', s => {
-                        const chat = s.val() || [];
-                        chat.push({ user: 'Аукцион', text: `${act.player} выбил предмет: ${act.item.title}. У него 10 секунд на ставку!` });
-                        mgRef.child('chat').set(chat);
+                    clearInterval(soundInterval);
+                    playSound('win');
+                    mgRef.update({
+                        currentAuctionItem: { ...act.item, owner: act.player },
+                        bidsOnCurrentItem: {}, firstBidDone: false, itemEndTime: Date.now() + 10000
                     });
                     isMgSpinning = false;
                 }, 4100);
@@ -1315,80 +1363,56 @@
         }
 
         function placeBid() {
+            playSound('click');
             const val = parseInt(document.getElementById('bidInput').value);
             if(isNaN(val) || val <= 0) { alert('Введите корректную ставку!'); return; }
-            
             mgRef.once('value', snap => {
                 const data = snap.val();
-                if(!data.currentAuctionItem) { alert('Нет активного лота для ставки!'); return; }
-
-                const isOwner = (data.currentAuctionItem.owner === mgName);
-                if(!data.firstBidDone && !isOwner) {
-                    alert('Владелец предмета еще не сделал первую ставку!');
-                    return;
-                }
-
-                const players = data.players || {};
-                const currentBalance = players[mgName].balance || 0;
-
-                if(currentBalance < val) {
-                    alert('У вас недостаточно средств для такой ставки!');
-                    return;
-                }
-
-                const newBalance = currentBalance - val;
-                const bids = data.bidsOnCurrentItem || {};
-                const playerBidsTotal = (bids[mgName] || 0) + val;
-                bids[mgName] = playerBidsTotal;
-
-                const chat = data.chat || [];
-                chat.push({ user: mgName, text: `Ставка: $${val} (сгорело)` });
+                if(!data.currentAuctionItem) return;
+                const currentBalance = data.players[mgName].balance || 0;
+                if(currentBalance < val) { alert('Недостаточно средств!'); return; }
 
                 mgRef.update({
-                    [`players/${mgName}/balance`]: newBalance,
-                    bidsOnCurrentItem: bids,
-                    firstBidDone: true,
-                    itemEndTime: 0,
-                    chat: chat
+                    [`players/${mgName}/balance`]: currentBalance - val,
+                    [`bidsOnCurrentItem/${mgName}`]: (data.bidsOnCurrentItem?.[mgName] || 0) + val,
+                    firstBidDone: true, itemEndTime: 0
                 });
                 document.getElementById('bidInput').value = '';
             });
         }
 
+        // ИСПРАВЛЕННАЯ ФУНКЦИЯ ПЕРЕДАЧИ ПРЕДМЕТА
         function giveItem() {
+            playSound('click');
             mgRef.once('value', snap => {
                 const data = snap.val();
+                if(!data) return;
+
                 const auctionItem = data.currentAuctionItem;
-                if(!auctionItem) { alert('Нет активного лота!'); return; }
-                if(auctionItem.owner !== mgName) { alert('Вы не являетесь владельцем этого предмета!'); return; }
+                if(!auctionItem) return;
 
                 const players = data.players || {};
-                const pKeys = Object.keys(players);
-                const opponentName = pKeys.find(p => p !== mgName);
+                const opponentName = Object.keys(players).find(p => p !== mgName);
                 if(!opponentName) return;
 
-                const currentBalance = players[mgName].balance || 0;
-                const bids = data.bidsOnCurrentItem || {};
-                const playerBids = bids[mgName] || 0;
-                const refundedBalance = currentBalance + playerBids;
-
+                const refundedBalance = (players[mgName].balance || 0) + (data.bidsOnCurrentItem?.[mgName] || 0);
                 const oppInventory = players[opponentName].inventory || [];
                 oppInventory.push({ title: auctionItem.title, price: auctionItem.price, label: auctionItem.label, color: auctionItem.color });
 
                 const chat = data.chat || [];
-                chat.push({ user: mgName, text: `отдал(а) предмет оппоненту! Возврат за ставки: +$${playerBids}` });
-
-                const nextTurn = opponentName;
+                chat.push({ user: mgName, text: `передал предмет оппоненту!` });
 
                 mgRef.update({
                     [`players/${mgName}/balance`]: refundedBalance,
                     [`players/${opponentName}/inventory`]: oppInventory,
-                    currentAuctionItem: null,
-                    bidsOnCurrentItem: {},
-                    firstBidDone: false,
+                    currentAuctionItem: null, 
+                    bidsOnCurrentItem: {}, 
+                    firstBidDone: false, 
                     itemEndTime: 0,
-                    turn: nextTurn,
+                    turn: opponentName, 
                     chat: chat
+                }).then(() => {
+                    triggerGoldWinAnimation(auctionItem.title);
                 });
             });
         }
@@ -1402,7 +1426,7 @@
                 const div = document.createElement('div');
                 div.className = `flex-shrink-0 flex flex-col items-center justify-center p-2 rounded-xl border ${item.color} text-center`;
                 div.style.width = '120px';
-                div.innerHTML = `<div class="text-xs font-bold text-white truncate w-full">${item.title}</div><div class="text-[9px] text-slate-400">${item.label || ''}</div><div class="text-[10px] text-emerald-400 font-black">$${item.price}</div>`;
+                div.innerHTML = `<div class="text-xs font-bold text-white truncate w-full">${item.title}</div><div class="text-[10px] text-emerald-400 font-black">$${item.price}</div>`;
                 track.appendChild(div);
             }
         }
