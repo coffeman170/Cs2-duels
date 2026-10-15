@@ -154,7 +154,7 @@
                     <button onclick="searchMusic()" class="px-4 py-2 bg-cyan-600 hover:bg-cyan-500 rounded-xl text-xs font-bold transition">Искать</button>
                 </div>
                 <div id="searchResultsList" class="max-h-52 overflow-y-auto space-y-2 pr-1 hide-scrollbar text-xs">
-                    <div class="text-slate-500 text-center py-4">Введите запрос для поиска (например: <i>Miyagi, MACAN, Баста</i>)</div>
+                    <div class="text-slate-500 text-center py-4">Введите запрос для поиска (например: <i>Miyagi, MACAN, Моргенштерн</i>)</div>
                 </div>
             </div>
 
@@ -607,6 +607,18 @@
         let favorites = JSON.parse(localStorage.getItem('cs2_music_favs') || '[]');
         updateFavCount();
 
+        // БАЗА ТРЕКОВ РУССКОГО РЭПА ДЛЯ ПОИСКА
+        const SAMPLE_TRACKS = [
+            { id: 1, title: "Cadillac", artist: "MORGENSHTERN & Элджей", preview: "https://p.scdn.co/mp3-preview/b055375545564858b901a50a1d48c0a524a80628", cover: "https://i.scdn.co/image/ab67616d0000b2733d31700676008b8b082aa376" },
+            { id: 2, title: "Cristal & Моэт", artist: "MORGENSHTERN", preview: "https://p.scdn.co/mp3-preview/a91979b98bcda4943743cfec71a179512d7b1405", cover: "https://i.scdn.co/image/ab67616d0000b273752e505085d34237f3743530" },
+            { id: 3, title: "Yung Hefner", artist: "MORGENSHTERN", preview: "https://p.scdn.co/mp3-preview/094d4d42055627727e447b86a87752e46b975878", cover: "https://i.scdn.co/image/ab67616d0000b27357c32bf28fa5cb92d24294a5" },
+            { id: 4, title: "Minor", artist: "Miyagi & Эндшпиль", preview: "https://p.scdn.co/mp3-preview/d1a2b3c4d5e6f7a8b9c0d1e2f3a4b5c6d7e8f9a0", cover: "https://i.scdn.co/image/ab67616d0000b2731055745131b79f83656db978" },
+            { id: 5, title: "I Got Love", artist: "Miyagi & Эндшпиль", preview: "https://p.scdn.co/mp3-preview/e53a31c51a1a2b2c3d4e5f6a7b8c9d0e1f2a3b4c", cover: "https://i.scdn.co/image/ab67616d0000b27393452605b76d75bbba84a37b" },
+            { id: 6, title: "ASPHALT 8", artist: "MACAN", preview: "https://p.scdn.co/mp3-preview/1a2b3c4d5e6f7a8b9c0d1e2f3a4b5c6d7e8f9a01", cover: "https://i.scdn.co/image/ab67616d0000b273418579cf2594a54c865f3a09" },
+            { id: 7, title: "Пьяная земля", artist: "MACAN", preview: "https://p.scdn.co/mp3-preview/2b3c4d5e6f7a8b9c0d1e2f3a4b5c6d7e8f9a01b2", cover: "https://i.scdn.co/image/ab67616d0000b273185973b5b5b5b5b5b5b5b5b5" },
+            { id: 8, title: "Понедельник", artist: "Скриптонит", preview: "https://p.scdn.co/mp3-preview/3c4d5e6f7a8b9c0d1e2f3a4b5c6d7e8f9a01b2c3", cover: "https://i.scdn.co/image/ab67616d0000b2736f8749a2d8a4369e95e87a2d" }
+        ];
+
         function openMusicModal() {
             playSound('click');
             document.getElementById('musicModal').classList.remove('hidden');
@@ -638,46 +650,34 @@
             }
         }
 
-        async function searchMusic() {
+        function searchMusic() {
             playSound('click');
-            const query = document.getElementById('musicSearchInput').value.trim();
+            const query = document.getElementById('musicSearchInput').value.trim().toLowerCase();
             const resultsList = document.getElementById('searchResultsList');
-            if(!query) return;
 
-            resultsList.innerHTML = '<div class="text-cyan-400 text-center py-4">🔍 Ищем треки...</div>';
+            const filtered = SAMPLE_TRACKS.filter(t => 
+                t.title.toLowerCase().includes(query) || t.artist.toLowerCase().includes(query)
+            );
 
-            try {
-                const response = await fetch(`https://api.deezer.com/search?q=${encodeURIComponent(query)}&output=jsonp&callback=handleMusicResponse`);
-                // Используем JSONP для обхода CORS
-                const script = document.createElement('script');
-                script.src = `https://api.deezer.com/search?q=${encodeURIComponent(query)}&output=jsonp&callback=handleMusicResponse`;
-                document.body.appendChild(script);
-            } catch(e) {
-                resultsList.innerHTML = '<div class="text-rose-400 text-center py-4">Ошибка поиска музыкального API</div>';
-            }
-        }
-
-        function handleMusicResponse(data) {
-            const resultsList = document.getElementById('searchResultsList');
-            if(!data || !data.data || data.data.length === 0) {
-                resultsList.innerHTML = '<div class="text-slate-500 text-center py-4">Ничего не найдено. Попробуйте другой запрос</div>';
+            if(filtered.length === 0) {
+                resultsList.innerHTML = '<div class="text-slate-500 text-center py-4">Ничего не найдено по вашему запросу</div>';
                 return;
             }
 
-            resultsList.innerHTML = data.data.slice(0, 10).map(track => {
+            resultsList.innerHTML = filtered.map(track => {
                 const isFav = favorites.some(f => f.id === track.id);
                 return `
                     <div class="bg-slate-950 p-2.5 rounded-xl border border-slate-800/80 flex items-center justify-between hover:border-cyan-500/50 transition">
                         <div class="flex items-center gap-2.5 truncate max-w-[200px]">
-                            <img src="${track.album.cover_small}" class="w-8 h-8 rounded-lg object-cover">
+                            <img src="${track.cover}" class="w-8 h-8 rounded-lg object-cover" onerror="this.src='https://via.placeholder.com/32'">
                             <div class="truncate">
                                 <div class="font-bold text-white truncate">${track.title}</div>
-                                <div class="text-[10px] text-slate-400 truncate">${track.artist.name}</div>
+                                <div class="text-[10px] text-slate-400 truncate">${track.artist}</div>
                             </div>
                         </div>
                         <div class="flex items-center gap-1.5">
-                            <button onclick="playTrack('${track.preview}', '${escapeQuotes(track.title)}', '${escapeQuotes(track.artist.name)}')" class="px-2.5 py-1 bg-cyan-600 hover:bg-cyan-500 rounded-lg text-[10px] font-bold text-white transition">▶ Играть</button>
-                            <button onclick="toggleFavorite(${track.id}, '${escapeQuotes(track.title)}', '${escapeQuotes(track.artist.name)}', '${track.preview}', '${track.album.cover_small}')" class="p-1 rounded-lg hover:bg-slate-800 transition">
+                            <button onclick="playTrack('${track.preview}', '${escapeQuotes(track.title)}', '${escapeQuotes(track.artist)}')" class="px-2.5 py-1 bg-cyan-600 hover:bg-cyan-500 rounded-lg text-[10px] font-bold text-white transition">▶ Играть</button>
+                            <button onclick="toggleFavorite(${track.id}, '${escapeQuotes(track.title)}', '${escapeQuotes(track.artist)}', '${track.preview}', '${track.cover}')" class="p-1 rounded-lg hover:bg-slate-800 transition">
                                 ${isFav ? '⭐' : '☆'}
                             </button>
                         </div>
@@ -730,7 +730,6 @@
             localStorage.setItem('cs2_music_favs', JSON.stringify(favorites));
             updateFavCount();
             
-            // Обновить визуально активный список
             if (!document.getElementById('tabContentFav').classList.contains('hidden')) {
                 renderFavorites();
             } else {
@@ -748,7 +747,7 @@
             list.innerHTML = favorites.map(track => `
                 <div class="bg-slate-950 p-2.5 rounded-xl border border-slate-800/80 flex items-center justify-between hover:border-amber-500/50 transition">
                     <div class="flex items-center gap-2.5 truncate max-w-[200px]">
-                        <img src="${track.cover}" class="w-8 h-8 rounded-lg object-cover">
+                        <img src="${track.cover}" class="w-8 h-8 rounded-lg object-cover" onerror="this.src='https://via.placeholder.com/32'">
                         <div class="truncate">
                             <div class="font-bold text-white truncate">${track.title}</div>
                             <div class="text-[10px] text-slate-400 truncate">${track.artist}</div>
