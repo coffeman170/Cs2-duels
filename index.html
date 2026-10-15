@@ -187,7 +187,7 @@
 
             <div class="space-y-3">
                 <div class="flex bg-slate-950 p-1 rounded-xl border border-slate-800 gap-1 text-xs font-bold">
-                    <button id="tabBtnSearch" onclick="switchMusicTab('search')" class="flex-1 py-1.5 rounded-lg bg-indigo-600 text-white transition">🔍 Все треки (34)</button>
+                    <button id="tabBtnSearch" onclick="switchMusicTab('search')" class="flex-1 py-1.5 rounded-lg bg-indigo-600 text-white transition">🔍 Все треки (20)</button>
                     <button id="tabBtnFav" onclick="switchMusicTab('favorites')" class="flex-1 py-1.5 rounded-lg text-slate-400 hover:text-white transition">⭐ Избранное</button>
                 </div>
 
@@ -624,13 +624,11 @@
         const fortunaCover = "https://raw.githubusercontent.com/coffeman170/rap-music/main/" + encodeURIComponent("фортуна 812.png");
         const madkidPrinceCover = "https://raw.githubusercontent.com/coffeman170/rap-music/main/" + encodeURIComponent("медкид и темний принс.png");
         const xxxmaneraCover = "https://raw.githubusercontent.com/coffeman170/rap-music/main/xxxmanera.png";
-        const ogBudaCover = "https://raw.githubusercontent.com/coffeman170/rap-music/main/" + encodeURIComponent("og buda.png");
-        const blagoWhiteCover = "https://raw.githubusercontent.com/coffeman170/rap-music/main/" + encodeURIComponent("благо вайт.png");
         const kizaruCover = "https://raw.githubusercontent.com/coffeman170/rap-music/main/" + encodeURIComponent("кизару.png");
         const kuzneckiiSquadCover = defaultCover;
         const bigpluggCover = "https://raw.githubusercontent.com/coffeman170/rap-music/main/" + encodeURIComponent("bigpluggssd, YouRunPlugg & exxxor - Пойдем со мною.png");
 
-        /* --- ПЛЕЙЛИСТ (34 ТРЕКА) --- */
+        /* --- ПЛЕЙЛИСТ (20 ТРЕКОВ) --- */
         const SAMPLE_TRACKS = [
             { id: 1, title: "rich-forever-2", artist: "kuzneckii-skvad", preview: "https://raw.githubusercontent.com/coffeman170/rap-music/main/kuzneckii-skvad-rich-forever-2.mp3", cover: kuzneckiiSquadCover },
             { id: 3, title: "Первый", artist: "Kuznetsky Squad", preview: "https://raw.githubusercontent.com/coffeman170/rap-music/main/" + encodeURIComponent("Kuznetsky Squad — Первый (audset.ru).mp3"), cover: kuzneckiiSquadCover },
@@ -646,19 +644,6 @@
             { id: 13, title: "Дайте Дури", artist: "kraken", preview: "https://raw.githubusercontent.com/coffeman170/rap-music/main/" + encodeURIComponent("Painhatedyou - Дайте Дури.mp3"), cover: krakenCover },
             { id: 14, title: "Бывший Воздух И Подонок", artist: "Кракен", preview: "https://raw.githubusercontent.com/coffeman170/rap-music/main/" + encodeURIComponent("Кракен - Бывший Воздух И Подонок.mp3"), cover: krakenCover },
             { id: 15, title: "Fake_ID", artist: "kizaru & ICEGERGERT", preview: "https://raw.githubusercontent.com/coffeman170/rap-music/main/kizaru_ICEGERGERT-Fake_ID-spaces.im.mp3", cover: kizaruCover },
-            { id: 16, title: "morgenshtern-cadillac", artist: "MORGENSHTERN & Элджей", preview: "https://raw.githubusercontent.com/coffeman170/rap-music/main/morgenshtern-cadillac.mp3", cover: "https://raw.githubusercontent.com/coffeman170/rap-music/main/" + encodeURIComponent("моргенштерн.png") },
-            { id: 17, title: "morgenshtern-crystal-moet", artist: "MORGENSHTERN", preview: "https://raw.githubusercontent.com/coffeman170/rap-music/main/morgenshtern-crystal-moet.mp3", cover: "https://raw.githubusercontent.com/coffeman170/rap-music/main/" + encodeURIComponent("моргенштерн.png") },
-            { id: 18, title: "og-buda-bandana", artist: "OG Buda", preview: "https://raw.githubusercontent.com/coffeman170/rap-music/main/og-buda-bandana.mp3", cover: ogBudaCover },
-            { id: 19, title: "mayot-moroz", artist: "MAYOT", preview: "https://raw.githubusercontent.com/coffeman170/rap-music/main/mayot-moroz.mp3", cover: defaultCover },
-            { id: 20, title: "blago-white-ika", artist: "Blago White", preview: "https://raw.githubusercontent.com/coffeman170/rap-music/main/blago-white-ika.mp3", cover: blagoWhiteCover },
-            { id: 21, title: "booking-machine-freestyle", artist: "Oxxxymiron", preview: "https://raw.githubusercontent.com/coffeman170/rap-music/main/oxxxymiron-freestyle.mp3", cover: defaultCover },
-            { id: 22, title: "pharaoh-smart", artist: "PHARAOH", preview: "https://raw.githubusercontent.com/coffeman170/rap-music/main/pharaoh-smart.mp3", cover: defaultCover },
-            { id: 23, title: "thomas-mraz-doroga", artist: "Thomas Mraz", preview: "https://raw.githubusercontent.com/coffeman170/rap-music/main/thomas-mraz-doroga.mp3", cover: defaultCover },
-            { id: 24, title: "boulevard-depo-blunt", artist: "Boulevard Depo", preview: "https://raw.githubusercontent.com/coffeman170/rap-music/main/boulevard-depo-blunt.mp3", cover: defaultCover },
-            { id: 25, title: "saluki-fiesta", artist: "SALUKI", preview: "https://raw.githubusercontent.com/coffeman170/rap-music/main/saluki-fiesta.mp3", cover: defaultCover },
-            { id: 26, title: "ДИНАСТИЯ", artist: "VILLIAN & madk1d", preview: "https://raw.githubusercontent.com/coffeman170/rap-music/main/" + encodeURIComponent("VILLIAN, madk1d — ДИНАСТИЯ (audset.ru).mp3"), cover: madkidPrinceCover },
-            { id: 27, title: "Ты че обиделась", artist: "Madk1d & Тёмный принц", preview: "https://raw.githubusercontent.com/coffeman170/rap-music/main/" + encodeURIComponent("[muzrecord.com] Madk1d & Тёмный принц- Ты че обиделась.mp3"), cover: madkidPrinceCover },
-            { id: 28, title: "(не) уходи", artist: "fallen777angel & mapt0v", preview: "https://raw.githubusercontent.com/coffeman170/rap-music/main/" + encodeURIComponent("fallen777angel, mapt0v - (не) уходи_(muzdevil.net).mp3"), cover: defaultCover },
             { id: 29, title: "Gladiator", artist: "fallen777angel", preview: "https://raw.githubusercontent.com/coffeman170/rap-music/main/fallen777angel_Gladiator_rycar.mp3", cover: defaultCover },
             { id: 30, title: "parislove", artist: "fortuna 812", preview: "https://raw.githubusercontent.com/coffeman170/rap-music/main/fortuna-812-parislove.mp3", cover: fortunaCover },
             { id: 31, title: "Скажи мне кто ты", artist: "xxxmanera", preview: "https://raw.githubusercontent.com/coffeman170/rap-music/main/xxxmanera-skazhi-mne-kto-ty_(mobplay.run).mp3", cover: xxxmaneraCover },
@@ -899,7 +884,7 @@
         const imgM4A4 = "https://raw.githubusercontent.com/coffeman170/rap-music/main/M4A4.png";
         const imgM4A1 = "https://raw.githubusercontent.com/coffeman170/rap-music/main/M4A1-S.png";
         const imgAWP = "https://raw.githubusercontent.com/coffeman170/rap-music/main/AWP.png";
-        const imgSmoke = "https://raw.githubusercontent.com/coffeman170/rap-music/main/" + encodeURIComponent("флешка.png");
+        const imgSmoke = "https://raw.githubusercontent.com/coffeman170/rap-music/main/smoke.png";
         const imgFlash = "https://raw.githubusercontent.com/coffeman170/rap-music/main/" + encodeURIComponent("флешка.png");
         const imgHE = "https://raw.githubusercontent.com/coffeman170/rap-music/main/" + encodeURIComponent("хаешка граната.png");
         const imgMolotov = "https://raw.githubusercontent.com/coffeman170/rap-music/main/" + encodeURIComponent("молик молотов.png");
@@ -933,6 +918,10 @@
         const imgMP9 = "https://raw.githubusercontent.com/coffeman170/rap-music/main/MP9.png";
         const imgP90 = "https://raw.githubusercontent.com/coffeman170/rap-music/main/P90.png";
 
+        const esc = v => String(v ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+        const cleanCode = v => String(v || '').trim().toUpperCase().replace(/[^A-Z0-9_-]/g, '').slice(0, 12);
+        const cleanName = (v, d) => (String(v || '').trim().slice(0, 20)) || d;
+
         const WEAPONS_CT = [
             { title: 'USP-S', price: 200, category: 'secondary', label: 'Вторичное', color: 'border-blue-500/50 bg-blue-950/30', img: imgUSP },
             { title: 'P2000', price: 200, category: 'secondary', label: 'Вторичное', color: 'border-blue-500/50 bg-blue-950/30', img: imgP2000 },
@@ -965,7 +954,8 @@
             { title: 'Flashbang', price: 200, category: 'grenade', label: 'Граната', color: 'border-yellow-500/50 bg-yellow-950/30', img: imgFlash },
             { title: 'HE Grenade', price: 300, category: 'grenade', label: 'Граната', color: 'border-red-500/50 bg-red-950/30', img: imgHE },
             { title: 'Incendiary Grenade', price: 600, category: 'grenade', label: 'Граната', color: 'border-orange-600/50 bg-orange-950/30', img: imgMolotov },
-            { title: 'Decoy', price: 50, category: 'grenade', label: 'Граната', color: 'border-slate-500/50 bg-slate-950/30', img: imgDecoy }
+            { title: 'Decoy', price: 50, category: 'grenade', label: 'Граната', color: 'border-slate-500/50 bg-slate-950/30', img: imgDecoy },
+            { title: 'Набор сапёра (Defuse Kit)', price: 400, category: 'utility', label: 'Спецсредство', color: 'border-cyan-500/50 bg-cyan-950/30' }
         ];
 
         const WEAPONS_T = [
@@ -1004,10 +994,10 @@
         const ARMOR_ITEMS = [
             { title: 'Без брони', price: 0, category: 'armor', label: 'Снаряжение', color: 'border-slate-700 bg-slate-950/30' },
             { title: 'Броня', price: 650, category: 'armor', label: 'Снаряжение', color: 'border-blue-500/50 bg-blue-950/30' },
-            { title: 'Броня + Шлем', price: 1000, category: 'armor', label: 'Снаряжение', color: 'border-amber-500/50 bg-amber-950/30' },
-            { title: 'Набор сапёра (Defuse Kit)', price: 400, category: 'armor', label: 'Снаряжение', color: 'border-cyan-500/50 bg-cyan-950/30' }
+            { title: 'Броня + Шлем', price: 1000, category: 'armor', label: 'Снаряжение', color: 'border-amber-500/50 bg-amber-950/30' }
         ];
 
+        for (let i = ARMOR_ITEMS.length - 1; i >= 0; i--) { if (ARMOR_ITEMS[i].category !== 'armor') ARMOR_ITEMS.splice(i, 1); }
         const ALL_CS2_ITEMS = [...WEAPONS_CT, ...WEAPONS_T, ...ARMOR_ITEMS];
         const GENERAL_COMPLICATIONS = ["Без шифта", "Без прыжков", "Без звука", "Ноу-скопом", "Свап на нож при выстреле", "Только ван-тапы", "Перезарядка на 0 патрон в обойме"];
 
@@ -1040,7 +1030,7 @@
 
         function createRoom() {
             playSound('click');
-            playerName = document.getElementById('usernameInput').value.trim() || 'User';
+            playerName = cleanName(document.getElementById('usernameInput').value, 'User');
             currentRoomCode = Math.random().toString(36).substring(2, 8).toUpperCase();
             roomRef = db.ref('rooms/' + currentRoomCode);
             roomRef.set({
@@ -1058,8 +1048,8 @@
 
         function joinRoom() {
             playSound('click');
-            playerName = document.getElementById('usernameInput').value.trim() || 'User';
-            const code = document.getElementById('roomCodeInput').value.trim().toUpperCase();
+            playerName = cleanName(document.getElementById('usernameInput').value, 'User');
+            const code = cleanCode(document.getElementById('roomCodeInput').value);
             if(!code) { alert('Введите код комнаты!'); return; }
             roomRef = db.ref('rooms/' + code);
             roomRef.once('value').then((snapshot) => {
@@ -1376,10 +1366,8 @@
             if(currentList.includes(index)) {
                 currentList = currentList.filter(i => i !== index);
             } else {
-                if (targetItem.category === 'primary') {
-                    currentList = currentList.filter(idx => items[idx] && items[idx].category !== 'primary');
-                } else if (targetItem.category === 'secondary') {
-                    currentList = currentList.filter(idx => items[idx] && items[idx].category !== 'secondary');
+                if (targetItem.category === 'primary' || targetItem.category === 'secondary') {
+                    currentList = currentList.filter(idx => items[idx] && items[idx].category !== targetItem.category);
                 } else if (targetItem.category === 'grenade') {
                     if (targetItem.title !== 'Flashbang') {
                         const hasSameGrenade = currentList.some(idx => items[idx] && items[idx].title === targetItem.title);
@@ -1463,6 +1451,9 @@
                     if (!seenCategories.has(item.category)) { autoSelected.push(i); seenCategories.add(item.category); }
                 } else if (item.category === 'grenade') {
                     if (item.title === 'Flashbang' || !seenGrenades.has(item.title)) { autoSelected.push(i); seenGrenades.add(item.title); }
+
+                } else if (item.category === 'utility') {
+                    autoSelected.push(i);
                 }
             }
             const updates = {};
@@ -1622,7 +1613,7 @@
             if(!feedList || feedList.length === 0) { container.innerHTML = '<div class="text-slate-500">Событий пока нет...</div>'; return; }
             container.innerHTML = feedList.map(f => `
                 <div class="bg-slate-800/80 px-2 py-1 rounded border border-slate-700/80 flex justify-between items-center">
-                    <div><span class="text-cyan-400 font-bold">${f.player}:</span> <span class="text-white">${f.title}</span></div>
+                    <div><span class="text-cyan-400 font-bold">${esc(f.player)}:</span> <span class="text-white">${esc(f.title)}</span></div>
                     ${f.price > 0 ? `<span class="text-emerald-400 font-bold">($${f.price})</span>` : ''}
                 </div>
             `).join('');
@@ -1642,7 +1633,7 @@
 
         function createMgRoom() {
             playSound('click');
-            mgName = document.getElementById('mgUsername').value.trim() || 'Player';
+            mgName = cleanName(document.getElementById('mgUsername').value, 'Player');
             mgCode = Math.random().toString(36).substring(2, 8).toUpperCase();
             hasShownDiceModal = false;
             mgRef = db.ref('mgRooms/' + mgCode);
@@ -1656,8 +1647,8 @@
 
         function joinMgRoom() {
             playSound('click');
-            mgName = document.getElementById('mgUsername').value.trim() || 'Player';
-            mgCode = document.getElementById('mgRoomCodeInput').value.trim().toUpperCase();
+            mgName = cleanName(document.getElementById('mgUsername').value, 'Player');
+            mgCode = cleanCode(document.getElementById('mgRoomCodeInput').value);
             if(!mgCode) { alert('Введите код комнаты!'); return; }
             hasShownDiceModal = false;
             mgRef = db.ref('mgRooms/' + mgCode);
@@ -1803,7 +1794,7 @@
 
                 const chatEl = document.getElementById('mgChat');
                 if(data.chat) {
-                    chatEl.innerHTML = data.chat.map(c => `<div><b>${c.user}:</b> ${c.text}</div>`).join('');
+                    chatEl.innerHTML = data.chat.map(c => `<div><b>${esc(c.user)}:</b> ${esc(c.text)}</div>`).join('');
                     chatEl.scrollTop = chatEl.scrollHeight;
                 }
             });
