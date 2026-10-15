@@ -55,6 +55,11 @@
         .hide-scrollbar::-webkit-scrollbar { display: none; }
         .hide-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
         
+        ::-webkit-scrollbar { width: 6px; }
+        ::-webkit-scrollbar-track { background: rgba(15, 23, 42, 0.6); border-radius: 4px; }
+        ::-webkit-scrollbar-thumb { background: rgba(99, 102, 241, 0.5); border-radius: 4px; }
+        ::-webkit-scrollbar-thumb:hover { background: rgba(99, 102, 241, 0.8); }
+
         .roulette-container {
             position: relative;
             overflow: hidden;
@@ -115,7 +120,7 @@
         }
     </style>
 </head>
-<body class="p-3 md:p-6 flex flex-col items-center min-h-screen justify-center">
+<body class="p-3 md:p-6 flex flex-col items-center min-h-screen justify-center selection:bg-indigo-500 selection:text-white">
 
     <div class="bg-glow-1"></div>
     <div class="bg-glow-2"></div>
@@ -131,50 +136,73 @@
         </button>
     </div>
 
-    <!-- МОДАЛЬНОЕ ОКНО МУЗЫКАЛЬНОГО ПЛЕЕРА -->
+    <!-- МОДАЛЬНОЕ ОКНО НОВОГО МУЗЫКАЛЬНОГО ПЛЕЕРА -->
     <div id="musicModal" class="fixed inset-0 bg-black/80 backdrop-blur-md flex flex-col items-center justify-center z-50 hidden p-4">
-        <div class="max-w-md w-full bg-slate-900 border border-slate-800 rounded-3xl p-5 space-y-4 shadow-2xl relative">
+        <div class="relative w-full max-w-xl bg-slate-900/90 backdrop-blur-xl rounded-2xl p-6 shadow-2xl border border-slate-800/80 ring-1 ring-white/10 space-y-4">
             <button onclick="closeMusicModal()" class="absolute top-4 right-4 text-slate-400 hover:text-white text-lg font-bold">✕</button>
             
-            <div class="space-y-1">
-                <h3 class="text-base font-black text-cyan-400 flex items-center gap-2">🎧 Твой плейлист (Все 8 треков)</h3>
-                <p class="text-[11px] text-slate-400">Выберите трек для игры или добавьте в Избранное</p>
-            </div>
-
-            <!-- ВКЛАДКИ -->
-            <div class="flex bg-slate-950 p-1 rounded-xl border border-slate-800 gap-1 text-xs font-bold">
-                <button id="tabBtnSearch" onclick="switchMusicTab('search')" class="flex-1 py-1.5 rounded-lg bg-cyan-600 text-white transition">🔍 Треки</button>
-                <button id="tabBtnFav" onclick="switchMusicTab('favorites')" class="flex-1 py-1.5 rounded-lg text-slate-400 hover:text-white transition">⭐ Избранное (<span id="favCount">0</span>)</button>
-            </div>
-
-            <!-- ВКЛАДКА ПОИСКА -->
-            <div id="tabContentSearch" class="space-y-3">
-                <div class="flex gap-2">
-                    <input type="text" id="musicSearchInput" placeholder="Поиск по твоему плейлисту..." class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-cyan-500" oninput="searchMusic()">
-                    <button onclick="searchMusic()" class="px-4 py-2 bg-cyan-600 hover:bg-cyan-500 rounded-xl text-xs font-bold transition">Искать</button>
+            <div class="flex items-center justify-between pb-3 border-b border-slate-800">
+                <div class="flex items-center space-x-3">
+                    <div class="w-3 h-3 bg-indigo-500 rounded-full animate-pulse shadow-[0_0_12px_rgba(99,102,241,0.8)]"></div>
+                    <h3 class="text-base font-black tracking-wider uppercase bg-gradient-to-r from-indigo-400 via-cyan-400 to-white bg-clip-text text-transparent">CS2 Duel Center Music Hub</h3>
                 </div>
-                <div id="searchResultsList" class="max-h-52 overflow-y-auto space-y-2 pr-1 hide-scrollbar text-xs">
-                    <!-- Треки подгружаются динамически -->
-                </div>
+                <span id="favCountBadge" class="text-xs font-semibold px-2.5 py-1 bg-indigo-500/10 text-indigo-400 border border-indigo-500/20 rounded-full">⭐ Избранное: <span id="favCount">0</span></span>
             </div>
 
-            <!-- ВКЛАДКА ИЗБРАННОГО -->
-            <div id="tabContentFav" class="hidden space-y-3">
-                <div id="favResultsList" class="max-h-52 overflow-y-auto space-y-2 pr-1 hide-scrollbar text-xs">
-                    <div class="text-slate-500 text-center py-4">Избранных треков пока нет. Нажмите ⭐ возле трека!</div>
+            <div class="flex flex-col sm:flex-row items-center gap-4 bg-slate-950/50 p-3.5 rounded-xl border border-slate-800/60 shadow-inner">
+                <div class="relative w-24 h-24 sm:w-20 sm:h-20 rounded-lg overflow-hidden bg-slate-900 border border-slate-700/50 flex-shrink-0 shadow-lg">
+                    <img id="current-cover" src="https://images.unsplash.com/photo-1514525253161-7a46d19cd819?w=300&auto=format&fit=crop&q=80" alt="Cover" class="w-full h-full object-cover">
+                    <div class="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent"></div>
+                </div>
+                
+                <div class="text-center sm:text-left flex-grow min-w-0">
+                    <p class="text-[10px] uppercase tracking-wider text-indigo-400 font-semibold mb-1">Сейчас играет</p>
+                    <h2 id="track-title" class="text-sm font-bold text-slate-100 truncate mb-1">Выберите трек</h2>
+                    <p id="track-artist" class="text-xs text-slate-400 truncate">CS2 Audio Library</p>
                 </div>
             </div>
 
-            <!-- ПЛЕЕР ВНИЗУ ОКНА -->
-            <div id="activePlayerBar" class="hidden bg-slate-950 p-3 rounded-2xl border border-slate-800 space-y-2">
-                <div class="flex justify-between items-center text-xs">
-                    <div class="truncate max-w-[220px]">
-                        <span id="playingTitle" class="font-bold text-white block truncate">Трек</span>
-                        <span id="playingArtist" class="text-[10px] text-slate-400 block truncate">Артист</span>
+            <audio id="bgAudioPlayer" class="hidden"></audio>
+
+            <div class="space-y-3 bg-slate-950/30 p-3.5 rounded-xl border border-slate-800/40">
+                <div class="space-y-1">
+                    <input type="range" id="progress-bar" value="0" max="100" class="w-full h-1.5 bg-slate-800 rounded-lg appearance-none cursor-pointer accent-indigo-500">
+                    <div class="flex justify-between text-[11px] text-slate-400 font-mono">
+                        <span id="current-time">0:00</span>
+                        <span id="duration">0:00</span>
                     </div>
-                    <button onclick="stopMusic()" class="px-2.5 py-1 bg-rose-600 hover:bg-rose-500 rounded-lg text-[10px] font-bold">Стоп ⏹️</button>
                 </div>
-                <audio id="bgAudioPlayer" controls class="w-full h-8 rounded-lg bg-slate-900"></audio>
+
+                <div class="flex items-center justify-center space-x-6">
+                    <button onclick="prevTrack()" class="p-2 rounded-full bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white transition shadow-md active:scale-95">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path></svg>
+                    </button>
+                    <button onclick="togglePlayPause()" class="p-3 rounded-full bg-gradient-to-r from-indigo-600 to-cyan-600 hover:from-indigo-500 hover:to-cyan-500 text-white shadow-lg shadow-indigo-600/30 transition transform hover:scale-105 active:scale-95">
+                        <svg id="play-icon" class="w-5 h-5" fill="currentColor" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>
+                        <svg id="pause-icon" class="w-5 h-5 hidden" fill="currentColor" viewBox="0 0 24 24"><path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z"/></svg>
+                    </button>
+                    <button onclick="nextTrack()" class="p-2 rounded-full bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white transition shadow-md active:scale-95">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path></svg>
+                    </button>
+                </div>
+            </div>
+
+            <div class="space-y-3">
+                <div class="flex bg-slate-950 p-1 rounded-xl border border-slate-800 gap-1 text-xs font-bold">
+                    <button id="tabBtnSearch" onclick="switchMusicTab('search')" class="flex-1 py-1.5 rounded-lg bg-indigo-600 text-white transition">🔍 Все треки (33)</button>
+                    <button id="tabBtnFav" onclick="switchMusicTab('favorites')" class="flex-1 py-1.5 rounded-lg text-slate-400 hover:text-white transition">⭐ Избранное</button>
+                </div>
+
+                <div id="tabContentSearch" class="space-y-2">
+                    <input type="text" id="musicSearchInput" placeholder="Поиск по плейлисту..." class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-indigo-500" oninput="searchMusic()">
+                    <div id="searchResultsList" class="max-h-44 overflow-y-auto space-y-2 pr-1 hide-scrollbar text-xs"></div>
+                </div>
+
+                <div id="tabContentFav" class="hidden space-y-2">
+                    <div id="favResultsList" class="max-h-44 overflow-y-auto space-y-2 pr-1 hide-scrollbar text-xs">
+                        <div class="text-slate-500 text-center py-4">Избранных треков пока нет. Нажмите ⭐ возле трека!</div>
+                    </div>
+                </div>
             </div>
         </div>
     </div>
@@ -192,7 +220,7 @@
         <div id="fallingContainer"></div>
     </div>
 
-    <!-- МОДАЛЬНОЕ ОКНО ПОБЕДЫ В АУКЦИОНЕ (ДЛЯ ПОЛУЧАТЕЛЯ) -->
+    <!-- МОДАЛЬНОЕ ОКНО ПОБЕДЫ В АУКЦИОНЕ -->
     <div id="goldWinModal" class="fixed inset-0 bg-black/80 backdrop-blur-sm flex flex-col items-center justify-center z-50 hidden space-y-3 pointer-events-none">
         <div class="text-4xl md:text-6xl font-black text-amber-400 uppercase tracking-wider drop-shadow-[0_0_25px_#f59e0b] text-center animate-bounce">
             🎉 ВЫ ВЫИГРАЛИ В АУКЦИОНЕ!
@@ -326,7 +354,6 @@
             </div>
         </div>
 
-        <!-- БЛОК НАСТРОЕК СЕРВЕРА ДЛЯ ЛИДЕРА ЛОББИ -->
         <div class="bg-slate-900/90 backdrop-blur-xl p-4 rounded-2xl border border-amber-500/30 space-y-2 shadow-lg">
             <div class="flex justify-between items-center">
                 <h3 class="text-xs font-black uppercase text-amber-400 flex items-center gap-1.5">
@@ -337,14 +364,13 @@
                 </button>
             </div>
             <p class="text-[11px] text-slate-400 leading-relaxed">
-                Лидер лобби прописывает это 1 раз в консоль CS2 (<code>~</code>). Это снимет лимит и даст каждому по $60,000 в начале каждого раунда, чтобы вы свободно покупали выбитые пушки:
+                Лидер лобби прописывает это 1 раз в консоль CS2 (<code>~</code>). Это снимет лимит и даст каждому по $60,000:
             </p>
             <div class="bg-slate-950 px-3 py-2 rounded-xl border border-slate-800 text-[11px] font-mono text-cyan-300 select-all">
                 mp_maxmoney 60000; mp_startmoney 60000
             </div>
         </div>
 
-        <!-- БЛОК УСЛОВИЙ -->
         <div class="bg-slate-900/90 backdrop-blur-xl p-4 rounded-2xl border border-slate-800/80 space-y-3">
             <h3 class="text-xs font-black uppercase text-amber-400">⚡ Система усложнений раунда</h3>
             <div id="complicationArea" class="flex flex-col items-center gap-3">
@@ -357,7 +383,6 @@
         </div>
 
         <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
-            <!-- CT СТОРОНА -->
             <div class="bg-slate-900/80 backdrop-blur-xl p-5 rounded-2xl border border-blue-900/50 space-y-4 shadow-xl">
                 <div class="flex justify-between items-center border-b border-slate-800 pb-3">
                     <h2 class="text-blue-400 font-black text-sm uppercase">🛡️ CT (Контр-террористы)</h2>
@@ -381,7 +406,6 @@
                 </div>
             </div>
 
-            <!-- T СТОРОНА -->
             <div class="bg-slate-900/80 backdrop-blur-xl p-5 rounded-2xl border border-amber-900/50 space-y-4 shadow-xl">
                 <div class="flex justify-between items-center border-b border-slate-800 pb-3">
                     <h2 class="text-amber-400 font-black text-sm uppercase">⚔️ T (Террористы)</h2>
@@ -438,7 +462,7 @@
         </div>
         <div class="space-y-4 text-xs text-slate-300">
             <p class="bg-slate-950/60 p-3 rounded-2xl border border-slate-800/80 leading-relaxed">
-                <b>Правила:</b> Сервер выставляет лот. Оба игрока торгуются на свои $20. Кто поставил больше — забирает лот, а его деньги сгорают. Кнопка «Отдать оппоненту» возвращает вашу ставку вам, а предмет уходит сопернику!
+                <b>Правила:</b> Сервер выставляет лот. Оба игрока торгуются на свои $20. Кто поставил больше — забирает лот, а его деньги сгорают. Кнопка «Отдать оппоненту» возвращает ставку вам, а предмет уходит сопернику!
             </p>
             <div>
                 <label class="block text-slate-400 font-bold mb-1.5">Ваш никнейм:</label>
@@ -557,7 +581,6 @@
         }
         const db = firebase.database();
 
-        // СЧЕТЧИК ОНЛАЙНА
         const myPresenceRef = db.ref('presence/' + Math.random().toString(36).substring(2, 9));
         myPresenceRef.set(true);
         myPresenceRef.onDisconnect().remove();
@@ -603,21 +626,58 @@
             }
         }
 
-        /* --- ЛОГИКА МУЗЫКАЛЬНОГО ПЛЕЕРА И ИЗБРАННОГО --- */
+        const defaultCover = "https://images.unsplash.com/photo-1514525253161-7a46d19cd819?w=300&auto=format&fit=crop&q=80";
+        const newlightchildCover = "https://raw.githubusercontent.com/coffeman170/rap-music/main/newlightchild.png";
+        const krakenCover = "https://raw.githubusercontent.com/coffeman170/rap-music/main/%D0%BA%D1%80%D0%B0%D0%BA%D0%B5%D0%BD.png";
+        const fortunaCover = "https://raw.githubusercontent.com/coffeman170/rap-music/main/%D1%84%D0%BE%D1%80%D1%82%D1%83%D0%BD%D0%B0%20812.png";
+        const madkidPrinceCover = "https://raw.githubusercontent.com/coffeman170/rap-music/main/%D0%BC%D0%B5%D0%B4%D0%BA%D0%B8%D0%B4%20%D0%B8%20%D1%82%D0%B5%D0%BC%D0%BD%D0%B8%D0%B9%20%D0%BF%D1%80%D0%B8%D0%BD%D1%86.png";
+        const xxxmaneraCover = "https://raw.githubusercontent.com/coffeman170/rap-music/main/xxxmanera.png";
+        const ogBudaCover = "https://raw.githubusercontent.com/coffeman170/rap-music/main/og%20buda.png";
+        const blagoWhiteCover = "https://raw.githubusercontent.com/coffeman170/rap-music/main/%D0%B1%D0%BB%D0%B0%D0%B3%D0%BE%20%D0%B2%D0%B0%D0%B9%D1%82.png";
+        const kizaruCover = "https://raw.githubusercontent.com/coffeman170/rap-music/main/%D0%BA%D0%B8%D0%B7%D0%B0%D1%80%D1%83.png";
+        const kuzneckiiSquadCover = "https://raw.githubusercontent.com/coffeman170/rap-music/main/%D0%BA%D1%83%D0%B7%D0%BD%D0%B5%D1%86%D0%BA%D0%B8%D0%B9%20%D1%81%D0%BA%D0%B2%D0%B0%D0%B4.png";
+
+        const SAMPLE_TRACKS = [
+            { id: 1, title: "rich-forever-2", artist: "kuzneckii-skvad", preview: "https://raw.githubusercontent.com/coffeman170/rap-music/main/kuzneckii-skvad-rich-forever-2.mp3", cover: kuzneckiiSquadCover },
+            { id: 2, title: "riskuyu", artist: "veyst", preview: "https://raw.githubusercontent.com/coffeman170/rap-music/main/veyst-riskuyu.mp3", cover: defaultCover },
+            { id: 3, title: "Первый", artist: "Kuznetsky Squad", preview: "https://raw.githubusercontent.com/coffeman170/rap-music/main/Kuznetsky%20Squad%20%E2%80%94%20%D0%9F%D0%B5%D1%80%D0%B2%D1%8B%D0%B9%20(audset.ru).mp3", cover: kuzneckiiSquadCover },
+            { id: 4, title: "Кожура", artist: "OM.", preview: "https://raw.githubusercontent.com/coffeman170/rap-music/main/OM.%20%E2%80%94%20%D0%9A%D0%BE%D0%B6%D1%83%D1%80%D0%B0%20(audset.ru).mp3", cover: defaultCover },
+            { id: 5, title: "8 миля", artist: "madk1d & VILLIAN", preview: "https://raw.githubusercontent.com/coffeman170/rap-music/main/%5Bmuzrecord.com%5D%20madk1d%20%26%20VILLIAN%20-%208%20%D0%BC%D0%B8%D0%BB%D1%8F.mp3", cover: madkidPrinceCover },
+            { id: 6, title: "LABIRINT", artist: "FACE", preview: "https://raw.githubusercontent.com/coffeman170/rap-music/main/FACE-LABIRINT-spaces.im.mp3", cover: "https://raw.githubusercontent.com/coffeman170/rap-music/main/%D1%84%D0%B5%D0%B9%D1%81.png" },
+            { id: 7, title: "dezhavju", artist: "kizaru", preview: "https://raw.githubusercontent.com/coffeman170/rap-music/main/kizaru-dezhavju_muzrecord.net.mp3", cover: kizaruCover },
+            { id: 8, title: "zerkalo", artist: "kizaru", preview: "https://raw.githubusercontent.com/coffeman170/rap-music/main/kizaru-zerkalo.mp3", cover: kizaruCover },
+            { id: 9, title: "Million", artist: "Big Baby Tape & Kizaru", preview: "https://raw.githubusercontent.com/coffeman170/rap-music/main/Big_Baby_Tape_Kizaru-Million-spaces.im.mp3", cover: "https://raw.githubusercontent.com/coffeman170/rap-music/main/%D0%BA%D0%B8%D0%B7%D0%B0%D1%80%D1%83%20%D0%B1%D0%B5%D0%B9%D0%B1%D0%B8%D1%82%D0%B5%D0%B9%D0%BF.png" },
+            { id: 10, title: "fuck_off", artist: "NEWLIGHTCHILD", preview: "https://raw.githubusercontent.com/coffeman170/rap-music/main/NEWLIGHTCHILD-fuck_off-spaces.im.mp3", cover: newlightchildCover },
+            { id: 11, title: "dance-floor", artist: "newlightchild", preview: "https://raw.githubusercontent.com/coffeman170/rap-music/main/newlightchild-dance-floor.mp3", cover: newlightchildCover },
+            { id: 12, title: "vampir", artist: "scally milano & uglystephan", preview: "https://raw.githubusercontent.com/coffeman170/rap-music/main/scally-milano-uglystephan-vampir.mp3", cover: defaultCover },
+            { id: 13, title: "Дайте Дури", artist: "kraken", preview: "https://raw.githubusercontent.com/coffeman170/rap-music/main/Painhatedyou%20-%20%D0%94%D0%B0%D0%B9%D1%82%D0%B5%20%D0%94%D1%83%D1%80%D0%B8.mp3", cover: krakenCover },
+            { id: 14, title: "Бывший Воздух И Подонок", artist: "Кракен", preview: "https://raw.githubusercontent.com/coffeman170/rap-music/main/%D0%9A%D1%80%D0%B0%D0%BA%D0%B5%D0%BD%20-%20%D0%91%D1%8B%D0%B2%D1%88%D0%B8%D0%B9%20%D0%92%D0%BE%D0%B7%D0%B4%D1%83%D1%85%20%D0%98%20%D0%9F%D0%BE%D0%B4%D0%BE%D0%B4%D0%BE%D0%BD%D0%BE%D0%BA.mp3", cover: krakenCover },
+            { id: 15, title: "Fake_ID", artist: "kizaru & ICEGERGERT", preview: "https://raw.githubusercontent.com/coffeman170/rap-music/main/kizaru_ICEGERGERT-Fake_ID-spaces.im.mp3", cover: kizaruCover },
+            { id: 16, title: "morgenshtern-cadillac", artist: "MORGENSHTERN & Элджей", preview: "https://raw.githubusercontent.com/coffeman170/rap-music/main/morgenshtern-cadillac.mp3", cover: "https://raw.githubusercontent.com/coffeman170/rap-music/main/%D0%BC%D0%BE%D1%80%D0%B3%D0%B5%D0%BD%D1%88%D1%82%D0%B5%D1%80%D0%BD.png" },
+            { id: 17, title: "morgenshtern-crystal-moet", artist: "MORGENSHTERN", preview: "https://raw.githubusercontent.com/coffeman170/rap-music/main/morgenshtern-crystal-moet.mp3", cover: "https://raw.githubusercontent.com/coffeman170/rap-music/main/%D0%BC%D0%BE%D1%80%D0%B3%D0%B5%D0%BD%D1%88%D1%82%D0%B5%D1%80%D0%BD.png" },
+            { id: 18, title: "og-buda-bandana", artist: "OG Buda", preview: "https://raw.githubusercontent.com/coffeman170/rap-music/main/og-buda-bandana.mp3", cover: ogBudaCover },
+            { id: 19, title: "mayot-moroz", artist: "MAYOT", preview: "https://raw.githubusercontent.com/coffeman170/rap-music/main/mayot-moroz.mp3", cover: defaultCover },
+            { id: 20, title: "blago-white-ika", artist: "Blago White", preview: "https://raw.githubusercontent.com/coffeman170/rap-music/main/blago-white-ika.mp3", cover: blagoWhiteCover },
+            { id: 21, title: "booking-machine-freestyle", artist: "Oxxxymiron", preview: "https://raw.githubusercontent.com/coffeman170/rap-music/main/oxxxymiron-freestyle.mp3", cover: defaultCover },
+            { id: 22, title: "pharaoh-smart", artist: "PHARAOH", preview: "https://raw.githubusercontent.com/coffeman170/rap-music/main/pharaoh-smart.mp3", cover: defaultCover },
+            { id: 23, title: "thomas-mraz-doroga", artist: "Thomas Mraz", preview: "https://raw.githubusercontent.com/coffeman170/rap-music/main/thomas-mraz-doroga.mp3", cover: defaultCover },
+            { id: 24, title: "boulevard-depo-blunt", artist: "Boulevard Depo", preview: "https://raw.githubusercontent.com/coffeman170/rap-music/main/boulevard-depo-blunt.mp3", cover: defaultCover },
+            { id: 25, title: "saluki-fiesta", artist: "SALUKI", preview: "https://raw.githubusercontent.com/coffeman170/rap-music/main/saluki-fiesta.mp3", cover: defaultCover },
+            { id: 26, title: "ДИНАСТИЯ", artist: "VILLIAN & madk1d", preview: "https://raw.githubusercontent.com/coffeman170/rap-music/main/VILLIAN%2C%20madk1d%20%E2%80%94%20%D0%94%D0%98%D0%9D%D0%90%D0%A1%D0%A2%D0%98%D0%AF%20(audset.ru).mp3", cover: madkidPrinceCover },
+            { id: 27, title: "Ты че обиделась", artist: "Madk1d & Тёмный принц", preview: "https://raw.githubusercontent.com/coffeman170/rap-music/main/[muzrecord.com]%20Madk1d%20%26%20%D0%A2%D1%91%D0%BC%D0%BD%D1%8B%D0%B9%20%D0%BF%D1%80%D0%B8%D0%BD%D1%86%20-%20%D0%A2%D1%8B%20%D1%87%D0%B5%20%D0%BE%D0%B1%D0%B8%D0%B4%D0%B5%D0%BB%D0%B0%D1%81%D1%8C.mp3", cover: madkidPrinceCover },
+            { id: 28, title: "(не) уходи", artist: "fallen777angel & mapt0v", preview: "https://raw.githubusercontent.com/coffeman170/rap-music/main/fallen777angel%2C%20mapt0v%20-%20(%D0%BD%D0%B5)%20%D1%83%D1%85%D0%BE%D0%B4%D0%B8_(muzdevil.net).mp3", cover: defaultCover },
+            { id: 29, title: "Gladiator", artist: "fallen777angel", preview: "https://raw.githubusercontent.com/coffeman170/rap-music/main/fallen777angel_Gladiator_rycar.mp3", cover: defaultCover },
+            { id: 30, title: "parislove", artist: "fortuna 812", preview: "https://raw.githubusercontent.com/coffeman170/rap-music/main/fortuna-812-parislove.mp3", cover: fortunaCover },
+            { id: 31, title: "Скажи мне кто ты", artist: "xxxmanera", preview: "https://raw.githubusercontent.com/coffeman170/rap-music/main/xxxmanera-skazhi-mne-kto-ty_(mobplay.run).mp3", cover: xxxmaneraCover },
+            { id: 32, title: "Больно", artist: "fleurnothappy", preview: "https://raw.githubusercontent.com/coffeman170/rap-music/main/%D0%B1%D0%BE%D0%BB%D1%8C%D0%BD%D0%BE%20-%20fleurnothappy.mp3", cover: defaultCover },
+            { id: 33, title: "Trytofriend", artist: "фортуна 812", preview: "https://raw.githubusercontent.com/coffeman170/rap-music/main/%D1%84%D0%BE%D1%80%D1%82%D1%83%D0%BD%D0%B0%20812%20-%20Trytofriend.mp3", cover: fortunaCover }
+        ];
+
         let favorites = JSON.parse(localStorage.getItem('cs2_music_favs') || '[]');
         updateFavCount();
 
-        // ВСЕ 8 ТВОИХ ТРЕКОВ С ПРАВИЛЬНЫМИ ПРЯМЫМИ ССЫЛКАМИ GITHUB
-        const SAMPLE_TRACKS = [
-            { id: 1, title: "VILLIAN, madk1d — ДИНАСТИЯ", artist: "VILLIAN, madk1d", preview: "https://raw.githubusercontent.com/coffeman170/rap-music/main/VILLIAN%2C%20madk1d%20%E2%80%94%20%D0%94%D0%98%D0%9D%D0%90%D0%A1%D0%A2%D0%98%D0%AF%20(audset.ru).mp3", cover: "https://images.unsplash.com/photo-1514525253161-7a46d19cd819?w=100&h=100&fit=crop" },
-            { id: 2, title: "Madk1d & Тёмный принц — Ты че обиделась", artist: "Madk1d & Тёмный принц", preview: "https://raw.githubusercontent.com/coffeman170/rap-music/main/%5Bmuzrecord.com%5D%20Madk1d%20%26%20%D0%A2%D1%91%D0%BC%D0%BD%D1%8B%D0%B9%20%D0%BF%D1%80%D0%B8%D0%BD%D1%86%20-%20%D0%A2%D1%8B%20%D1%87%D0%B5%20%D0%BE%D0%B1%D0%B8%D0%B4%D0%B5%D0%BB%D0%B0%D1%81%D1%8C.mp3", cover: "https://images.unsplash.com/photo-1498038432885-c6f3f1b912ee?w=100&h=100&fit=crop" },
-            { id: 3, title: "fallen777angel, mapt0v — (не) уходи", artist: "fallen777angel, mapt0v", preview: "https://raw.githubusercontent.com/coffeman170/rap-music/main/fallen777angel%2C%20mapt0v%20-%20(%D0%BD%D0%B5)%20%D1%83%D1%85%D0%BE%D0%B4%D0%B8_(muzdevil.net).mp3", cover: "https://images.unsplash.com/photo-1511671782779-c97d3d27a1d4?w=100&h=100&fit=crop" },
-            { id: 4, title: "fallen777angel — Gladiator", artist: "fallen777angel", preview: "https://raw.githubusercontent.com/coffeman170/rap-music/main/fallen777angel_Gladiator_rycar.mp3", cover: "https://images.unsplash.com/photo-1470225620780-dba8ba36b745?w=100&h=100&fit=crop" },
-            { id: 5, title: "fortuna-812 — parislove", artist: "fortuna-812", preview: "https://raw.githubusercontent.com/coffeman170/rap-music/main/fortuna-812-parislove.mp3", cover: "https://images.unsplash.com/photo-1508700115892-45ecd05ae2ad?w=100&h=100&fit=crop" },
-            { id: 6, title: "xxxmanera — Скажи мне кто ты", artist: "xxxmanera", preview: "https://raw.githubusercontent.com/coffeman170/rap-music/main/xxxmanera-skazhi-mne-kto-ty_(mobplay.run).mp3", cover: "https://images.unsplash.com/photo-1526478806334-5fd488fcaabc?w=100&h=100&fit=crop" },
-            { id: 7, title: "больно — fleurnothappy", artist: "fleurnothappy", preview: "https://raw.githubusercontent.com/coffeman170/rap-music/main/%D0%B1%D0%BE%D0%BB%D1%8C%D0%BD%D0%BE%20-%20fleurnothappy.mp3", cover: "https://images.unsplash.com/photo-1511671782779-c97d3d27a1d4?w=100&h=100&fit=crop" },
-            { id: 8, title: "фортуна 812 — Trytofriend", artist: "фортуна 812", preview: "https://raw.githubusercontent.com/coffeman170/rap-music/main/%D1%84%D0%BE%D1%80%D1%82%D1%83%D0%BD%D0%B0%20812%20-%20Trytofriend.mp3", cover: "https://images.unsplash.com/photo-1508700115892-45ecd05ae2ad?w=100&h=100&fit=crop" }
-        ];
+        let currentTrackIndex = 0;
+        const bgAudioPlayer = document.getElementById('bgAudioPlayer');
 
         function openMusicModal() {
             playSound('click');
@@ -638,12 +698,12 @@
             const contentFav = document.getElementById('tabContentFav');
 
             if (tab === 'search') {
-                btnSearch.className = "flex-1 py-1.5 rounded-lg bg-cyan-600 text-white transition";
+                btnSearch.className = "flex-1 py-1.5 rounded-lg bg-indigo-600 text-white transition";
                 btnFav.className = "flex-1 py-1.5 rounded-lg text-slate-400 hover:text-white transition";
                 contentSearch.classList.remove('hidden');
                 contentFav.classList.add('hidden');
             } else {
-                btnFav.className = "flex-1 py-1.5 rounded-lg bg-cyan-600 text-white transition";
+                btnFav.className = "flex-1 py-1.5 rounded-lg bg-indigo-600 text-white transition";
                 btnSearch.className = "flex-1 py-1.5 rounded-lg text-slate-400 hover:text-white transition";
                 contentFav.classList.remove('hidden');
                 contentSearch.classList.add('hidden');
@@ -665,19 +725,20 @@
             }
 
             resultsList.innerHTML = filtered.map(track => {
-                const isFav = favorites.some(f => f.id === track.id);
+                const globalIndex = SAMPLE_TRACKS.findIndex(t => t.id === track.id);
+                const isFav = favorites.some(f => f === track.id);
                 return `
-                    <div class="bg-slate-950 p-2.5 rounded-xl border border-slate-800/80 flex items-center justify-between hover:border-cyan-500/50 transition">
-                        <div class="flex items-center gap-2.5 truncate max-w-[200px]">
-                            <img src="${track.cover}" class="w-8 h-8 rounded-lg object-cover">
+                    <div class="bg-slate-950/60 p-2.5 rounded-xl border border-slate-800/80 flex items-center justify-between hover:border-indigo-500/50 transition">
+                        <div class="flex items-center gap-2.5 truncate max-w-[220px]">
+                            <img src="${track.cover}" class="w-8 h-8 rounded-lg object-cover flex-shrink-0 border border-slate-700/50">
                             <div class="truncate">
-                                <div class="font-bold text-white truncate">${track.title}</div>
+                                <div class="font-bold text-white truncate text-xs">${track.title}</div>
                                 <div class="text-[10px] text-slate-400 truncate">${track.artist}</div>
                             </div>
                         </div>
                         <div class="flex items-center gap-1.5">
-                            <button onclick="playTrack('${track.preview}', '${escapeQuotes(track.title)}', '${escapeQuotes(track.artist)}')" class="px-2.5 py-1 bg-cyan-600 hover:bg-cyan-500 rounded-lg text-[10px] font-bold text-white transition">▶ Играть</button>
-                            <button onclick="toggleFavorite(${track.id}, '${escapeQuotes(track.title)}', '${escapeQuotes(track.artist)}', '${track.preview}', '${track.cover}')" class="p-1 rounded-lg hover:bg-slate-800 transition">
+                            <button onclick="loadAndPlayTrack(${globalIndex})" class="px-2.5 py-1 bg-indigo-600 hover:bg-indigo-500 rounded-lg text-[10px] font-bold text-white transition">▶ Играть</button>
+                            <button onclick="toggleFavorite(${track.id})" class="p-1 rounded-lg hover:bg-slate-800 transition">
                                 ${isFav ? '⭐' : '☆'}
                             </button>
                         </div>
@@ -686,81 +747,125 @@
             }).join('');
         }
 
-        function escapeQuotes(str) {
-            return str.replace(/'/g, "\\'").replace(/"/g, '&quot;');
-        }
-
-        function playTrack(url, title, artist) {
+        function loadAndPlayTrack(index) {
             playSound('click');
-            const player = document.getElementById('bgAudioPlayer');
-            const playerBar = document.getElementById('activePlayerBar');
-            const badge = document.getElementById('currentTrackBadge');
+            currentTrackIndex = index;
+            const track = SAMPLE_TRACKS[index];
 
-            document.getElementById('playingTitle').innerText = title;
-            document.getElementById('playingArtist').innerText = artist;
+            document.getElementById('track-title').innerText = track.title;
+            document.getElementById('track-artist').innerText = track.artist;
+            document.getElementById('current-cover').src = track.cover;
 
-            player.src = url;
-            player.loop = true;
-            player.play().catch(e => {
-                alert("Кликните в любом месте страницы, чтобы разрешить воспроизведение музыки!");
+            bgAudioPlayer.src = track.preview;
+            bgAudioPlayer.play().then(() => {
+                document.getElementById('play-icon').classList.add('hidden');
+                document.getElementById('pause-icon').classList.remove('hidden');
+                document.getElementById('currentTrackBadge').classList.remove('hidden');
+            }).catch(e => {
+                alert("Кликните в любом месте страницы, чтобы разрешить воспроизведение аудио!");
             });
-
-            playerBar.classList.remove('hidden');
-            badge.classList.remove('hidden');
         }
 
-        function stopMusic() {
+        function togglePlayPause() {
             playSound('click');
-            const player = document.getElementById('bgAudioPlayer');
-            const playerBar = document.getElementById('activePlayerBar');
-            const badge = document.getElementById('currentTrackBadge');
-
-            player.pause();
-            player.currentTime = 0;
-            playerBar.classList.add('hidden');
-            badge.classList.add('hidden');
+            if(bgAudioPlayer.paused) {
+                if(!bgAudioPlayer.src && SAMPLE_TRACKS.length > 0) {
+                    loadAndPlayTrack(0);
+                } else {
+                    bgAudioPlayer.play().catch(() => {});
+                    document.getElementById('play-icon').classList.add('hidden');
+                    document.getElementById('pause-icon').classList.remove('hidden');
+                }
+            } else {
+                bgAudioPlayer.pause();
+                document.getElementById('play-icon').classList.remove('hidden');
+                document.getElementById('pause-icon').classList.add('hidden');
+            }
         }
 
-        function toggleFavorite(id, title, artist, preview, cover) {
+        function nextTrack() {
             playSound('click');
-            const idx = favorites.findIndex(f => f.id === id);
+            currentTrackIndex = (currentTrackIndex + 1) % SAMPLE_TRACKS.length;
+            loadAndPlayTrack(currentTrackIndex);
+        }
+
+        function prevTrack() {
+            playSound('click');
+            currentTrackIndex = (currentTrackIndex - 1 + SAMPLE_TRACKS.length) % SAMPLE_TRACKS.length;
+            loadAndPlayTrack(currentTrackIndex);
+        }
+
+        bgAudioPlayer.addEventListener('ended', () => {
+            nextTrack();
+        });
+
+        function formatTime(seconds) {
+            const mins = Math.floor(seconds / 60);
+            const secs = Math.floor(seconds % 60);
+            return `${mins}:${secs < 10 ? '0' : ''}${secs}`;
+        }
+
+        bgAudioPlayer.addEventListener('timeupdate', () => {
+            if (bgAudioPlayer.duration) {
+                const progressPercent = (bgAudioPlayer.currentTime / bgAudioPlayer.duration) * 100;
+                document.getElementById('progress-bar').value = progressPercent;
+                document.getElementById('current-time').textContent = formatTime(bgAudioPlayer.currentTime);
+            }
+        });
+
+        bgAudioPlayer.addEventListener('loadedmetadata', () => {
+            document.getElementById('duration').textContent = formatTime(bgAudioPlayer.duration);
+        });
+
+        document.getElementById('progress-bar').addEventListener('input', (e) => {
+            if (bgAudioPlayer.duration) {
+                bgAudioPlayer.currentTime = (e.target.value / 100) * bgAudioPlayer.duration;
+            }
+        });
+
+        function toggleFavorite(id) {
+            playSound('click');
+            const idx = favorites.findIndex(f => f === id);
             if(idx >= 0) {
                 favorites.splice(idx, 1);
             } else {
-                favorites.push({ id, title, artist, preview, cover });
+                favorites.push(id);
             }
             localStorage.setItem('cs2_music_favs', JSON.stringify(favorites));
             updateFavCount();
-            
+            searchMusic();
             if (!document.getElementById('tabContentFav').classList.contains('hidden')) {
                 renderFavorites();
-            } else {
-                searchMusic();
             }
         }
 
         function renderFavorites() {
             const list = document.getElementById('favResultsList');
-            if(favorites.length === 0) {
+            const favTracks = SAMPLE_TRACKS.filter(t => favorites.includes(t.id));
+
+            if(favTracks.length === 0) {
                 list.innerHTML = '<div class="text-slate-500 text-center py-4">Избранных треков пока нет. Нажмите ⭐ возле трека!</div>';
                 return;
             }
 
-            list.innerHTML = favorites.map(track => `
-                <div class="bg-slate-950 p-2.5 rounded-xl border border-slate-800/80 flex items-center justify-between hover:border-amber-500/50 transition">
-                    <div class="flex items-center gap-2.5 truncate max-w-[200px]">
-                        <img src="${track.cover}" class="w-8 h-8 rounded-lg object-cover">
-                        <div class="truncate">
-                            <div class="font-bold text-white truncate">${track.title}</div>
-                            <div class="text-[10px] text-slate-400 truncate">${track.artist}</div>
+            list.innerHTML = favTracks.map(track => {
+                const globalIndex = SAMPLE_TRACKS.findIndex(t => t.id === track.id);
+                return `
+                    <div class="bg-slate-950/60 p-2.5 rounded-xl border border-slate-800/80 flex items-center justify-between hover:border-indigo-500/50 transition">
+                        <div class="flex items-center gap-2.5 truncate max-w-[220px]">
+                            <img src="${track.cover}" class="w-8 h-8 rounded-lg object-cover flex-shrink-0 border border-slate-700/50">
+                            <div class="truncate">
+                                <div class="font-bold text-white truncate text-xs">${track.title}</div>
+                                <div class="text-[10px] text-slate-400 truncate">${track.artist}</div>
+                            </div>
+                        </div>
+                        <div class="flex items-center gap-1.5">
+                            <button onclick="loadAndPlayTrack(${globalIndex})" class="px-2.5 py-1 bg-indigo-600 hover:bg-indigo-500 rounded-lg text-[10px] font-bold text-white transition">▶ Играть</button>
+                            <button onclick="toggleFavorite(${track.id})" class="p-1 rounded-lg hover:bg-slate-800 transition text-amber-400">⭐</button>
                         </div>
                     </div>
-                    <div class="flex items-center gap-1.5">
-                        <button onclick="playTrack('${track.preview}', '${escapeQuotes(track.title)}', '${escapeQuotes(track.artist)}')" class="px-2.5 py-1 bg-amber-600 hover:bg-amber-500 rounded-lg text-[10px] font-bold text-white transition">▶ Играть</button>
-                        <button onclick="toggleFavorite(${track.id})" class="p-1 rounded-lg hover:bg-slate-800 transition text-amber-400">⭐</button>
-                    </div>
-                </div>
-            `).join('');
+                `;
+            }).join('');
         }
 
         function updateFavCount() {
@@ -1461,7 +1566,6 @@
             `).join('');
         }
 
-        /* --- MINI GAME 20$ ЛОГИКА --- */
         function setAvatar(av) {
             playSound('click');
             mgAvatar = av;
@@ -1777,7 +1881,7 @@
 
         function placeBid() {
             playSound('click');
-            const val = parseInt(document.getElementById('bidInput5').value || document.getElementById('bidInput').value);
+            const val = parseInt(document.getElementById('bidInput').value);
             if(isNaN(val) || val <= 0) { alert('Введите корректную ставку!'); return; }
             mgRef.once('value', snap => {
                 const data = snap.val();
