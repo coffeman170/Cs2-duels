@@ -570,36 +570,94 @@
         let hasShownDiceModal = false;
         let lastAuctionWinner = '';
 
+        let isSpinningWeaponCT = false, isSpinningWeaponT = false;
+        let isSpinningArmorCT = false, isSpinningArmorT = false;
+
+        // ПОЛНЫЙ АРСЕНАЛ ОРУЖИЯ CS2 (CT СТОРОНА)
         const WEAPONS_CT = [
-            { title: 'M4A1-S', price: 2900, category: 'primary', label: 'Основное', color: 'border-cyan-500/50 bg-cyan-950/30' },
-            { title: 'AWP', price: 4750, category: 'primary', label: 'Основное', color: 'border-amber-500/50 bg-amber-950/30' },
-            { title: 'MP9', price: 1250, category: 'primary', label: 'Основное', color: 'border-emerald-500/50 bg-emerald-950/30' },
-            { title: 'XM1014', price: 2000, category: 'primary', label: 'Основное', color: 'border-orange-500/50 bg-orange-950/30' },
-            { title: 'Negev', price: 1700, category: 'primary', label: 'Основное', color: 'border-teal-500/50 bg-teal-950/30' },
-            
+            // Пистолеты
             { title: 'USP-S', price: 200, category: 'secondary', label: 'Вторичное', color: 'border-blue-500/50 bg-blue-950/30' },
+            { title: 'P2000', price: 200, category: 'secondary', label: 'Вторичное', color: 'border-blue-500/50 bg-blue-950/30' },
+            { title: 'Dual Berettas', price: 300, category: 'secondary', label: 'Вторичное', color: 'border-cyan-500/50 bg-cyan-950/30' },
+            { title: 'P250', price: 300, category: 'secondary', label: 'Вторичное', color: 'border-cyan-500/50 bg-cyan-950/30' },
+            { title: 'Five-SeveN', price: 500, category: 'secondary', label: 'Вторичное', color: 'border-teal-500/50 bg-teal-950/30' },
+            { title: 'CZ75-Auto', price: 500, category: 'secondary', label: 'Вторичное', color: 'border-teal-500/50 bg-teal-950/30' },
             { title: 'Desert Eagle', price: 700, category: 'secondary', label: 'Вторичное', color: 'border-purple-500/50 bg-purple-950/30' },
             { title: 'R8 Revolver', price: 600, category: 'secondary', label: 'Вторичное', color: 'border-rose-500/50 bg-rose-950/30' },
 
-            { title: 'Smoke', price: 300, category: 'grenade', label: 'Граната', color: 'border-emerald-500/50 bg-emerald-950/30' },
-            { title: 'Flashbang', price: 200, category: 'grenade', label: 'Граната', color: 'border-yellow-500/50 bg-yellow-950/30' },
-            { title: 'HE Grenade', price: 300, category: 'grenade', label: 'Граната', color: 'border-red-500/50 bg-red-950/30' },
-            { title: 'Molotov', price: 400, category: 'grenade', label: 'Граната', color: 'border-orange-600/50 bg-orange-950/30' },
-            { title: 'Decoy', price: 50, category: 'grenade', label: 'Граната', color: 'border-slate-500/50 bg-slate-950/30' }
-        ];
+            // ПП (SMG)
+            { title: 'MP9', price: 1250, category: 'primary', label: 'Основное', color: 'border-emerald-500/50 bg-emerald-950/30' },
+            { title: 'MP7', price: 1500, category: 'primary', label: 'Основное', color: 'border-emerald-500/50 bg-emerald-950/30' },
+            { title: 'MP5-SD', price: 1500, category: 'primary', label: 'Основное', color: 'border-emerald-500/50 bg-emerald-950/30' },
+            { title: 'UMP-45', price: 1200, category: 'primary', label: 'Основное', color: 'border-emerald-500/50 bg-emerald-950/30' },
+            { title: 'P90', price: 2350, category: 'primary', label: 'Основное', color: 'border-emerald-500/50 bg-emerald-950/30' },
+            { title: 'PP-Bizon', price: 1400, category: 'primary', label: 'Основное', color: 'border-emerald-500/50 bg-emerald-950/30' },
 
-        const WEAPONS_T = [
-            { title: 'AK-47', price: 2700, category: 'primary', label: 'Основное', color: 'border-rose-500/50 bg-rose-950/30' },
-            { title: 'AWP', price: 4750, category: 'primary', label: 'Основное', color: 'border-amber-500/50 bg-amber-950/30' },
-            { title: 'Galil AR', price: 1800, category: 'primary', label: 'Основное', color: 'border-emerald-500/50 bg-emerald-950/30' },
+            // Дробовики и Пулеметы
+            { title: 'Nova', price: 1050, category: 'primary', label: 'Основное', color: 'border-orange-500/50 bg-orange-950/30' },
             { title: 'XM1014', price: 2000, category: 'primary', label: 'Основное', color: 'border-orange-500/50 bg-orange-950/30' },
+            { title: 'MAG-7', price: 1300, category: 'primary', label: 'Основное', color: 'border-orange-500/50 bg-orange-950/30' },
+            { title: 'M249', price: 5200, category: 'primary', label: 'Основное', color: 'border-teal-500/50 bg-teal-950/30' },
             { title: 'Negev', price: 1700, category: 'primary', label: 'Основное', color: 'border-teal-500/50 bg-teal-950/30' },
-            
+
+            // Штурмовые винтовки
+            { title: 'FAMAS', price: 2050, category: 'primary', label: 'Основное', color: 'border-cyan-500/50 bg-cyan-950/30' },
+            { title: 'M4A4', price: 3100, category: 'primary', label: 'Основное', color: 'border-cyan-500/50 bg-cyan-950/30' },
+            { title: 'M4A1-S', price: 2900, category: 'primary', label: 'Основное', color: 'border-cyan-500/50 bg-cyan-950/30' },
+            { title: 'AUG', price: 3300, category: 'primary', label: 'Основное', color: 'border-cyan-500/50 bg-cyan-950/30' },
+
+            // Снайперские винтовки
+            { title: 'SSG 08', price: 1700, category: 'primary', label: 'Основное', color: 'border-amber-500/50 bg-amber-950/30' },
+            { title: 'AWP', price: 4750, category: 'primary', label: 'Основное', color: 'border-amber-500/50 bg-amber-950/30' },
+            { title: 'SCAR-20', price: 5000, category: 'primary', label: 'Основное', color: 'border-amber-500/50 bg-amber-950/30' },
+
+            // Гранаты и спецсредства
+            { title: 'Zeus x27', price: 200, category: 'secondary', label: 'Спецсредство', color: 'border-yellow-500/50 bg-yellow-950/30' },
+            { title: 'Smoke', price: 300, category: 'grenade', label: 'Граната', color: 'border-emerald-500/50 bg-emerald-950/30' },
+            { title: 'Flashbang', price: 200, category: 'grenade', label: 'Граната', color: 'border-yellow-500/50 bg-yellow-950/30' },
+            { title: 'HE Grenade', price: 300, category: 'grenade', label: 'Граната', color: 'border-red-500/50 bg-red-950/30' },
+            { title: 'Incendiary Grenade', price: 600, category: 'grenade', label: 'Граната', color: 'border-orange-600/50 bg-orange-950/30' },
+            { title: 'Decoy', price: 50, category: 'grenade', label: 'Граната', color: 'border-slate-500/50 bg-slate-950/30' }
+        ];
+
+        // ПОЛНЫЙ АРСЕНАЛ ОРУЖИЯ CS2 (T СТОРОНА)
+        const WEAPONS_T = [
+            // Пистолеты
             { title: 'Glock-18', price: 200, category: 'secondary', label: 'Вторичное', color: 'border-cyan-500/50 bg-cyan-950/30' },
+            { title: 'Dual Berettas', price: 300, category: 'secondary', label: 'Вторичное', color: 'border-cyan-500/50 bg-cyan-950/30' },
+            { title: 'P250', price: 300, category: 'secondary', label: 'Вторичное', color: 'border-cyan-500/50 bg-cyan-950/30' },
             { title: 'Tec-9', price: 500, category: 'secondary', label: 'Вторичное', color: 'border-yellow-500/50 bg-yellow-950/30' },
+            { title: 'CZ75-Auto', price: 500, category: 'secondary', label: 'Вторичное', color: 'border-yellow-500/50 bg-yellow-950/30' },
             { title: 'Desert Eagle', price: 700, category: 'secondary', label: 'Вторичное', color: 'border-purple-500/50 bg-purple-950/30' },
             { title: 'R8 Revolver', price: 600, category: 'secondary', label: 'Вторичное', color: 'border-rose-500/50 bg-rose-950/30' },
 
+            // ПП (SMG)
+            { title: 'MAC-10', price: 1050, category: 'primary', label: 'Основное', color: 'border-emerald-500/50 bg-emerald-950/30' },
+            { title: 'MP7', price: 1500, category: 'primary', label: 'Основное', color: 'border-emerald-500/50 bg-emerald-950/30' },
+            { title: 'MP5-SD', price: 1500, category: 'primary', label: 'Основное', color: 'border-emerald-500/50 bg-emerald-950/30' },
+            { title: 'UMP-45', price: 1200, category: 'primary', label: 'Основное', color: 'border-emerald-500/50 bg-emerald-950/30' },
+            { title: 'P90', price: 2350, category: 'primary', label: 'Основное', color: 'border-emerald-500/50 bg-emerald-950/30' },
+            { title: 'PP-Bizon', price: 1400, category: 'primary', label: 'Основное', color: 'border-emerald-500/50 bg-emerald-950/30' },
+
+            // Дробовики и Пулеметы
+            { title: 'Nova', price: 1050, category: 'primary', label: 'Основное', color: 'border-orange-500/50 bg-orange-950/30' },
+            { title: 'XM1014', price: 2000, category: 'primary', label: 'Основное', color: 'border-orange-500/50 bg-orange-950/30' },
+            { title: 'Sawed-Off', price: 1100, category: 'primary', label: 'Основное', color: 'border-orange-500/50 bg-orange-950/30' },
+            { title: 'M249', price: 5200, category: 'primary', label: 'Основное', color: 'border-teal-500/50 bg-teal-950/30' },
+            { title: 'Negev', price: 1700, category: 'primary', label: 'Основное', color: 'border-teal-500/50 bg-teal-950/30' },
+
+            // Штурмовые винтовки
+            { title: 'Galil AR', price: 1800, category: 'primary', label: 'Основное', color: 'border-emerald-500/50 bg-emerald-950/30' },
+            { title: 'AK-47', price: 2700, category: 'primary', label: 'Основное', color: 'border-rose-500/50 bg-rose-950/30' },
+            { title: 'SG 553', price: 3000, category: 'primary', label: 'Основное', color: 'border-rose-500/50 bg-rose-950/30' },
+
+            // Снайперские винтовки
+            { title: 'SSG 08', price: 1700, category: 'primary', label: 'Основное', color: 'border-amber-500/50 bg-amber-950/30' },
+            { title: 'AWP', price: 4750, category: 'primary', label: 'Основное', color: 'border-amber-500/50 bg-amber-950/30' },
+            { title: 'G3SG1', price: 5000, category: 'primary', label: 'Основное', color: 'border-amber-500/50 bg-amber-950/30' },
+
+            // Гранаты и спецсредства
+            { title: 'Zeus x27', price: 200, category: 'secondary', label: 'Спецсредство', color: 'border-yellow-500/50 bg-yellow-950/30' },
             { title: 'Smoke', price: 300, category: 'grenade', label: 'Граната', color: 'border-emerald-500/50 bg-emerald-950/30' },
             { title: 'Flashbang', price: 200, category: 'grenade', label: 'Граната', color: 'border-yellow-500/50 bg-yellow-950/30' },
             { title: 'HE Grenade', price: 300, category: 'grenade', label: 'Граната', color: 'border-red-500/50 bg-red-950/30' },
@@ -607,10 +665,12 @@
             { title: 'Decoy', price: 50, category: 'grenade', label: 'Граната', color: 'border-slate-500/50 bg-slate-950/30' }
         ];
 
+        // ПОЛНЫЙ СПИСОК БРОНИ И СНАРЯЖЕНИЯ
         const ARMOR_ITEMS = [
             { title: 'Без брони', price: 0, category: 'armor', label: 'Снаряжение', color: 'border-slate-700 bg-slate-950/30' },
             { title: 'Броня', price: 650, category: 'armor', label: 'Снаряжение', color: 'border-blue-500/50 bg-blue-950/30' },
-            { title: 'Броня + Шлем', price: 1000, category: 'armor', label: 'Снаряжение', color: 'border-amber-500/50 bg-amber-950/30' }
+            { title: 'Броня + Шлем', price: 1000, category: 'armor', label: 'Снаряжение', color: 'border-amber-500/50 bg-amber-950/30' },
+            { title: 'Набор сапёра (Defuse Kit)', price: 400, category: 'armor', label: 'Снаряжение', color: 'border-cyan-500/50 bg-cyan-950/30' }
         ];
 
         const ALL_CS2_ITEMS = [...WEAPONS_CT, ...WEAPONS_T, ...ARMOR_ITEMS];
@@ -836,6 +896,8 @@
                 votes[playerName] = true;
                 const players = Object.keys(data.players || {});
                 if(players.length === 2 && players.every(p => votes[p])) {
+                    isSpinningWeaponCT = false; isSpinningWeaponT = false;
+                    isSpinningArmorCT = false; isSpinningArmorT = false;
                     roomRef.update({
                         spinCountCT: 0, spinCountT: 0,
                         itemsCT: [null, null, null], itemsT: [null, null, null],
@@ -940,15 +1002,26 @@
         function triggerSpin(type) {
             playSound('click');
             
-            // СТРОГАЯ ПРОВЕРКА ПО СТОРОНЕ И ЛИМИТАМ (БЕЗ ОЖИДАНИЯ ЧУЖИХ СПИНОВ)
             if ((type === 'CT' || type === 'ARMOR_CT') && playerSide !== 'CT') return;
             if ((type === 'T' || type === 'ARMOR_T') && playerSide !== 'T') return;
 
-            if(type === 'CT' && spinCountCT >= 3) { alert('Оружие за КТ можно крутить максимум 3 раза!'); return; }
-            if(type === 'T' && spinCountT >= 3) { alert('Оружие за Т можно крутить максимум 3 раза!'); return; }
+            if(type === 'CT') {
+                if(spinCountCT >= 3) { alert('Оружие за КТ можно крутить максимум 3 раза!'); return; }
+                if(isSpinningWeaponCT) return;
+            }
+            if(type === 'T') {
+                if(spinCountT >= 3) { alert('Оружие за Т можно крутить максимум 3 раза!'); return; }
+                if(isSpinningWeaponT) return;
+            }
 
-            if(type === 'ARMOR_CT' && hasSpunArmorCT) { alert('Броню за CT можно крутить только 1 раз!'); return; }
-            if(type === 'ARMOR_T' && hasSpunArmorT) { alert('Броню за T можно крутить только 1 раз!'); return; }
+            if(type === 'ARMOR_CT') {
+                if(hasSpunArmorCT) { alert('Броню за CT можно крутить только 1 раз!'); return; }
+                if(isSpinningArmorCT) return;
+            }
+            if(type === 'ARMOR_T') {
+                if(hasSpunArmorT) { alert('Броню за T можно крутить только 1 раз!'); return; }
+                if(isSpinningArmorT) return;
+            }
 
             const pool = (type === 'CT') ? WEAPONS_CT : (type === 'T') ? WEAPONS_T : ARMOR_ITEMS;
             let winningItem = pool[Math.floor(Math.random() * pool.length)];
@@ -1046,37 +1119,47 @@
             roomRef.update(updates);
         }
 
-        function runAnimation(action) {
+        async function runAnimation(action) {
             let item = action.winner;
 
             if (action.type === 'CT' || action.type === 'T') {
                 const side = action.type;
+                if(side === 'CT') isSpinningWeaponCT = true;
+                else isSpinningWeaponT = true;
+                renderState();
+
                 const pool = side === 'CT' ? WEAPONS_CT : WEAPONS_T;
-                
-                // АНИМАЦИЯ ВЫПОЛНЯЕТСЯ ПАРАЛЛЕЛЬНО, НЕ БЛОКИРУЯ ИНТЕРФЕЙС
-                animateTrackWithWinner(`trackWeapon${side}`, pool, item);
+                await animateTrackWithWinner(`trackWeapon${side}`, pool, item);
                 
                 if (action.player === playerName) {
                     let currentItems = side === 'CT' ? [...itemsCT] : [...itemsT];
                     let count = side === 'CT' ? spinCountCT : spinCountT;
-                    if(count >= 3) return;
-                    currentItems[count] = item;
-                    count++;
-                    
-                    const newFeed = [{ player: action.player, title: item.title, price: item.price }, ...feedList];
-                    const updates = {};
-                    if(side === 'CT') { updates.itemsCT = currentItems; updates.spinCountCT = count; }
-                    else { updates.itemsT = currentItems; updates.spinCountT = count; }
-                    updates.feedList = newFeed;
-                    roomRef.update(updates);
+                    if(count < 3) {
+                        currentItems[count] = item;
+                        count++;
+                        
+                        const newFeed = [{ player: action.player, title: item.title, price: item.price }, ...feedList];
+                        const updates = {};
+                        if(side === 'CT') { updates.itemsCT = currentItems; updates.spinCountCT = count; }
+                        else { updates.itemsT = currentItems; updates.spinCountT = count; }
+                        updates.feedList = newFeed;
+                        await roomRef.update(updates);
 
-                    if (count === 3) autoSelectNonConflictingItems(side, currentItems);
+                        if (count === 3) autoSelectNonConflictingItems(side, currentItems);
+                    }
                 }
+
+                if(side === 'CT') isSpinningWeaponCT = false;
+                else isSpinningWeaponT = false;
+                renderState();
 
             } else if (action.type === 'ARMOR_CT' || action.type === 'ARMOR_T') {
                 const side = action.type === 'ARMOR_CT' ? 'CT' : 'T';
+                if(side === 'CT') isSpinningArmorCT = true;
+                else isSpinningArmorT = true;
+                renderState();
 
-                animateTrackWithWinner(`trackArmor${side}`, ARMOR_ITEMS, item);
+                await animateTrackWithWinner(`trackArmor${side}`, ARMOR_ITEMS, item);
                 
                 if (action.player === playerName) {
                     const newFeed = [{ player: action.player, title: `Снаряжение: ${item.title}`, price: item.price }, ...feedList];
@@ -1084,8 +1167,12 @@
                     if(side === 'CT') { updates.armorCTItem = item; updates.hasSpunArmorCT = true; }
                     else { updates.armorTItem = item; updates.hasSpunArmorT = true; }
                     updates.feedList = newFeed;
-                    roomRef.update(updates);
+                    await roomRef.update(updates);
                 }
+
+                if(side === 'CT') isSpinningArmorCT = false;
+                else isSpinningArmorT = false;
+                renderState();
             }
         }
 
@@ -1096,11 +1183,21 @@
             const isCT = (playerSide === 'CT');
             const isT = (playerSide === 'T');
 
-            // КНОПКИ УПРАВЛЯЮТСЯ СТРОГО ПО СВОЕЙ СТОРОНЕ
-            document.getElementById('spinCTBtn').disabled = (!isCT || spinCountCT >= 3);
-            document.getElementById('spinTBtn').disabled = (!isT || spinCountT >= 3);
-            document.getElementById('spinArmorCTBtn').disabled = (!isCT || hasSpunArmorCT);
-            document.getElementById('spinArmorTBtn').disabled = (!isT || hasSpunArmorT);
+            const spinCTBtn = document.getElementById('spinCTBtn');
+            spinCTBtn.disabled = (!isCT || spinCountCT >= 3 || isSpinningWeaponCT);
+            spinCTBtn.innerText = isSpinningWeaponCT ? '⏳ Крутится...' : '🎲 Крутить оружие';
+
+            const spinTBtn = document.getElementById('spinTBtn');
+            spinTBtn.disabled = (!isT || spinCountT >= 3 || isSpinningWeaponT);
+            spinTBtn.innerText = isSpinningWeaponT ? '⏳ Крутится...' : '🎲 Крутить оружие';
+
+            const spinArmorCTBtn = document.getElementById('spinArmorCTBtn');
+            spinArmorCTBtn.disabled = (!isCT || hasSpunArmorCT || isSpinningArmorCT);
+            spinArmorCTBtn.innerText = isSpinningArmorCT ? '⏳ Крутится...' : '🎲 Крутить броню';
+
+            const spinArmorTBtn = document.getElementById('spinArmorTBtn');
+            spinArmorTBtn.disabled = (!isT || hasSpunArmorT || isSpinningArmorT);
+            spinArmorTBtn.innerText = isSpinningArmorT ? '⏳ Крутится...' : '🎲 Крутить броню';
 
             const renderSlots = (items, containerId, side, selectedList, currentSpinCount) => {
                 const container = document.getElementById(containerId);
