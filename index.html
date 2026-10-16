@@ -437,6 +437,7 @@
                         <button id="spinCTBtn" onclick="triggerSpin('CT')" class="spin-btn px-3 py-1 bg-blue-600 hover:bg-blue-500 rounded text-[10px] font-bold uppercase transition">🎲 Крутить оружие</button>
                     </div>
                     <div class="roulette-container h-24"><div class="pointer"></div><div id="trackWeaponCT" class="roulette-track h-full"></div></div>
+                    <div id="rerollHintCT" class="hidden text-[11px] font-bold text-rose-300 bg-rose-950/40 border border-rose-500/40 rounded-lg px-2 py-1.5"></div>
                     <div id="slotsCT" class="grid grid-cols-3 gap-2 pt-1"></div>
                 </div>
                 <div class="space-y-2 pt-2 border-t border-slate-800">
@@ -460,6 +461,7 @@
                         <button id="spinTBtn" onclick="triggerSpin('T')" class="spin-btn px-3 py-1 bg-amber-600 hover:bg-amber-500 rounded text-[10px] font-bold uppercase transition">🎲 Крутить оружие</button>
                     </div>
                     <div class="roulette-container h-24"><div class="pointer"></div><div id="trackWeaponT" class="roulette-track h-full"></div></div>
+                    <div id="rerollHintT" class="hidden text-[11px] font-bold text-rose-300 bg-rose-950/40 border border-rose-500/40 rounded-lg px-2 py-1.5"></div>
                     <div id="slotsT" class="grid grid-cols-3 gap-2 pt-1"></div>
                 </div>
                 <div class="space-y-2 pt-2 border-t border-slate-800">
@@ -646,7 +648,29 @@
     </div>
 
     <div id="toastBox" class="fixed top-4 left-1/2 -translate-x-1/2 z-[9999] flex flex-col gap-2 items-center pointer-events-none w-[92%] max-w-sm"></div>
-    <div id="opponentLeftBanner" class="hidden fixed bottom-4 left-1/2 -translate-x-1/2 z-[9998] bg-red-950/95 border border-red-500/60 text-red-200 text-xs font-bold px-4 py-2.5 rounded-xl shadow-lg">🚪 Соперник вышел из игры</div>
+    <div id="rerollModal" class="hidden fixed inset-0 z-[9999] bg-black/70 flex items-center justify-center p-4">
+        <div class="max-w-sm w-full bg-slate-900 border border-amber-500/50 rounded-2xl p-5 space-y-4 text-center shadow-2xl">
+            <div class="text-3xl">🔁</div>
+            <div id="rerollModalText" class="text-sm text-slate-200 font-bold"></div>
+            <div class="text-[11px] text-slate-400">Если вы согласитесь — такое же право перекрутить 1 предмет получите и вы.</div>
+            <div class="flex gap-3">
+                <button onclick="answerReroll(true)" class="flex-1 py-2.5 bg-emerald-600 hover:bg-emerald-500 rounded-xl text-xs font-black uppercase text-white">✅ Да</button>
+                <button onclick="answerReroll(false)" class="flex-1 py-2.5 bg-red-700 hover:bg-red-600 rounded-xl text-xs font-black uppercase text-white">❌ Нет</button>
+            </div>
+        </div>
+    </div>
+    <div id="opponentLeftBanner" class="hidden fixed bottom-4 left-1/2 -translate-x-1/2 z-[9998] bg-red-950/95 border border-red-500/60 text-red-200 text-xs font-bold px-4 py-2.5 rounded-xl shadow-lg">🚪 Соперник отключился… ждём его возвращения</div>
+    <div id="endGameModal" class="hidden fixed inset-0 z-[9999] bg-black/70 flex items-center justify-center p-4">
+        <div class="w-full max-w-sm bg-slate-900 border border-red-500/50 rounded-2xl p-5 space-y-4 text-center">
+            <div class="text-3xl">🚪</div>
+            <div class="text-sm text-slate-200 font-bold">Соперник не в игре уже больше минуты. Завершить игру?</div>
+            <div class="text-[11px] text-slate-400">Комната будет удалена. Если соперник вернётся раньше — это окно закроется само.</div>
+            <div class="flex gap-3">
+                <button onclick="endGameNow()" class="flex-1 py-2.5 bg-red-700 hover:bg-red-600 rounded-xl text-xs font-black uppercase text-white">Завершить</button>
+                <button onclick="waitOpponent()" class="flex-1 py-2.5 bg-slate-700 hover:bg-slate-600 rounded-xl text-xs font-black uppercase text-white">Ждать</button>
+            </div>
+        </div>
+    </div>
 
     <script>
         const firebaseConfig = {
@@ -660,6 +684,38 @@
             firebase.initializeApp(firebaseConfig);
         }
         const db = firebase.database();
+        // --- время сервера и автоочистка комнат старше 24 часов ---
+        let srvOffset = 0;
+        db.ref('.info/serverTimeOffset').on('value', sn => { srvOffset = sn.val() || 0; });
+        const ROOM_TTL = 24 * 60 * 60 * 1000;
+        const srvNow = () => Date.now() + srvOffset;
+        function indexRoom(kind, code) { db.ref('roomIndex/' + kind + '_' + code).set(firebase.database.ServerValue.TIMESTAMP).catch(() => {}); }
+        function sweepOldRooms() {
+            db.ref('roomIndex').once('value').then(snap => {
+                const all = snap.val() || {}, now = srvNow();
+                Object.keys(all).forEach(k => {
+                    if (now - all[k] <= ROOM_TTL) return;
+                    const i = k.indexOf('_'), kind = k.slice(0, i), code = k.slice(i + 1);
+                    if (kind === 'rooms' || kind === 'mgRooms') db.ref(kind + '/' + code).remove().catch(() => {});
+                    db.ref('roomIndex/' + k).remove().catch(() => {});
+                });
+            }).catch(() => {});
+        }
+        // запасной способ: ищем старые комнаты по полю createdAt (в т.ч. не попавшие в roomIndex)
+        function sweepByCreatedAt() {
+            ['rooms', 'mgRooms'].forEach(kind => {
+                db.ref(kind).orderByChild('createdAt').endAt(srvNow() - ROOM_TTL).once('value').then(snap => {
+                    snap.forEach(ch => {
+                        if (typeof ch.val().createdAt !== 'number') return;
+                        db.ref(kind + '/' + ch.key).remove().catch(() => {});
+                        db.ref('roomIndex/' + kind + '_' + ch.key).remove().catch(() => {});
+                    });
+                }).catch(() => {});
+            });
+        }
+        function runSweep() { sweepOldRooms(); sweepByCreatedAt(); }
+        setTimeout(runSweep, 2000); // ждём, пока придёт поправка серверного времени
+        setInterval(runSweep, 60 * 60 * 1000);
 
         const myPresenceRef = db.ref('presence/' + Math.random().toString(36).substring(2, 9));
         myPresenceRef.set(true);
@@ -1167,6 +1223,9 @@
         }
 
         let currentRoomCode = '', playerName = '', playerSide = '', roomRef = null, lastProcessedTimestamp = 0;
+        const seenActionIds = new Set(), seenMgActionIds = new Set();
+        const newActionId = () => Date.now() + '-' + Math.random().toString(36).slice(2, 9);
+        let lastAnimBegin = 0;
         let mgCode = '', mgName = 'Player', mgAvatar = '👨', mgRef = null, isMgSpinning = false, mgLastTs = 0;
         let mgHostName = '', hasShownFinish = false, mgSpinPending = false;
         let timerInterval = null;
@@ -1239,6 +1298,8 @@
 
         let presenceWatch = null, presenceConn = null, presenceCurrent = null, opponentSeen = false, leftTimer = null;
         let presenceBeat = null, iAmOnline = true, presenceGraceUntil = 0, lastOthersCount = 0;
+        const END_PROMPT_MS = 60000; // через минуту отсутствия соперника предлагаем завершить игру
+        let endTimer = null, absentSince = 0, endPromptDismissed = false;
         const LEFT_DELAY_MS = 12000; // пауза перед «Соперник вышел» (телефон мог просто уснуть/переподключаться)
         function announcePresence() {
             if (!presenceCurrent) return;
@@ -1275,11 +1336,22 @@
         function checkOpponentLeft() {
             const banner = document.getElementById('opponentLeftBanner');
             if (lastOthersCount) {
-                opponentSeen = true; clearTimeout(leftTimer); banner.classList.add('hidden');
+                opponentSeen = true; clearTimeout(leftTimer); clearTimeout(endTimer);
+                absentSince = 0; endPromptDismissed = false;
+                banner.classList.add('hidden');
+                document.getElementById('endGameModal').classList.add('hidden');
                 return;
             }
             if (!opponentSeen) return;
-            clearTimeout(leftTimer);
+            if (!absentSince) absentSince = Date.now();
+            clearTimeout(leftTimer); clearTimeout(endTimer);
+            if (!endPromptDismissed) {
+                const w2 = Math.max(END_PROMPT_MS - (Date.now() - absentSince), presenceGraceUntil - Date.now(), 0);
+                endTimer = setTimeout(() => {
+                    if (!iAmOnline || lastOthersCount || endPromptDismissed || !presenceCurrent) return;
+                    document.getElementById('endGameModal').classList.remove('hidden');
+                }, w2);
+            }
             const wait = Math.max(LEFT_DELAY_MS, presenceGraceUntil - Date.now());
             leftTimer = setTimeout(() => {
                 // если связи нет у нас самих — это не «соперник вышел», просто ждём возврата сети
@@ -1289,10 +1361,25 @@
                 showToast('Соперник вышел из игры', 'warn');
             }, wait);
         }
+        function waitOpponent() {
+            playSound('click');
+            endPromptDismissed = true;
+            document.getElementById('endGameModal').classList.add('hidden');
+        }
+        function endGameNow() {
+            if (!presenceCurrent) { document.getElementById('endGameModal').classList.add('hidden'); return; }
+            const ref = presenceCurrent.ref, kind = ref.parent.key, code = ref.key;
+            backToMenu(); // выходим из комнаты и отключаем слушатели
+            ref.remove().catch(() => {});
+            db.ref('roomIndex/' + kind + '_' + code).remove().catch(() => {});
+            showToast('Игра завершена, комната удалена', 'ok');
+        }
         function leavePresence(ref, name) {
             if (presenceConn) { presenceConn.off(); presenceConn = null; }
             if (presenceWatch) { presenceWatch.off(); presenceWatch = null; }
-            clearTimeout(leftTimer); clearInterval(presenceBeat);
+            clearTimeout(leftTimer); clearTimeout(endTimer); clearInterval(presenceBeat);
+            absentSince = 0; endPromptDismissed = false;
+            document.getElementById('endGameModal').classList.add('hidden');
             presenceCurrent = null;
             if (ref && name) ref.child('online/' + name).remove();
             opponentSeen = false;
@@ -1481,8 +1568,8 @@
                 hasSpunArmorCT: false, hasSpunArmorT: false,
                 feedList: [], status: 'waiting',
                 complicationState: 'RANDOM', complicationVotes: {}, complicationResult: '',
-                resetVotes: {}
-            }).then(() => { joinPresence(roomRef, playerName); showLobby(currentRoomCode, 'Ожидание второго игрока...'); listenRoom(); });
+                resetVotes: {}, createdAt: firebase.database.ServerValue.TIMESTAMP
+            }).then(() => { indexRoom('rooms', currentRoomCode); joinPresence(roomRef, playerName); showLobby(currentRoomCode, 'Ожидание второго игрока...'); listenRoom(); });
         }
 
         function joinRoom() {
@@ -1495,12 +1582,31 @@
                 if(snapshot.exists()) {
                     const data = snapshot.val();
                     const players = data.players || {};
+                    if (data.createdAt && srvNow() - data.createdAt > ROOM_TTL) {
+                        roomRef.remove().catch(() => {}); roomRef = null;
+                        showToast('Комната устарела (старше 24 часов) и удалена'); return;
+                    }
+                    if (!players[playerName] && Object.keys(players).length >= 2) {
+                        roomRef = null; showToast('Комната заполнена: максимум 2 игрока'); return;
+                    }
+                    if (players[playerName] && (data.online || {})[playerName]) {
+                        roomRef = null; showToast('Игрок с таким ником уже в комнате — выберите другой ник'); return;
+                    }
                     currentRoomCode = code;
-                    players[playerName] = myPlayerEntry();
-                    joinPresence(roomRef, playerName);
-                    roomRef.update({ players, status: 'choosing_sides' }).then(() => {
-                        showLobby(code, 'Оба игрока в сборе! Выберите сторону:');
-                        listenRoom();
+                    const ref0 = roomRef;
+                    ref0.child('players').transaction(cur => {
+                        cur = cur || {};
+                        if (!cur[playerName] && Object.keys(cur).length >= 2) return; // абортируем: уже 2 игрока
+                        cur[playerName] = myPlayerEntry();
+                        return cur;
+                    }, (err, committed) => {
+                        if (err || !committed) { roomRef = null; showToast('Комната заполнена: максимум 2 игрока'); return; }
+                        joinPresence(ref0, playerName);
+                        const st = (!data.status || data.status === 'waiting') ? 'choosing_sides' : data.status;
+                        ref0.update({ status: st }).then(() => {
+                            showLobby(code, 'Оба игрока в сборе! Выберите сторону:');
+                            listenRoom();
+                        });
                     });
                 } else { showToast('Комната не найдена!'); }
             });
@@ -1670,8 +1776,10 @@
                         armorCTItem: null, armorTItem: null,
                         hasSpunArmorCT: false, hasSpunArmorT: false,
                         resetVotes: {},
+                        rerollGrant: false, rerollUsed: null, rerollReq: null, rerollDenied: null,
                         complicationState: 'RANDOM', complicationResult: '', complicationVotes: {}
                     });
+                    rerollSelecting = false; rerollPick = -1; rerollWanted = false;
                 } else {
                     roomRef.update({ resetVotes: votes });
                 }
@@ -1694,6 +1802,7 @@
                 hasSpunArmorT = data.hasSpunArmorT || false;
                 feedList = data.feedList || [];
                 roomAppliedTs = data.appliedActionTs || 0;
+                handleRerollState(data);
 
                 const sides = data.sides || {};
                 const players = Object.keys(data.players || {});
@@ -1737,11 +1846,12 @@
                 const action = snapshot.val();
                 if (firstActionEvent) {
                     firstActionEvent = false;
-                    if (action) lastProcessedTimestamp = Math.max(lastProcessedTimestamp, action.timestamp);
+                    if (action) seenActionIds.add(action.id || String(action.timestamp));
                     return;
                 }
-                if (action && action.timestamp > lastProcessedTimestamp) {
-                    lastProcessedTimestamp = action.timestamp;
+                const aid = action && (action.id || String(action.timestamp));
+                if (action && !seenActionIds.has(aid)) {
+                    seenActionIds.add(aid);
                     runAnimation(action);
                 }
             });
@@ -1775,6 +1885,73 @@
             }
         }
 
+        // ================= ПЕРЕКРУТ 1 ПРЕДМЕТА =================
+        let rerollGrant = false, rerollUsed = {}, rerollReq = null, rerollWanted = false;
+        let rerollSelecting = false, rerollPick = -1, seenRerollDenyId = '';
+        const mySpinCount = () => playerSide === 'CT' ? spinCountCT : spinCountT;
+        const canRerollNow = () => !!playerSide && mySpinCount() >= 3 && !rerollUsed[playerName];
+
+        function handleRerollState(data) {
+            rerollGrant = !!data.rerollGrant;
+            rerollUsed = data.rerollUsed || {};
+            rerollReq = data.rerollReq || null;
+            const modal = document.getElementById('rerollModal');
+            if (rerollReq && rerollReq.from !== playerName) {
+                document.getElementById('rerollModalText').innerText = `${rerollReq.from} просит разрешения перекрутить 1 предмет. Разрешить?`;
+                modal.classList.remove('hidden');
+            } else modal.classList.add('hidden');
+            const den = data.rerollDenied;
+            if (den && den.to === playerName && den.id !== seenRerollDenyId) {
+                seenRerollDenyId = den.id; rerollWanted = false;
+                showToast('Соперник не разрешил перекрут', 'warn');
+                roomRef.child('rerollDenied').remove().catch(() => {});
+            }
+            if (rerollGrant && rerollWanted && canRerollNow()) { startRerollSelect(); showToast('Соперник разрешил! Выберите предмет'); }
+            if (rerollSelecting && !canRerollNow()) { rerollSelecting = false; rerollPick = -1; }
+        }
+        function requestReroll() {
+            if (!canRerollNow()) { showToast('Перекрут недоступен'); return; }
+            if (rerollGrant) { startRerollSelect(); return; }
+            if (rerollReq) { showToast(rerollReq.from === playerName ? 'Ждём ответа соперника…' : 'Сначала ответьте на запрос соперника'); return; }
+            rerollWanted = true;
+            roomRef.update({ rerollReq: { from: playerName, id: newActionId() }, rerollDenied: null });
+            showToast('Запрос отправлен сопернику…');
+        }
+        function answerReroll(ok) {
+            playSound('click');
+            document.getElementById('rerollModal').classList.add('hidden');
+            const req = rerollReq;
+            if (!req || !roomRef) return;
+            const u = { rerollReq: null };
+            if (ok) u.rerollGrant = true; else u.rerollDenied = { to: req.from, id: newActionId() };
+            roomRef.update(u);
+            if (ok) showToast('Теперь и вы можете перекрутить 1 предмет');
+        }
+        function startRerollSelect() { rerollSelecting = true; rerollPick = -1; rerollWanted = false; renderState(); }
+        function cancelReroll() { rerollSelecting = false; rerollPick = -1; renderState(); }
+        function confirmReroll() {
+            if (!rerollSelecting || rerollPick < 0) { showToast('Выберите предмет для перекрута'); return; }
+            const side = playerSide;
+            const items = side === 'CT' ? itemsCT : itemsT;
+            const old = items[rerollPick];
+            if (!old || !canRerollNow()) return;
+            if (side === 'CT' ? isSpinningWeaponCT : isSpinningWeaponT) return;
+            const pool = side === 'CT' ? WEAPONS_CT : WEAPONS_T;
+            const owned = items.filter(Boolean).map(i => i.title);
+            let cand = pool.filter(w => w.title === 'Flashbang' || !owned.includes(w.title));
+            if (!cand.length) cand = pool.filter(w => w.title !== old.title);
+            const winner = cand[Math.floor(Math.random() * cand.length)];
+            const idx = rerollPick;
+            rerollSelecting = false; rerollPick = -1;
+            const reqAt = Date.now();
+            lastSpinStart = reqAt;
+            if (side === 'CT') isSpinningWeaponCT = true; else isSpinningWeaponT = true;
+            renderState();
+            setTimeout(() => { if (lastAnimBegin < reqAt) { animRunning = 0; clearSpinFlag('RR_' + side); showToast('Рулетка не запустилась, нажмите ещё раз'); renderState(); } }, 3500);
+            roomRef.child('action').set({ type: 'RR_' + side, idx, winner, player: playerName, id: newActionId(), timestamp: Date.now() })
+                .catch(() => { clearSpinFlag('RR_' + side); renderState(); showToast('Не удалось крутить, попробуйте ещё раз'); });
+        }
+
         function triggerSpin(type) {
             playSound('click');
             
@@ -1782,11 +1959,11 @@
             if ((type === 'T' || type === 'ARMOR_T') && playerSide !== 'T') return;
 
             if(type === 'CT') {
-                if(spinCountCT >= 3) { showToast('Оружие за КТ можно крутить максимум 3 раза!'); return; }
+                if(spinCountCT >= 3) { if (rerollSelecting) confirmReroll(); else requestReroll(); return; }
                 if(isSpinningWeaponCT) return;
             }
             if(type === 'T') {
-                if(spinCountT >= 3) { showToast('Оружие за Т можно крутить максимум 3 раза!'); return; }
+                if(spinCountT >= 3) { if (rerollSelecting) confirmReroll(); else requestReroll(); return; }
                 if(isSpinningWeaponT) return;
             }
 
@@ -1811,16 +1988,21 @@
                 else if (type === 'ARMOR_CT') isSpinningArmorCT = v; else isSpinningArmorT = v;
                 renderState();
             };
-            lastSpinStart = Date.now();
+            const reqAt = Date.now();
+            lastSpinStart = reqAt;
             setLock(true);
+            setTimeout(() => {
+                if (lastAnimBegin < reqAt) { animRunning = 0; setLock(false); showToast('Рулетка не запустилась, нажмите ещё раз'); }
+            }, 3500);
             setTimeout(() => { if (Date.now() - lastSpinStart >= 9000) { animRunning = 0; setLock(false); } }, 10000);
-            roomRef.child('action').set({ type, winner: winningItem, player: playerName, timestamp: Date.now() })
+            roomRef.child('action').set({ type, winner: winningItem, player: playerName, id: newActionId(), timestamp: Date.now() })
                 .catch(() => { setLock(false); showToast('Не удалось крутить, попробуйте ещё раз'); });
         }
 
         function selectSlot(side, index) {
             playSound('click');
             if (side !== playerSide) return;
+            if (rerollSelecting) { if ((side === 'CT' ? itemsCT : itemsT)[index]) { rerollPick = index; renderState(); } return; }
             const items = (side === 'CT') ? itemsCT : itemsT;
             const targetItem = items[index];
             if(!targetItem) return;
@@ -1935,13 +2117,13 @@
             return true;
         }
         function clearSpinFlag(type) {
-            if (type === 'CT') isSpinningWeaponCT = false;
-            else if (type === 'T') isSpinningWeaponT = false;
+            if (type === 'CT' || type === 'RR_CT') isSpinningWeaponCT = false;
+            else if (type === 'T' || type === 'RR_T') isSpinningWeaponT = false;
             else if (type === 'ARMOR_CT') isSpinningArmorCT = false;
             else if (type === 'ARMOR_T') isSpinningArmorT = false;
         }
         async function runAnimation(action) {
-            animRunning++; lastSpinStart = Date.now();
+            animRunning++; lastSpinStart = lastAnimBegin = Date.now();
             try { await runAnimationInner(action); }
             catch (e) { console.error(e); }
             finally { animRunning--; clearSpinFlag(action.type); renderState(); }
@@ -1980,6 +2162,24 @@
 
                 if(side === 'CT') isSpinningWeaponCT = false;
                 else isSpinningWeaponT = false;
+                renderState();
+
+            } else if (action.type === 'RR_CT' || action.type === 'RR_T') {
+                const side = action.type === 'RR_CT' ? 'CT' : 'T';
+                if (side === 'CT') isSpinningWeaponCT = true; else isSpinningWeaponT = true;
+                renderState();
+                await animateTrackWithWinner(`trackWeapon${side}`, side === 'CT' ? WEAPONS_CT : WEAPONS_T, item);
+                if (action.player === playerName && claimAction(action)) {
+                    const cur = side === 'CT' ? [...itemsCT] : [...itemsT];
+                    const old = cur[action.idx];
+                    cur[action.idx] = item;
+                    const newFeed = [{ player: action.player, title: `🔁 Перекрут: ${old ? old.title : '?'} → ${item.title}`, price: item.price }, ...feedList];
+                    const updates = { feedList: newFeed, appliedActionTs: action.timestamp, ['rerollUsed/' + action.player]: true };
+                    if (side === 'CT') updates.itemsCT = cur; else updates.itemsT = cur;
+                    roomRef.update(updates).catch(() => showToast('Нет связи: результат сохранится при подключении'));
+                    autoSelectNonConflictingItems(side, cur);
+                }
+                if (side === 'CT') isSpinningWeaponCT = false; else isSpinningWeaponT = false;
                 renderState();
 
             } else if (action.type === 'ARMOR_CT' || action.type === 'ARMOR_T') {
@@ -2033,13 +2233,27 @@
             const isCT = (playerSide === 'CT');
             const isT = (playerSide === 'T');
 
-            const spinCTBtn = document.getElementById('spinCTBtn');
-            spinCTBtn.disabled = (!isCT || spinCountCT >= 3 || isSpinningWeaponCT);
-            spinCTBtn.innerText = isSpinningWeaponCT ? '⏳ Крутится...' : '🎲 Крутить оружие';
-
-            const spinTBtn = document.getElementById('spinTBtn');
-            spinTBtn.disabled = (!isT || spinCountT >= 3 || isSpinningWeaponT);
-            spinTBtn.innerText = isSpinningWeaponT ? '⏳ Крутится...' : '🎲 Крутить оружие';
+            const setWeaponBtn = (btn, mine, count, spinning) => {
+                if (spinning) { btn.disabled = true; btn.innerText = '⏳ Крутится...'; return; }
+                if (mine && count >= 3) {
+                    if (rerollSelecting) { btn.disabled = rerollPick < 0; btn.innerText = '✅ Подтвердить'; return; }
+                    if (rerollUsed[playerName]) { btn.disabled = true; btn.innerText = '🔁 Перекрут использован'; return; }
+                    const waiting = rerollReq && rerollReq.from === playerName;
+                    btn.disabled = !!waiting;
+                    btn.innerText = waiting ? '⏳ Ждём соперника...' : '🔁 Перекрутить 1 предмет';
+                    return;
+                }
+                btn.disabled = (!mine || count >= 3);
+                btn.innerText = '🎲 Крутить оружие';
+            };
+            setWeaponBtn(document.getElementById('spinCTBtn'), isCT, spinCountCT, isSpinningWeaponCT);
+            setWeaponBtn(document.getElementById('spinTBtn'), isT, spinCountT, isSpinningWeaponT);
+            ['CT', 'T'].forEach(sd => {
+                const h = document.getElementById('rerollHint' + sd);
+                const show = rerollSelecting && playerSide === sd;
+                h.classList.toggle('hidden', !show);
+                if (show) h.innerHTML = 'Выберите 1 из 3 предметов, который хотите перекрутить, и нажмите «Подтвердить» <button onclick="cancelReroll()" class="underline ml-2 text-slate-300">Отмена</button>';
+            });
 
             const spinArmorCTBtn = document.getElementById('spinArmorCTBtn');
             spinArmorCTBtn.disabled = (!isCT || hasSpunArmorCT || isSpinningArmorCT);
@@ -2069,6 +2283,7 @@
                             </div>
                             ${slotImg}
                         `;
+                        if (rerollSelecting && side === playerSide) div.className += (i === rerollPick ? ' ring-2 ring-rose-400 scale-105' : ' ring-1 ring-rose-400/40');
                         div.onclick = () => selectSlot(side, i);
                     } else {
                         div.className = 'h-14 bg-slate-950 rounded-xl border border-slate-800 flex items-center justify-center text-xs text-slate-600';
@@ -2147,9 +2362,9 @@
             mgRef.set({
                 players: { [mgName]: { name: mgName, avatar: mgAvatar, photo: myPhoto(), guest: isGuest(), balance: 20, dice: 0, inventory: [] } },
                 turn: '', phase: 'waiting', mgSpins: 0, mgDropped: [], currentAuctionItem: null, bidsOnCurrentItem: {}, firstBidDone: false, itemEndTime: 0,
-                lastAuctionWinnerData: null,
+                lastAuctionWinnerData: null, createdAt: firebase.database.ServerValue.TIMESTAMP,
                 chat: [{ user: 'Сервер', text: 'Комната создана. Ожидание соперника...' }]
-            }).then(() => { joinPresence(mgRef, mgName); showMgScreen(mgCode); listenMg(); });
+            }).then(() => { indexRoom('mgRooms', mgCode); joinPresence(mgRef, mgName); showMgScreen(mgCode); listenMg(); });
         }
 
         function joinMgRoom() {
@@ -2163,9 +2378,29 @@
                 if(snapshot.exists()) {
                     const data = snapshot.val();
                     const players = data.players || {};
-                    players[mgName] = { name: mgName, avatar: mgAvatar, photo: myPhoto(), guest: isGuest(), balance: 20, dice: 0, inventory: [] };
-                    joinPresence(mgRef, mgName);
-                    mgRef.child('players').set(players).then(() => { showMgScreen(mgCode); listenMg(); });
+                    if (data.createdAt && srvNow() - data.createdAt > ROOM_TTL) {
+                        mgRef.remove().catch(() => {}); mgRef = null;
+                        showToast('Комната устарела (старше 24 часов) и удалена'); return;
+                    }
+                    if (!players[mgName] && Object.keys(players).length >= 2) {
+                        mgRef = null; showToast('Комната заполнена: максимум 2 игрока'); return;
+                    }
+                    if (players[mgName] && (data.online || {})[mgName]) {
+                        mgRef = null; showToast('Игрок с таким ником уже в комнате — выберите другой ник'); return;
+                    }
+                    const ref0 = mgRef, nm = mgName;
+                    ref0.child('players').transaction(cur => {
+                        cur = cur || {};
+                        if (!cur[nm]) {
+                            if (Object.keys(cur).length >= 2) return;
+                            cur[nm] = { name: nm, avatar: mgAvatar, photo: myPhoto(), guest: isGuest(), balance: 20, dice: 0, inventory: [] };
+                        }
+                        return cur;
+                    }, (err, committed) => {
+                        if (err || !committed) { mgRef = null; showToast('Комната заполнена: максимум 2 игрока'); return; }
+                        joinPresence(ref0, nm);
+                        showMgScreen(mgCode); listenMg();
+                    });
                 } else { showToast('Комната не найдена!'); }
             });
         }
@@ -2334,11 +2569,12 @@
                 const act = snap.val();
                 if (firstMgAction) {
                     firstMgAction = false;
-                    if (act) mgLastTs = Math.max(mgLastTs, act.timestamp);
+                    if (act) seenMgActionIds.add(act.id || String(act.timestamp));
                     return;
                 }
-                if(act && act.timestamp > mgLastTs && !isMgSpinning) {
-                    mgLastTs = act.timestamp;
+                const mid = act && (act.id || String(act.timestamp));
+                if(act && !seenMgActionIds.has(mid) && !isMgSpinning) {
+                    seenMgActionIds.add(mid);
                     runMgAnimation(act);
                 }
             });
@@ -2450,7 +2686,7 @@
                 const winnerItem = candidates[Math.floor(Math.random() * candidates.length)];
                 mgRef.child('action').set({
                     type: 'SPIN', item: winnerItem, player: mgName,
-                    spinNo: (data.mgSpins || 0) + 1, dropped: [...dropped, winnerItem.title], timestamp: Date.now()
+                    spinNo: (data.mgSpins || 0) + 1, dropped: [...dropped, winnerItem.title], id: newActionId(), timestamp: Date.now()
                 }).catch(() => fail('Не удалось крутить, попробуйте ещё раз'));
             });
         }
