@@ -147,6 +147,7 @@
             background: linear-gradient(90deg, #6366f1, #22d3ee) 0 / var(--p, 0%) 100% no-repeat, #1e293b; }
         input[type=range].rng::-webkit-slider-thumb { -webkit-appearance: none; width: 14px; height: 14px; border-radius: 50%; background: #fff; box-shadow: 0 0 10px rgba(99,102,241,.9); }
         input[type=range].rng::-moz-range-thumb { width: 14px; height: 14px; border: 0; border-radius: 50%; background: #fff; }
+        @media (max-width: 767px) { .mob-hide { display: none !important; } }
         .ctl-on { color: #22d3ee !important; background: rgba(34,211,238,.12) !important; }
         .track-row.active { border-color: rgba(34,211,238,.6) !important; background: linear-gradient(90deg, rgba(34,211,238,.12), rgba(15,23,42,.6)) !important; }
         #miniPlayer { position: fixed; left: 16px; bottom: 16px; z-index: 40; width: min(320px, calc(100vw - 32px)); }
@@ -423,8 +424,9 @@
             <div id="complicationResultDisplay" class="text-xs text-cyan-400 font-bold text-center"></div>
         </div>
 
+        <button id="mobileViewToggle" onclick="toggleMobileView()" class="hidden md:hidden w-full py-3 bg-slate-800 hover:bg-slate-700 border border-slate-700 rounded-2xl text-xs font-black uppercase text-cyan-300 transition active:scale-95">👁 Показать оружие противника</button>
         <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
-            <div class="bg-slate-900/80 backdrop-blur-xl p-5 rounded-2xl border border-blue-900/50 space-y-4 shadow-xl">
+            <div id="panelCT" class="bg-slate-900/80 backdrop-blur-xl p-5 rounded-2xl border border-blue-900/50 space-y-4 shadow-xl">
                 <div class="flex justify-between items-center border-b border-slate-800 pb-3">
                     <h2 class="text-blue-400 font-black text-sm uppercase">🛡️ CT (Контр-террористы)</h2>
                     <div class="flex items-center gap-2"><img id="playerCTAvatar" alt="" class="w-7 h-7 rounded-full object-cover border border-slate-700 bg-slate-800"><span id="playerCTName" class="text-xs font-bold text-slate-300">-</span></div>
@@ -447,7 +449,7 @@
                 </div>
             </div>
 
-            <div class="bg-slate-900/80 backdrop-blur-xl p-5 rounded-2xl border border-amber-900/50 space-y-4 shadow-xl">
+            <div id="panelT" class="bg-slate-900/80 backdrop-blur-xl p-5 rounded-2xl border border-amber-900/50 space-y-4 shadow-xl">
                 <div class="flex justify-between items-center border-b border-slate-800 pb-3">
                     <h2 class="text-amber-400 font-black text-sm uppercase">⚔️ T (Террористы)</h2>
                     <div class="flex items-center gap-2"><img id="playerTAvatar" alt="" class="w-7 h-7 rounded-full object-cover border border-slate-700 bg-slate-800"><span id="playerTName" class="text-xs font-bold text-slate-300">-</span></div>
@@ -1694,9 +1696,20 @@
             }
 
             const pool = (type === 'CT') ? WEAPONS_CT : (type === 'T') ? WEAPONS_T : ARMOR_ITEMS;
-            let winningItem = pool[Math.floor(Math.random() * pool.length)];
+            const owned = (type === 'CT' ? itemsCT : type === 'T' ? itemsT : []).filter(Boolean).map(i => i.title);
+            let candidates = pool.filter(w => w.title === 'Flashbang' || !owned.includes(w.title));
+            if (!candidates.length) candidates = pool;
+            let winningItem = candidates[Math.floor(Math.random() * candidates.length)];
 
-            roomRef.child('action').set({ type, winner: winningItem, player: playerName, timestamp: Date.now() });
+            // блокируем повторное нажатие сразу, не дожидаясь ответа сервера
+            const setLock = v => {
+                if (type === 'CT') isSpinningWeaponCT = v; else if (type === 'T') isSpinningWeaponT = v;
+                else if (type === 'ARMOR_CT') isSpinningArmorCT = v; else isSpinningArmorT = v;
+                renderState();
+            };
+            setLock(true);
+            roomRef.child('action').set({ type, winner: winningItem, player: playerName, timestamp: Date.now() })
+                .catch(() => { setLock(false); showToast('Не удалось крутить, попробуйте ещё раз'); });
         }
 
         function selectSlot(side, index) {
@@ -1772,7 +1785,7 @@
                 const targetIdx = 30;
                 if (track.children[targetIdx]) track.children[targetIdx].replaceWith(createCard(winner));
                 const cardWidth = 120;
-                const offset = (targetIdx * cardWidth) - (track.parentElement.clientWidth / 2) + (cardWidth / 2);
+                const offset = (targetIdx * cardWidth) - ((track.parentElement.clientWidth || Math.min(window.innerWidth - 72, 420)) / 2) + (cardWidth / 2);
                 track.style.transition = 'none';
                 track.style.transform = `translateX(0px)`;
                 void track.offsetWidth;
@@ -1807,6 +1820,14 @@
             roomRef.update(updates);
         }
 
+        // Результат крутки записывается строго один раз на одно действие
+        async function claimAction(action) {
+            try {
+                const res = await roomRef.child('appliedActionTs').transaction(cur => cur === action.timestamp ? undefined : action.timestamp);
+                return !!(res && res.committed);
+            } catch (e) { return false; }
+        }
+
         async function runAnimation(action) {
             let item = action.winner;
 
@@ -1819,7 +1840,7 @@
                 const pool = side === 'CT' ? WEAPONS_CT : WEAPONS_T;
                 await animateTrackWithWinner(`trackWeapon${side}`, pool, item);
                 
-                if (action.player === playerName) {
+                if (action.player === playerName && await claimAction(action)) {
                     let currentItems = side === 'CT' ? [...itemsCT] : [...itemsT];
                     let count = side === 'CT' ? spinCountCT : spinCountT;
                     if(count < 3) {
@@ -1849,7 +1870,7 @@
 
                 await animateTrackWithWinner(`trackArmor${side}`, ARMOR_ITEMS, item);
                 
-                if (action.player === playerName) {
+                if (action.player === playerName && await claimAction(action)) {
                     const newFeed = [{ player: action.player, title: `Снаряжение: ${item.title}`, price: item.price }, ...feedList];
                     const updates = {};
                     if(side === 'CT') { updates.armorCTItem = item; updates.hasSpunArmorCT = true; }
@@ -1864,7 +1885,27 @@
             }
         }
 
+        let viewingOpponent = false;
+        function applyMobileView() {
+            const btn = document.getElementById('mobileViewToggle');
+            const pCT = document.getElementById('panelCT'), pT = document.getElementById('panelT');
+            if (!btn || !pCT || !pT) return;
+            const hasSide = (playerSide === 'CT' || playerSide === 'T');
+            btn.classList.toggle('hidden', !hasSide);
+            if (!hasSide) { pCT.classList.remove('mob-hide'); pT.classList.remove('mob-hide'); return; }
+            const mine = playerSide === 'CT' ? pCT : pT, opp = playerSide === 'CT' ? pT : pCT;
+            mine.classList.toggle('mob-hide', viewingOpponent);
+            opp.classList.toggle('mob-hide', !viewingOpponent);
+            btn.textContent = viewingOpponent ? '↩ Перейти на своё вооружение' : '👁 Показать оружие противника';
+        }
+        function toggleMobileView() {
+            playSound('click');
+            viewingOpponent = !viewingOpponent;
+            applyMobileView();
+        }
+
         function renderState() {
+            applyMobileView();
             document.getElementById('countCT').innerText = spinCountCT;
             document.getElementById('countT').innerText = spinCountT;
             
@@ -2259,7 +2300,7 @@
                 }
 
                 const cardWidth = 120;
-                const offset = (targetIdx * cardWidth) - (track.parentElement.clientWidth / 2) + (cardWidth / 2);
+                const offset = (targetIdx * cardWidth) - ((track.parentElement.clientWidth || Math.min(window.innerWidth - 72, 420)) / 2) + (cardWidth / 2);
                 track.style.transition = 'none';
                 track.style.transform = 'translateX(0px)';
                 void track.offsetWidth;
