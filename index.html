@@ -1168,6 +1168,7 @@
 
         let currentRoomCode = '', playerName = '', playerSide = '', roomRef = null, lastProcessedTimestamp = 0;
         let mgCode = '', mgName = 'Player', mgAvatar = '👨', mgRef = null, isMgSpinning = false, mgLastTs = 0;
+        let mgHostName = '', hasShownFinish = false, mgSpinPending = false;
         let timerInterval = null;
         let hasShownDiceModal = false;
         let lastAuctionWinner = '';
@@ -1236,32 +1237,90 @@
         function startSpinSound() { const id = setInterval(() => playSound('spin'), 200); spinSounds.add(id); return id; }
         function stopAllSpinSounds() { spinSounds.forEach(clearInterval); spinSounds.clear(); }
 
-        let presenceWatch = null, opponentSeen = false;
-        function joinPresence(ref, name) {
-            const me = ref.child('online/' + name);
-            me.set(true);
+        let presenceWatch = null, presenceConn = null, presenceCurrent = null, opponentSeen = false, leftTimer = null;
+        let presenceBeat = null, iAmOnline = true, presenceGraceUntil = 0, lastOthersCount = 0;
+        const LEFT_DELAY_MS = 12000; // пауза перед «Соперник вышел» (телефон мог просто уснуть/переподключаться)
+        function announcePresence() {
+            if (!presenceCurrent) return;
+            const me = presenceCurrent.ref.child('online/' + presenceCurrent.name);
             me.onDisconnect().remove();
-            opponentSeen = false;
+            me.set(true);
+        }
+        function joinPresence(ref, name) {
+            if (presenceConn) presenceConn.off();
             if (presenceWatch) presenceWatch.off();
-            presenceWatch = ref.child('online');
-            presenceWatch.on('value', snap => {
-                const others = Object.keys(snap.val() || {}).filter(n => n !== name);
-                const banner = document.getElementById('opponentLeftBanner');
-                if (others.length) { opponentSeen = true; banner.classList.add('hidden'); }
-                else if (opponentSeen) {
-                    banner.classList.remove('hidden');
-                    stopAllSpinSounds();
-                    showToast('Соперник вышел из игры', 'warn');
+            clearTimeout(leftTimer);
+            clearInterval(presenceBeat);
+            presenceCurrent = { ref, name };
+            opponentSeen = false; iAmOnline = true; lastOthersCount = 0;
+            // при каждом (пере)подключении к Firebase заново отмечаемся «онлайн»
+            presenceConn = db.ref('.info/connected');
+            presenceConn.on('value', snap => {
+                iAmOnline = snap.val() === true;
+                if (iAmOnline) {
+                    announcePresence();
+                    // сами только что вернулись в сеть — даём сопернику время вернуться тоже
+                    presenceGraceUntil = Date.now() + LEFT_DELAY_MS;
+                    checkOpponentLeft();
                 }
             });
+            // «сердцебиение»: если узел online случайно стёрт — восстановится сам
+            presenceBeat = setInterval(() => { if (iAmOnline && document.visibilityState === 'visible') announcePresence(); }, 15000);
+            presenceWatch = ref.child('online');
+            presenceWatch.on('value', snap => {
+                lastOthersCount = Object.keys(snap.val() || {}).filter(n => n !== name).length;
+                checkOpponentLeft();
+            });
+        }
+        function checkOpponentLeft() {
+            const banner = document.getElementById('opponentLeftBanner');
+            if (lastOthersCount) {
+                opponentSeen = true; clearTimeout(leftTimer); banner.classList.add('hidden');
+                return;
+            }
+            if (!opponentSeen) return;
+            clearTimeout(leftTimer);
+            const wait = Math.max(LEFT_DELAY_MS, presenceGraceUntil - Date.now());
+            leftTimer = setTimeout(() => {
+                // если связи нет у нас самих — это не «соперник вышел», просто ждём возврата сети
+                if (!iAmOnline || lastOthersCount) return;
+                banner.classList.remove('hidden');
+                stopAllSpinSounds();
+                showToast('Соперник вышел из игры', 'warn');
+            }, wait);
         }
         function leavePresence(ref, name) {
+            if (presenceConn) { presenceConn.off(); presenceConn = null; }
             if (presenceWatch) { presenceWatch.off(); presenceWatch = null; }
+            clearTimeout(leftTimer); clearInterval(presenceBeat);
+            presenceCurrent = null;
             if (ref && name) ref.child('online/' + name).remove();
             opponentSeen = false;
             document.getElementById('opponentLeftBanner').classList.add('hidden');
             stopAllSpinSounds();
         }
+        // телефон «проснулся» после выключенного экрана: возвращаем связь, присутствие и снимаем зависшие кнопки
+        let animRunning = 0, lastSpinStart = 0;
+        // принудительно снимаем зависшее «Крутится…» (анимация должна длиться ~4 сек)
+        function unstickSpins() {
+            if (Date.now() - lastSpinStart < 8000) return; // анимация реально идёт
+            animRunning = 0;
+            const was = isSpinningWeaponCT || isSpinningWeaponT || isSpinningArmorCT || isSpinningArmorT;
+            isSpinningWeaponCT = isSpinningWeaponT = isSpinningArmorCT = isSpinningArmorT = false;
+            if (was && roomRef) renderState();
+        }
+        function onWake() {
+            if (document.visibilityState !== 'visible') return;
+            try { db.goOnline(); } catch (e) {}
+            presenceGraceUntil = Date.now() + LEFT_DELAY_MS;
+            announcePresence();
+            unstickSpins();
+        }
+        document.addEventListener('visibilitychange', onWake);
+        window.addEventListener('focus', onWake);
+        window.addEventListener('pageshow', onWake);
+        window.addEventListener('online', onWake);
+        setInterval(unstickSpins, 2000);
 
         const WEAPONS_CT = [
             { title: 'USP-S', price: 200, category: 'secondary', label: 'Вторичное', color: 'border-blue-500/50 bg-blue-950/30', img: imgUSP },
@@ -1340,6 +1399,45 @@
 
         for (let i = ARMOR_ITEMS.length - 1; i >= 0; i--) { if (ARMOR_ITEMS[i].category !== 'armor') ARMOR_ITEMS.splice(i, 1); }
         const ALL_CS2_ITEMS = [...WEAPONS_CT, ...WEAPONS_T, ...ARMOR_ITEMS];
+        const MG_MAX_SPINS = 10; // 5 круток у каждого игрока
+        const MG_POOL = ALL_CS2_ITEMS.filter((it, i, arr) => arr.findIndex(x => x.title === it.title) === i);
+        const MG_SWAPS = {
+            'USP-S': 'За T замена: Glock-18', 'P2000': 'За T замена: Glock-18', 'Five-SeveN': 'За T замена: Tec-9',
+            'MP9': 'За T замена: MAC-10', 'MAG-7': 'За T замена: Sawed-Off', 'M4A4': 'За T замена: AK-47', 'M4A1-S': 'За T замена: AK-47',
+            'FAMAS': 'За T замена: Galil AR', 'AUG': 'За T замена: SG 553', 'SCAR-20': 'За T замена: G3SG1',
+            'Incendiary Grenade': 'За T замена: Molotov', 'Набор сапёра (Defuse Kit)': 'Только за CT',
+            'Glock-18': 'За CT замена: USP-S / P2000', 'Tec-9': 'За CT замена: Five-SeveN', 'MAC-10': 'За CT замена: MP9',
+            'Sawed-Off': 'За CT замена: MAG-7', 'AK-47': 'За CT замена: M4A4 / M4A1-S', 'Galil AR': 'За CT замена: FAMAS',
+            'SG 553': 'За CT замена: AUG', 'G3SG1': 'За CT замена: SCAR-20', 'Molotov': 'За CT замена: Incendiary Grenade',
+            'M249': 'Аналог: Negev', 'Negev': 'Аналог: M249'
+        };
+        const swapNote = t => MG_SWAPS[t] ? '🔁 ' + MG_SWAPS[t] : '';
+        // реальные аналоги между командами: можно обменять предмет в инвентаре на «брата» за другую сторону
+        const MG_SWAP_PAIRS = {
+            'USP-S': 'Glock-18', 'P2000': 'Glock-18', 'Glock-18': 'USP-S', 'Five-SeveN': 'Tec-9', 'Tec-9': 'Five-SeveN',
+            'MP9': 'MAC-10', 'MAC-10': 'MP9', 'MAG-7': 'Sawed-Off', 'Sawed-Off': 'MAG-7',
+            'M4A4': 'AK-47', 'M4A1-S': 'AK-47', 'AK-47': 'M4A4', 'FAMAS': 'Galil AR', 'Galil AR': 'FAMAS',
+            'AUG': 'SG 553', 'SG 553': 'AUG', 'SCAR-20': 'G3SG1', 'G3SG1': 'SCAR-20',
+            'Incendiary Grenade': 'Molotov', 'Molotov': 'Incendiary Grenade', 'M249': 'Negev', 'Negev': 'M249'
+        };
+        function mgSwapItem(idx) {
+            playSound('click');
+            if (!mgRef) return;
+            mgRef.once('value', snap => {
+                const data = snap.val() || {};
+                const inv = (data.players && data.players[mgName] && data.players[mgName].inventory) || [];
+                const it = inv[idx];
+                if (!it) return;
+                const to = MG_POOL.find(x => x.title === MG_SWAP_PAIRS[it.title]);
+                if (!to) return;
+                if (inv.some(x => x.title === to.title)) { showToast(`У вас уже есть ${to.title}`); return; }
+                const newInv = [...inv];
+                newInv[idx] = { title: to.title, price: to.price, label: to.label, color: to.color, img: to.img };
+                const chat = data.chat || [];
+                chat.push({ user: 'Сервер', text: `🔁 ${mgName} обменял ${it.title} на ${to.title} (аналог за другую сторону)` });
+                mgRef.update({ [`players/${mgName}/inventory`]: newInv, chat });
+            });
+        }
         const GENERAL_COMPLICATIONS = ["Без шифта", "Без прыжков", "Без звука", "Ноу-скопом", "Свап на нож при выстреле", "Только ван-тапы", "Перезарядка на 0 патрон в обойме"];
 
         let spinCountCT = 0, spinCountT = 0;
@@ -1374,7 +1472,6 @@
             playerName = cleanName(document.getElementById('usernameInput').value, 'User');
             currentRoomCode = Math.random().toString(36).substring(2, 8).toUpperCase();
             roomRef = db.ref('rooms/' + currentRoomCode);
-            joinPresence(roomRef, playerName);
             roomRef.set({
                 players: { [playerName]: myPlayerEntry() },
                 sides: {}, spinCountCT: 0, spinCountT: 0,
@@ -1385,7 +1482,7 @@
                 feedList: [], status: 'waiting',
                 complicationState: 'RANDOM', complicationVotes: {}, complicationResult: '',
                 resetVotes: {}
-            }).then(() => { showLobby(currentRoomCode, 'Ожидание второго игрока...'); listenRoom(); });
+            }).then(() => { joinPresence(roomRef, playerName); showLobby(currentRoomCode, 'Ожидание второго игрока...'); listenRoom(); });
         }
 
         function joinRoom() {
@@ -1596,6 +1693,7 @@
                 hasSpunArmorCT = data.hasSpunArmorCT || false;
                 hasSpunArmorT = data.hasSpunArmorT || false;
                 feedList = data.feedList || [];
+                roomAppliedTs = data.appliedActionTs || 0;
 
                 const sides = data.sides || {};
                 const players = Object.keys(data.players || {});
@@ -1634,8 +1732,14 @@
                 renderFeed();
             });
 
+            let firstActionEvent = true;
             roomRef.child('action').on('value', (snapshot) => {
                 const action = snapshot.val();
+                if (firstActionEvent) {
+                    firstActionEvent = false;
+                    if (action) lastProcessedTimestamp = Math.max(lastProcessedTimestamp, action.timestamp);
+                    return;
+                }
                 if (action && action.timestamp > lastProcessedTimestamp) {
                     lastProcessedTimestamp = action.timestamp;
                     runAnimation(action);
@@ -1707,7 +1811,9 @@
                 else if (type === 'ARMOR_CT') isSpinningArmorCT = v; else isSpinningArmorT = v;
                 renderState();
             };
+            lastSpinStart = Date.now();
             setLock(true);
+            setTimeout(() => { if (Date.now() - lastSpinStart >= 9000) { animRunning = 0; setLock(false); } }, 10000);
             roomRef.child('action').set({ type, winner: winningItem, player: playerName, timestamp: Date.now() })
                 .catch(() => { setLock(false); showToast('Не удалось крутить, попробуйте ещё раз'); });
         }
@@ -1820,15 +1926,28 @@
             roomRef.update(updates);
         }
 
-        // Результат крутки записывается строго один раз на одно действие
-        async function claimAction(action) {
-            try {
-                const res = await roomRef.child('appliedActionTs').transaction(cur => cur === action.timestamp ? undefined : action.timestamp);
-                return !!(res && res.committed);
-            } catch (e) { return false; }
+        // Результат крутки записывается строго один раз на одно действие (даже после перезахода)
+        let roomAppliedTs = 0;
+        const appliedLocal = new Set();
+        function claimAction(action) {
+            if (appliedLocal.has(action.timestamp) || roomAppliedTs === action.timestamp) return false;
+            appliedLocal.add(action.timestamp);
+            return true;
+        }
+        function clearSpinFlag(type) {
+            if (type === 'CT') isSpinningWeaponCT = false;
+            else if (type === 'T') isSpinningWeaponT = false;
+            else if (type === 'ARMOR_CT') isSpinningArmorCT = false;
+            else if (type === 'ARMOR_T') isSpinningArmorT = false;
+        }
+        async function runAnimation(action) {
+            animRunning++; lastSpinStart = Date.now();
+            try { await runAnimationInner(action); }
+            catch (e) { console.error(e); }
+            finally { animRunning--; clearSpinFlag(action.type); renderState(); }
         }
 
-        async function runAnimation(action) {
+        async function runAnimationInner(action) {
             let item = action.winner;
 
             if (action.type === 'CT' || action.type === 'T') {
@@ -1840,7 +1959,7 @@
                 const pool = side === 'CT' ? WEAPONS_CT : WEAPONS_T;
                 await animateTrackWithWinner(`trackWeapon${side}`, pool, item);
                 
-                if (action.player === playerName && await claimAction(action)) {
+                if (action.player === playerName && claimAction(action)) {
                     let currentItems = side === 'CT' ? [...itemsCT] : [...itemsT];
                     let count = side === 'CT' ? spinCountCT : spinCountT;
                     if(count < 3) {
@@ -1852,7 +1971,8 @@
                         if(side === 'CT') { updates.itemsCT = currentItems; updates.spinCountCT = count; }
                         else { updates.itemsT = currentItems; updates.spinCountT = count; }
                         updates.feedList = newFeed;
-                        await roomRef.update(updates);
+                        updates.appliedActionTs = action.timestamp;
+                        roomRef.update(updates).catch(() => showToast('Нет связи: результат сохранится при подключении'));
 
                         if (count === 3) autoSelectNonConflictingItems(side, currentItems);
                     }
@@ -1870,13 +1990,14 @@
 
                 await animateTrackWithWinner(`trackArmor${side}`, ARMOR_ITEMS, item);
                 
-                if (action.player === playerName && await claimAction(action)) {
+                if (action.player === playerName && claimAction(action)) {
                     const newFeed = [{ player: action.player, title: `Снаряжение: ${item.title}`, price: item.price }, ...feedList];
                     const updates = {};
                     if(side === 'CT') { updates.armorCTItem = item; updates.hasSpunArmorCT = true; }
                     else { updates.armorTItem = item; updates.hasSpunArmorT = true; }
                     updates.feedList = newFeed;
-                    await roomRef.update(updates);
+                    updates.appliedActionTs = action.timestamp;
+                    roomRef.update(updates).catch(() => showToast('Нет связи: результат сохранится при подключении'));
                 }
 
                 if(side === 'CT') isSpinningArmorCT = false;
@@ -2021,15 +2142,14 @@
             playSound('click');
             mgName = cleanName(document.getElementById('mgUsername').value, 'Player');
             mgCode = Math.random().toString(36).substring(2, 8).toUpperCase();
-            hasShownDiceModal = false;
+            hasShownDiceModal = false; hasShownFinish = false; mgSpinPending = false;
             mgRef = db.ref('mgRooms/' + mgCode);
-            joinPresence(mgRef, mgName);
             mgRef.set({
                 players: { [mgName]: { name: mgName, avatar: mgAvatar, photo: myPhoto(), guest: isGuest(), balance: 20, dice: 0, inventory: [] } },
-                turn: '', phase: 'waiting', currentAuctionItem: null, bidsOnCurrentItem: {}, firstBidDone: false, itemEndTime: 0,
+                turn: '', phase: 'waiting', mgSpins: 0, mgDropped: [], currentAuctionItem: null, bidsOnCurrentItem: {}, firstBidDone: false, itemEndTime: 0,
                 lastAuctionWinnerData: null,
                 chat: [{ user: 'Сервер', text: 'Комната создана. Ожидание соперника...' }]
-            }).then(() => { showMgScreen(mgCode); listenMg(); });
+            }).then(() => { joinPresence(mgRef, mgName); showMgScreen(mgCode); listenMg(); });
         }
 
         function joinMgRoom() {
@@ -2037,7 +2157,7 @@
             mgName = cleanName(document.getElementById('mgUsername').value, 'Player');
             mgCode = cleanCode(document.getElementById('mgRoomCodeInput').value);
             if(!mgCode) { showToast('Введите код комнаты!'); return; }
-            hasShownDiceModal = false;
+            hasShownDiceModal = false; hasShownFinish = false; mgSpinPending = false;
             mgRef = db.ref('mgRooms/' + mgCode);
             mgRef.once('value').then(snapshot => {
                 if(snapshot.exists()) {
@@ -2093,12 +2213,15 @@
                 const data = snapshot.val();
                 const players = data.players || {};
                 const pKeys = Object.keys(players);
+                const onlineMap = data.online || {};
+                mgHostName = pKeys.find(k => onlineMap[k]) || pKeys[0] || '';
 
                 if(pKeys.length > 0) {
                     const p1 = players[pKeys[0]];
                     document.getElementById('mgP1Name').innerText = p1.name;
                     renderMgAvatar('mgP1Avatar', p1);
                     document.getElementById('mgP1Balance').innerText = '$' + p1.balance;
+                    mgIsP1Me = pKeys[0] === mgName;
                     renderInventory('mgP1Inventory', p1.inventory);
                 }
                 if(pKeys.length > 1) {
@@ -2149,10 +2272,11 @@
                     }, 5000);
                 }
 
-                if(data.phase === 'auction') {
+                if(data.phase === 'auction' || data.phase === 'finished') {
                     document.getElementById('diceSection').classList.add('hidden');
                     document.getElementById('auctionSection').classList.remove('hidden');
-                    document.getElementById('turnIndicator').innerText = `Ход: ${data.turn}`;
+                    const spinsDone = data.mgSpins || 0;
+                    document.getElementById('turnIndicator').innerText = data.phase === 'finished' ? `🏁 Игра окончена · ${spinsDone}/${MG_MAX_SPINS}` : `Ход: ${data.turn} · Крутка ${spinsDone}/${MG_MAX_SPINS}`;
                     
                     const spinBtn = document.getElementById('mgSpinBtn');
                     const placeBidBtn = document.getElementById('placeBidBtn');
@@ -2163,7 +2287,7 @@
                     document.getElementById('currentBidsDisplay').innerText = bidsText ? `Текущие ставки — ${bidsText}` : 'Ставок пока нет';
 
                     if(data.currentAuctionItem) {
-                        document.getElementById('currentAuctionItem').innerHTML = `<b>${data.currentAuctionItem.title}</b> ($${data.currentAuctionItem.price}) выставил Сервер`;
+                        document.getElementById('currentAuctionItem').innerHTML = `<b>${data.currentAuctionItem.title}</b> ($${data.currentAuctionItem.price}) выставил Сервер` + (swapNote(data.currentAuctionItem.title) ? `<div class="text-[10px] text-cyan-300 mt-1">${swapNote(data.currentAuctionItem.title)}</div>` : '');
                         spinBtn.disabled = true;
                         placeBidBtn.disabled = false;
                         giveBtn.disabled = false;
@@ -2172,12 +2296,30 @@
                     } else {
                         document.getElementById('currentAuctionItem').innerText = 'Лот не выставлен';
                         document.getElementById('currentBidsDisplay').innerText = '';
-                        spinBtn.disabled = (data.turn !== mgName);
+                        const mgOver = (data.phase === 'finished' || (data.mgSpins || 0) >= MG_MAX_SPINS);
+                        spinBtn.disabled = (mgOver || data.turn !== mgName);
+                        spinBtn.textContent = mgOver ? '🏁 Игра окончена' : '🎲 Крутить рулетку (Сервер)';
                         placeBidBtn.disabled = true;
                         giveBtn.disabled = true;
                         document.getElementById('timerDisplay').innerText = '';
                         if(timerInterval) clearInterval(timerInterval);
                     }
+                }
+
+                if (data.phase === 'finished' && !hasShownFinish) {
+                    hasShownFinish = true;
+                    const rows = pKeys.map(k => {
+                        const pl = players[k]; const inv = pl.inventory || [];
+                        const total = inv.reduce((sum, it) => sum + (it.price || 0), 0);
+                        return `<b>${esc(k)}</b>: предметов ${inv.length}, на сумму $${total}, баланс $${pl.balance}`;
+                    }).join('<br>');
+                    const fm = document.getElementById('diceResultModal');
+                    const ft = document.getElementById('diceModalTitle');
+                    ft.className = 'text-4xl md:text-5xl font-black uppercase text-amber-400 drop-shadow-[0_0_20px_#f59e0b]';
+                    ft.innerText = '🏁 ИГРА ОКОНЧЕНА';
+                    document.getElementById('diceModalDesc').innerHTML = `Сыграно ${MG_MAX_SPINS} круток.<br>${rows}`;
+                    fm.classList.remove('hidden');
+                    setTimeout(() => fm.classList.add('hidden'), 9000);
                 }
 
                 const chatEl = document.getElementById('mgChat');
@@ -2187,8 +2329,14 @@
                 }
             });
 
+            let firstMgAction = true;
             mgRef.child('action').on('value', snap => {
                 const act = snap.val();
+                if (firstMgAction) {
+                    firstMgAction = false;
+                    if (act) mgLastTs = Math.max(mgLastTs, act.timestamp);
+                    return;
+                }
                 if(act && act.timestamp > mgLastTs && !isMgSpinning) {
                     mgLastTs = act.timestamp;
                     runMgAnimation(act);
@@ -2204,7 +2352,7 @@
                 document.getElementById('timerDisplay').innerText = `(${timeLeft}с)`;
                 if(timeLeft <= 0) {
                     clearInterval(timerInterval);
-                    if(mgName === Object.keys(mgRef.root.child('players').val?.() || {})[0]) {
+                    if(mgName === mgHostName) {
                         finishAuctionTimeout();
                     }
                 }
@@ -2236,26 +2384,34 @@
                 const chat = data.chat || [];
                 chat.push({ user: 'Сервер', text: `⏰ Время вышло! Победитель аукциона: ${winner} (ставка: $${bids[winner] || 0}). Деньги сгорели.` });
 
+                const gameOver = (data.mgSpins || 0) >= MG_MAX_SPINS;
+                const nextTurn = pNames.find(p => p !== data.turn) || loser;
+                if (gameOver) chat.push({ user: 'Сервер', text: `🏁 Все ${MG_MAX_SPINS} круток сыграны. Игра окончена!` });
+
                 mgRef.update({
                     [`players/${winner}/inventory`]: winInventory,
                     currentAuctionItem: null, bidsOnCurrentItem: {}, itemEndTime: 0,
-                    turn: loser, chat: chat,
+                    turn: nextTurn, phase: gameOver ? 'finished' : 'auction', chat: chat,
                     lastAuctionWinnerData: { winner: winner, itemName: auctionItem.title, ts: Date.now() }
                 });
             });
         }
 
+        let mgIsP1Me = true;
         function renderInventory(containerId, inventory) {
             const container = document.getElementById(containerId);
             if(!container) return;
             if(!inventory || inventory.length === 0) { container.innerHTML = '<div class="text-[10px] text-slate-600">Пусто</div>'; return; }
-            container.innerHTML = inventory.map(item => {
+            const mine = containerId === (mgIsP1Me ? 'mgP1Inventory' : 'mgP2Inventory');
+            container.innerHTML = inventory.map((item, idx) => {
                 const invImg = item.img ? `<img src="${item.img}" class="h-5 object-contain my-0.5">` : '';
                 return `
                     <div class="px-2 py-1 rounded bg-slate-950 border ${item.color} text-[10px] flex flex-col items-center">
                         <span class="font-bold text-white">${item.title}</span>
                         ${invImg}
                         <span class="text-emerald-400 font-black">$${item.price}</span>
+                        ${swapNote(item.title) ? `<span class="text-[9px] text-cyan-300 text-center leading-tight max-w-[110px]">${swapNote(item.title)}</span>` : ''}
+                        ${mine && MG_SWAP_PAIRS[item.title] ? `<button onclick="mgSwapItem(${idx})" class="mt-1 px-1.5 py-0.5 rounded bg-cyan-700 hover:bg-cyan-600 text-white text-[9px] font-bold">🔁 На ${MG_SWAP_PAIRS[item.title]}</button>` : ''}
                     </div>
                 `;
             }).join('');
@@ -2279,18 +2435,28 @@
 
         function mgSpinWheel() {
             playSound('click');
-            if(isMgSpinning) return;
+            if (isMgSpinning || mgSpinPending) return;
+            mgSpinPending = true;
+            setTimeout(() => { mgSpinPending = false; }, 8000);
+            const fail = msg => { mgSpinPending = false; showToast(msg); };
             mgRef.once('value', snap => {
-                const data = snap.val();
-                if(data.turn !== mgName) { showToast('Сейчас не ваш ход крутить рулетку!'); return; }
-                if(data.currentAuctionItem) { showToast('Лот уже выставлен!'); return; }
-                const winnerItem = ALL_CS2_ITEMS[Math.floor(Math.random() * ALL_CS2_ITEMS.length)];
-                mgRef.child('action').set({ type: 'SPIN', item: winnerItem, player: mgName, timestamp: Date.now() });
+                const data = snap.val() || {};
+                if (data.phase === 'finished' || (data.mgSpins || 0) >= MG_MAX_SPINS) return fail(`Лимит круток исчерпан (${MG_MAX_SPINS}/${MG_MAX_SPINS})`);
+                if (data.turn !== mgName) return fail('Сейчас не ваш ход крутить рулетку!');
+                if (data.currentAuctionItem) return fail('Лот уже выставлен!');
+                const dropped = Array.isArray(data.mgDropped) ? data.mgDropped : Object.values(data.mgDropped || {});
+                let candidates = MG_POOL.filter(it => !dropped.includes(it.title));
+                if (!candidates.length) candidates = MG_POOL;
+                const winnerItem = candidates[Math.floor(Math.random() * candidates.length)];
+                mgRef.child('action').set({
+                    type: 'SPIN', item: winnerItem, player: mgName,
+                    spinNo: (data.mgSpins || 0) + 1, dropped: [...dropped, winnerItem.title], timestamp: Date.now()
+                }).catch(() => fail('Не удалось крутить, попробуйте ещё раз'));
             });
         }
 
         async function runMgAnimation(act) {
-            isMgSpinning = true;
+            isMgSpinning = true; mgSpinPending = false;
             if(act.type === 'SPIN') {
                 const track = document.getElementById('mgTrack');
                 fillMgTrack();
@@ -2311,10 +2477,9 @@
                 setTimeout(() => {
                     clearInterval(soundInterval);
                     playSound('win');
-                    mgRef.update({
-                        currentAuctionItem: act.item,
-                        bidsOnCurrentItem: {}, itemEndTime: Date.now() + 10000
-                    });
+                    const lotUpdate = { currentAuctionItem: act.item, bidsOnCurrentItem: {}, itemEndTime: Date.now() + 10000 };
+                    if (act.spinNo) { lotUpdate.mgSpins = act.spinNo; lotUpdate.mgDropped = act.dropped || []; }
+                    mgRef.update(lotUpdate);
                     isMgSpinning = false;
                 }, 4100);
             }
@@ -2359,13 +2524,17 @@
                 const chat = data.chat || [];
                 chat.push({ user: mgName, text: `отдал лот оппоненту (ставка возвращена).` });
 
+                const gameOver = (data.mgSpins || 0) >= MG_MAX_SPINS;
+                const nextTurn = Object.keys(players).find(p => p !== data.turn) || opponentName;
+                if (gameOver) chat.push({ user: 'Сервер', text: `🏁 Все ${MG_MAX_SPINS} круток сыграны. Игра окончена!` });
+
                 mgRef.update({
                     [`players/${mgName}/balance`]: myRefundedBalance,
                     [`players/${opponentName}/inventory`]: oppInventory,
                     currentAuctionItem: null, 
                     bidsOnCurrentItem: {}, 
                     itemEndTime: 0,
-                    turn: opponentName, 
+                    turn: nextTurn, phase: gameOver ? 'finished' : 'auction',
                     chat: chat,
                     lastAuctionWinnerData: { winner: opponentName, itemName: auctionItem.title, ts: Date.now() }
                 }).then(() => {
@@ -2379,7 +2548,7 @@
             if(!track) return;
             track.innerHTML = '';
             for(let i=0; i<60; i++) {
-                const item = ALL_CS2_ITEMS[i % ALL_CS2_ITEMS.length];
+                const item = MG_POOL[i % MG_POOL.length];
                 track.appendChild(createCard(item));
             }
         }
