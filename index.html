@@ -4,14 +4,17 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>CS2 Duel Center</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com"><link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800;900&display=swap" rel="stylesheet">
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
+    <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <style>
         body { 
             background: #05070c; 
             color: #ffffff; 
-            font-family: system-ui, -apple-system, sans-serif; 
+            font-family: 'Inter', system-ui, -apple-system, sans-serif; 
             user-select: none; 
             overflow-x: hidden;
             position: relative;
@@ -118,6 +121,36 @@
             z-index: 999;
             pointer-events: none;
         }
+
+        /* ===== UI polish ===== */
+        button { transition: transform .15s, box-shadow .2s, background-color .2s, border-color .2s; }
+        button:not(:disabled):hover { box-shadow: 0 0 18px rgba(99,102,241,.25); }
+        [class*="bg-slate-900/"] { backdrop-filter: blur(14px); }
+        input:focus { box-shadow: 0 0 0 3px rgba(99,102,241,.18); }
+        ::-webkit-scrollbar { width: 6px; height: 6px; }
+        ::-webkit-scrollbar-thumb { background: #334155; border-radius: 9px; }
+        @keyframes fadeUp { from { opacity: 0; transform: translateY(10px) scale(.98); } to { opacity: 1; transform: none; } }
+        #musicModal:not(.hidden) > div { animation: fadeUp .25s ease-out; }
+        #mainMenu:not(.hidden) { animation: fadeUp .35s ease-out; }
+
+        /* ===== Music player ===== */
+        .np-card { background: linear-gradient(135deg, rgba(99,102,241,.16), rgba(6,182,212,.08) 60%, rgba(2,6,23,.6)); border: 1px solid rgba(99,102,241,.25); }
+        .cover-wrap { position: relative; width: 96px; height: 96px; border-radius: 18px; overflow: hidden; box-shadow: 0 8px 28px rgba(0,0,0,.55); transition: box-shadow .4s, transform .4s; }
+        .cover-wrap img { width: 100%; height: 100%; object-fit: cover; }
+        .cover-wrap.playing { box-shadow: 0 0 34px rgba(99,102,241,.65), 0 8px 28px rgba(0,0,0,.55); transform: scale(1.04); }
+        .eq { display: inline-flex; align-items: flex-end; gap: 2px; height: 12px; }
+        .eq i { width: 3px; height: 3px; background: #22d3ee; border-radius: 2px; }
+        .eq.on i { animation: eqBar .8s ease-in-out infinite alternate; }
+        .eq.on i:nth-child(2) { animation-delay: .2s; } .eq.on i:nth-child(3) { animation-delay: .4s; } .eq.on i:nth-child(4) { animation-delay: .1s; }
+        @keyframes eqBar { from { height: 3px; } to { height: 12px; } }
+        input[type=range].rng { -webkit-appearance: none; appearance: none; height: 6px; border-radius: 9px; cursor: pointer; outline: none;
+            background: linear-gradient(90deg, #6366f1, #22d3ee) 0 / var(--p, 0%) 100% no-repeat, #1e293b; }
+        input[type=range].rng::-webkit-slider-thumb { -webkit-appearance: none; width: 14px; height: 14px; border-radius: 50%; background: #fff; box-shadow: 0 0 10px rgba(99,102,241,.9); }
+        input[type=range].rng::-moz-range-thumb { width: 14px; height: 14px; border: 0; border-radius: 50%; background: #fff; }
+        .ctl-on { color: #22d3ee !important; background: rgba(34,211,238,.12) !important; }
+        .track-row.active { border-color: rgba(34,211,238,.6) !important; background: linear-gradient(90deg, rgba(34,211,238,.12), rgba(15,23,42,.6)) !important; }
+        #miniPlayer { position: fixed; left: 16px; bottom: 16px; z-index: 40; width: min(270px, calc(100vw - 32px)); }
+        @media (prefers-reduced-motion: reduce) { * { animation: none !important; transition: none !important; } }
     </style>
 </head>
 <body class="p-3 md:p-6 flex flex-col items-center min-h-screen justify-center selection:bg-indigo-500 selection:text-white">
@@ -147,41 +180,47 @@
                 <span id="favCountBadge" class="text-xs font-semibold px-2.5 py-1 bg-indigo-500/10 text-indigo-400 border border-indigo-500/20 rounded-full">⭐ Избранное: <span id="favCount">0</span></span>
             </div>
 
-            <div class="flex flex-col sm:flex-row items-center gap-4 bg-slate-950/50 p-3.5 rounded-xl border border-slate-800/60 shadow-inner">
-                <div class="relative w-24 h-24 sm:w-20 sm:h-20 rounded-lg overflow-hidden bg-slate-900 border border-slate-700/50 flex-shrink-0 shadow-lg">
-                    <img id="current-cover" src="https://images.unsplash.com/photo-1514525253161-7a46d19cd819?w=300&auto=format&fit=crop&q=80" alt="Cover" class="w-full h-full object-cover">
-                    <div class="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent"></div>
+            <div class="np-card flex flex-col sm:flex-row items-center gap-4 p-4 rounded-2xl">
+                <div id="coverWrap" class="cover-wrap flex-shrink-0">
+                    <img id="current-cover" src="https://images.unsplash.com/photo-1514525253161-7a46d19cd819?w=300&auto=format&fit=crop&q=80" alt="Cover">
                 </div>
-                
                 <div class="text-center sm:text-left flex-grow min-w-0">
-                    <p class="text-[10px] uppercase tracking-wider text-indigo-400 font-semibold mb-1">Сейчас играет</p>
-                    <h2 id="track-title" class="text-sm font-bold text-slate-100 truncate mb-1">Выберите трек</h2>
+                    <p class="text-[10px] uppercase tracking-widest text-cyan-400 font-bold mb-1 flex items-center justify-center sm:justify-start gap-2">
+                        <span id="eqBars" class="eq"><i></i><i></i><i></i><i></i></span> Сейчас играет
+                    </p>
+                    <h2 id="track-title" class="text-lg font-black text-white truncate mb-0.5">Выберите трек</h2>
                     <p id="track-artist" class="text-xs text-slate-400 truncate">CS2 Audio Library</p>
                 </div>
             </div>
 
             <audio id="bgAudioPlayer" class="hidden" preload="auto"></audio>
 
-            <div class="space-y-3 bg-slate-950/30 p-3.5 rounded-xl border border-slate-800/40">
+            <div class="space-y-3 bg-slate-950/40 p-4 rounded-2xl border border-slate-800/60">
                 <div class="space-y-1">
-                    <input type="range" id="progress-bar" value="0" max="100" class="w-full h-1.5 bg-slate-800 rounded-lg appearance-none cursor-pointer accent-indigo-500">
+                    <input type="range" id="progress-bar" class="rng w-full" value="0" max="100" step="0.1">
                     <div class="flex justify-between text-[11px] text-slate-400 font-mono">
                         <span id="current-time">0:00</span>
                         <span id="duration">0:00</span>
                     </div>
                 </div>
-
-                <div class="flex items-center justify-center space-x-6">
-                    <button onclick="prevTrack()" class="p-2 rounded-full bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white transition shadow-md active:scale-95">
-                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path></svg>
+                <div class="flex items-center justify-center gap-4">
+                    <button id="shuffleBtn" onclick="toggleShuffle()" title="Перемешать" class="p-2 rounded-full text-slate-500 hover:text-white text-sm active:scale-95">🔀</button>
+                    <button onclick="prevTrack()" class="p-2.5 rounded-full bg-slate-800 hover:bg-slate-700 text-slate-200 active:scale-95">
+                        <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 24 24"><path d="M6 6h2v12H6zm3.5 6l8.5 6V6z"/></svg>
                     </button>
-                    <button onclick="togglePlayPause()" class="p-3 rounded-full bg-gradient-to-r from-indigo-600 to-cyan-600 hover:from-indigo-500 hover:to-cyan-500 text-white shadow-lg shadow-indigo-600/30 transition transform hover:scale-105 active:scale-95">
-                        <svg id="play-icon" class="w-5 h-5" fill="currentColor" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>
-                        <svg id="pause-icon" class="w-5 h-5 hidden" fill="currentColor" viewBox="0 0 24 24"><path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z"/></svg>
+                    <button onclick="togglePlayPause()" class="p-4 rounded-full bg-gradient-to-br from-indigo-500 to-cyan-500 text-white shadow-lg shadow-indigo-600/40 hover:scale-105 active:scale-95">
+                        <svg id="play-icon" class="w-6 h-6" fill="currentColor" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>
+                        <svg id="pause-icon" class="w-6 h-6 hidden" fill="currentColor" viewBox="0 0 24 24"><path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z"/></svg>
                     </button>
-                    <button onclick="nextTrack()" class="p-2 rounded-full bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white transition shadow-md active:scale-95">
-                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path></svg>
+                    <button onclick="nextTrack()" class="p-2.5 rounded-full bg-slate-800 hover:bg-slate-700 text-slate-200 active:scale-95">
+                        <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 24 24"><path d="M16 6h2v12h-2zM6 18l8.5-6L6 6z"/></svg>
                     </button>
+                    <button id="repeatBtn" onclick="toggleRepeat()" title="Повтор трека" class="p-2 rounded-full text-slate-500 hover:text-white text-sm active:scale-95">🔁</button>
+                </div>
+                <div class="flex items-center gap-3 pt-1">
+                    <span class="text-xs text-slate-500">🔈</span>
+                    <input type="range" id="volumeBar" class="rng flex-1" min="0" max="100" value="80">
+                    <span id="volLabel" class="text-[11px] text-slate-400 font-mono w-8 text-right">80%</span>
                 </div>
             </div>
 
@@ -203,6 +242,16 @@
                 </div>
             </div>
         </div>
+    </div>
+
+    <div id="miniPlayer" class="hidden bg-slate-900/90 border border-slate-700/70 rounded-2xl shadow-2xl p-2 pr-3 flex items-center gap-2.5 cursor-pointer" onclick="openMusicModal()">
+        <img id="miniCover" src="" class="w-10 h-10 rounded-xl object-cover flex-shrink-0" alt="">
+        <div class="min-w-0 flex-1">
+            <div id="miniTitle" class="text-xs font-bold text-white truncate">-</div>
+            <div id="miniArtist" class="text-[10px] text-slate-400 truncate">-</div>
+            <div class="h-0.5 bg-slate-800 rounded mt-1"><div id="miniProg" class="h-full bg-gradient-to-r from-indigo-500 to-cyan-400 rounded" style="width:0%"></div></div>
+        </div>
+        <button onclick="event.stopPropagation(); togglePlayPause()" class="w-8 h-8 rounded-full bg-gradient-to-br from-indigo-500 to-cyan-500 text-white text-xs flex items-center justify-center flex-shrink-0"><span id="miniPlayBtn">▶</span></button>
     </div>
 
     <div id="diceResultModal" class="fixed inset-0 bg-black/90 backdrop-blur-md flex flex-col items-center justify-center z-50 hidden space-y-4 p-4 text-center">
@@ -560,9 +609,37 @@
         </div>
     </div>
 
+    <div id="loginOverlay" class="fixed inset-0 z-[10000] bg-[#05070c]/95 backdrop-blur-xl flex items-center justify-center p-4">
+        <div class="w-full max-w-sm bg-slate-900/80 border border-slate-800/80 rounded-3xl p-7 text-center space-y-5 shadow-2xl">
+            <div class="text-4xl">🎯</div>
+            <h1 class="text-xl font-black uppercase tracking-wider bg-gradient-to-r from-indigo-400 via-cyan-400 to-white bg-clip-text text-transparent">CS2 Duel Center</h1>
+            <p class="text-xs text-slate-400">Войдите, чтобы избранная музыка и имя сохранялись</p>
+            <div class="space-y-2.5">
+                <button onclick="loginTelegram()" class="w-full py-3 rounded-xl bg-[#229ED9] hover:bg-[#1c8cc2] text-white text-sm font-bold active:scale-95">✈️ Войти через Telegram</button>
+                <button onclick="loginGoogle()" class="w-full py-3 rounded-xl bg-white hover:bg-slate-200 text-slate-900 text-sm font-bold active:scale-95">🔐 Войти через Google</button>
+                <button onclick="loginGuest()" class="w-full py-3 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 text-sm font-bold active:scale-95">👤 Войти как гость</button>
+            </div>
+            <p class="text-[10px] text-slate-500">Гость: ничего не сохраняется после обновления</p>
+        </div>
+    </div>
+
+    <div id="profileChip" class="hidden fixed top-4 left-4 z-50 bg-slate-900/90 border border-slate-800 rounded-xl pl-1.5 pr-2 py-1 flex items-center gap-2 shadow-lg max-w-[60vw]">
+        <img id="profileAvatar" src="" alt="" class="w-6 h-6 rounded-full object-cover bg-slate-700">
+        <div class="min-w-0 leading-tight">
+            <div id="profileName" class="text-[11px] font-bold text-white truncate">-</div>
+            <div id="profileKind" class="text-[9px] text-slate-400">-</div>
+        </div>
+        <button onclick="logout()" title="Выйти" class="text-[10px] font-bold text-slate-400 hover:text-red-400 px-1.5">Выйти</button>
+    </div>
+
+    <div id="toastBox" class="fixed top-4 left-1/2 -translate-x-1/2 z-[9999] flex flex-col gap-2 items-center pointer-events-none w-[92%] max-w-sm"></div>
+    <div id="opponentLeftBanner" class="hidden fixed bottom-4 left-1/2 -translate-x-1/2 z-[9998] bg-red-950/95 border border-red-500/60 text-red-200 text-xs font-bold px-4 py-2.5 rounded-xl shadow-lg">🚪 Соперник вышел из игры</div>
+
     <script>
         const firebaseConfig = {
-            databaseURL: "https://cs2-duel-center-default-rtdb.firebaseio.com"
+            databaseURL: "https://cs2-duel-center-default-rtdb.firebaseio.com",
+            apiKey: "",        // <- вставьте Web API Key из Firebase (Project settings) для входа через Google
+            authDomain: ""     // <- например: cs2-duel-center.firebaseapp.com
         };
         if (!firebase.apps.length) {
             firebase.initializeApp(firebaseConfig);
@@ -652,7 +729,8 @@
             { id: 34, title: "Пойдем со мною", artist: "bigpluggssd, YouRunPlugg & exxxor", preview: "https://raw.githubusercontent.com/coffeman170/rap-music/main/bigpluggssd_YouRunPlugg_exxxor_Pojdem_so_mnoyu.mp3", cover: bigpluggCover }
         ];
 
-        let favorites = JSON.parse(localStorage.getItem('cs2_music_favs') || '[]');
+        const legacyFavs = (() => { try { return JSON.parse(localStorage.getItem('cs2_music_favs') || '[]'); } catch (e) { return []; } })();
+        let favorites = [];
         updateFavCount();
 
         let currentTrackIndex = 0;
@@ -707,7 +785,7 @@
                 const globalIndex = SAMPLE_TRACKS.findIndex(t => t.id === track.id);
                 const isFav = favorites.some(f => f === track.id);
                 return `
-                    <div class="bg-slate-950/60 p-2.5 rounded-xl border border-slate-800/80 flex items-center justify-between hover:border-indigo-500/50 transition">
+                    <div data-tid="${track.id}" class="track-row bg-slate-950/60 p-2.5 rounded-xl border border-slate-800/80 flex items-center justify-between hover:border-indigo-500/50 transition">
                         <div class="flex items-center gap-2.5 truncate max-w-[220px]">
                             <img src="${track.cover}" class="w-8 h-8 rounded-lg object-cover flex-shrink-0 border border-slate-700/50" onerror="this.src='${defaultCover}'">
                             <div class="truncate">
@@ -766,7 +844,7 @@
 
         function nextTrack() {
             playSound('click');
-            currentTrackIndex = (currentTrackIndex + 1) % SAMPLE_TRACKS.length;
+            currentTrackIndex = shuffleOn ? pickRandomIndex() : (currentTrackIndex + 1) % SAMPLE_TRACKS.length;
             loadAndPlayTrack(currentTrackIndex);
         }
 
@@ -777,6 +855,7 @@
         }
 
         bgAudioPlayer.addEventListener('ended', () => {
+            if (repeatOn) { bgAudioPlayer.currentTime = 0; bgAudioPlayer.play(); return; }
             nextTrack();
         });
 
@@ -805,6 +884,160 @@
             }
         });
 
+        let shuffleOn = false, repeatOn = false;
+        function pickRandomIndex() {
+            if (SAMPLE_TRACKS.length < 2) return 0;
+            let i; do { i = Math.floor(Math.random() * SAMPLE_TRACKS.length); } while (i === currentTrackIndex);
+            return i;
+        }
+        function toggleShuffle() { shuffleOn = !shuffleOn; document.getElementById('shuffleBtn').classList.toggle('ctl-on', shuffleOn); showToast(shuffleOn ? 'Перемешивание включено' : 'Перемешивание выключено', 'ok'); }
+        function toggleRepeat() { repeatOn = !repeatOn; document.getElementById('repeatBtn').classList.toggle('ctl-on', repeatOn); showToast(repeatOn ? 'Повтор трека включён' : 'Повтор трека выключен', 'ok'); }
+
+        function syncPlayerUI() {
+            const playing = !bgAudioPlayer.paused && !!bgAudioPlayer.src;
+            const t = SAMPLE_TRACKS[currentTrackIndex];
+            document.getElementById('coverWrap').classList.toggle('playing', playing);
+            document.getElementById('eqBars').classList.toggle('on', playing);
+            document.getElementById('play-icon').classList.toggle('hidden', playing);
+            document.getElementById('pause-icon').classList.toggle('hidden', !playing);
+            document.getElementById('miniPlayBtn').textContent = playing ? '❚❚' : '▶';
+            const mini = document.getElementById('miniPlayer');
+            const modalClosed = document.getElementById('musicModal').classList.contains('hidden');
+            mini.classList.toggle('hidden', !(t && bgAudioPlayer.src && modalClosed));
+            if (t) {
+                document.getElementById('miniCover').src = t.cover;
+                document.getElementById('miniTitle').textContent = t.title;
+                document.getElementById('miniArtist').textContent = t.artist;
+            }
+            document.querySelectorAll('[data-tid]').forEach(el => el.classList.toggle('active', !!t && !!bgAudioPlayer.src && el.dataset.tid == t.id));
+            if ('mediaSession' in navigator && t) {
+                navigator.mediaSession.metadata = new MediaMetadata({ title: t.title, artist: t.artist, artwork: [{ src: t.cover }] });
+                navigator.mediaSession.setActionHandler('nexttrack', nextTrack);
+                navigator.mediaSession.setActionHandler('previoustrack', prevTrack);
+            }
+        }
+        ['play', 'pause', 'loadstart', 'ended'].forEach(ev => bgAudioPlayer.addEventListener(ev, syncPlayerUI));
+        ['openMusicModal', 'closeMusicModal'].forEach(name => {
+            const orig = window[name];
+            window[name] = function () { orig.apply(this, arguments); syncPlayerUI(); };
+        });
+        const rowObserver = new MutationObserver(syncPlayerUI);
+        ['searchResultsList', 'favResultsList'].forEach(id => rowObserver.observe(document.getElementById(id), { childList: true }));
+
+        const setFill = (el, pct) => el.style.setProperty('--p', pct + '%');
+        bgAudioPlayer.addEventListener('timeupdate', () => {
+            if (!bgAudioPlayer.duration) return;
+            const pct = bgAudioPlayer.currentTime / bgAudioPlayer.duration * 100;
+            setFill(document.getElementById('progress-bar'), pct);
+            document.getElementById('miniProg').style.width = pct + '%';
+        });
+        document.getElementById('progress-bar').addEventListener('input', e => setFill(e.target, e.target.value));
+        const volBar = document.getElementById('volumeBar');
+        volBar.addEventListener('input', () => {
+            bgAudioPlayer.volume = volBar.value / 100;
+            document.getElementById('volLabel').textContent = volBar.value + '%';
+            setFill(volBar, volBar.value);
+        });
+        bgAudioPlayer.volume = 0.8; setFill(volBar, 80);
+
+        /* ===== Авторизация и сохранение ===== */
+        const tg = window.Telegram && window.Telegram.WebApp;
+        if (tg) { try { tg.ready(); tg.expand(); } catch (e) {} }
+        const tgUser = tg && tg.initDataUnsafe && tg.initDataUnsafe.user;
+        const googleReady = !!(firebaseConfig.apiKey && firebaseConfig.authDomain);
+        let currentUser = null;
+
+        function userRef() { return currentUser && currentUser.key ? db.ref('users/' + currentUser.key) : null; }
+
+        function saveFavorites() {
+            const r = userRef();
+            if (r) r.child('favorites').set(favorites).catch(() => showToast('Не удалось сохранить избранное'));
+        }
+
+        function refreshMusicUI() {
+            if (typeof updateFavCount === 'function') updateFavCount();
+            if (typeof searchMusic === 'function') searchMusic();
+            const favTab = document.getElementById('tabContentFav');
+            if (favTab && !favTab.classList.contains('hidden') && typeof renderFavorites === 'function') renderFavorites();
+        }
+
+        function applyName(name) {
+            ['usernameInput', 'mgUsername'].forEach(id => { const el = document.getElementById(id); if (el) el.value = cleanName(name, el.value); });
+        }
+
+        function enterApp(provider, info) {
+            const keyPrefix = { telegram: 'tg_', google: 'g_' }[provider];
+            currentUser = { provider, name: info.name, photo: info.photo, key: keyPrefix ? keyPrefix + info.id : null };
+            document.getElementById('loginOverlay').classList.add('hidden');
+            const chip = document.getElementById('profileChip');
+            chip.classList.remove('hidden');
+            document.getElementById('profileName').textContent = info.name;
+            document.getElementById('profileKind').textContent = { telegram: 'Telegram', google: 'Google', guest: 'Гость · без сохранения' }[provider];
+            document.getElementById('profileAvatar').src = info.photo || 'data:image/svg+xml,' + encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><rect width="24" height="24" fill="#475569"/><text x="12" y="17" font-size="14" text-anchor="middle">👤</text></svg>');
+            applyName(info.name);
+            favorites = [];
+            const r = userRef();
+            if (!r) { refreshMusicUI(); return; }
+            r.once('value').then(snap => {
+                const d = snap.val() || {};
+                favorites = Array.isArray(d.favorites) ? d.favorites : [];
+                if (!favorites.length && legacyFavs.length) { favorites = legacyFavs.slice(); saveFavorites(); }
+                if (d.name) applyName(d.name);
+                if (typeof d.volume === 'number') { const v = document.getElementById('volumeBar'); v.value = d.volume; v.dispatchEvent(new Event('input')); }
+                refreshMusicUI();
+            }).catch(() => { showToast('Не удалось загрузить сохранённые данные'); refreshMusicUI(); });
+            r.update({ lastSeen: Date.now(), provider });
+        }
+
+        function showLogin() { document.getElementById('loginOverlay').classList.remove('hidden'); document.getElementById('profileChip').classList.add('hidden'); }
+
+        function loginTelegram() {
+            if (!tgUser) { showToast('Откройте игру через Telegram-бота — тогда вход сработает автоматически'); return; }
+            sessionStorage.removeItem('noAuto');
+            enterApp('telegram', { id: tgUser.id, name: [tgUser.first_name, tgUser.last_name].filter(Boolean).join(' ') || tgUser.username || 'Telegram', photo: tgUser.photo_url });
+        }
+
+        function loginGoogle() {
+            if (!googleReady) { showToast('Вход через Google ещё не настроен (нужен apiKey в коде)'); return; }
+            if (tg && tg.initData) {
+                showToast('Google не пускает внутри Telegram — открываю в браузере', 'ok');
+                try { tg.openLink(location.href.split('#')[0]); } catch (e) {}
+                return;
+            }
+            firebase.auth().signInWithPopup(new firebase.auth.GoogleAuthProvider())
+                .catch(e => showToast('Не удалось войти через Google: ' + (e.code || e.message)));
+        }
+
+        function loginGuest() { sessionStorage.setItem('noAuto', '1'); enterApp('guest', { name: 'Гость' }); }
+
+        function logout() {
+            if (currentUser && currentUser.provider === 'google' && googleReady) firebase.auth().signOut();
+            sessionStorage.setItem('noAuto', '1');
+            currentUser = null; favorites = [];
+            refreshMusicUI();
+            showLogin();
+        }
+
+        ['usernameInput', 'mgUsername'].forEach(id => {
+            const el = document.getElementById(id);
+            if (el) el.addEventListener('change', () => { const r = userRef(); if (r) r.child('name').set(cleanName(el.value, 'User')); });
+        });
+        document.getElementById('volumeBar').addEventListener('change', e => { const r = userRef(); if (r) r.child('volume').set(Number(e.target.value)); });
+
+        window.addEventListener('load', () => {
+            const fallback = () => {
+                if (currentUser) return;
+                if (tgUser && !sessionStorage.getItem('noAuto')) loginTelegram(); else showLogin();
+            };
+            if (googleReady) {
+                firebase.initializeApp && !firebase.apps.length && firebase.initializeApp(firebaseConfig);
+                firebase.auth().onAuthStateChanged(u => {
+                    if (u) enterApp('google', { id: u.uid, name: u.displayName || u.email || 'Google', photo: u.photoURL });
+                    else fallback();
+                });
+            } else fallback();
+        });
+
         function toggleFavorite(id) {
             playSound('click');
             const idx = favorites.findIndex(f => f === id);
@@ -813,7 +1046,7 @@
             } else {
                 favorites.push(id);
             }
-            localStorage.setItem('cs2_music_favs', JSON.stringify(favorites));
+            saveFavorites();
             updateFavCount();
             searchMusic();
             if (!document.getElementById('tabContentFav').classList.contains('hidden')) {
@@ -833,7 +1066,7 @@
             list.innerHTML = favTracks.map(track => {
                 const globalIndex = SAMPLE_TRACKS.findIndex(t => t.id === track.id);
                 return `
-                    <div class="bg-slate-950/60 p-2.5 rounded-xl border border-slate-800/80 flex items-center justify-between hover:border-indigo-500/50 transition">
+                    <div data-tid="${track.id}" class="track-row bg-slate-950/60 p-2.5 rounded-xl border border-slate-800/80 flex items-center justify-between hover:border-indigo-500/50 transition">
                         <div class="flex items-center gap-2.5 truncate max-w-[220px]">
                             <img src="${track.cover}" class="w-8 h-8 rounded-lg object-cover flex-shrink-0 border border-slate-700/50" onerror="this.src='${defaultCover}'">
                             <div class="truncate">
@@ -858,14 +1091,14 @@
             playSound('click');
             const cmd = 'mp_maxmoney 60000; mp_startmoney 60000';
             navigator.clipboard.writeText(cmd);
-            alert('Команды скопированы! Вставьте в консоль CS2 (~).');
+            showToast('Команды скопированы! Вставьте в консоль CS2 (~).');
         }
 
         function copyRoomCode() {
             playSound('click');
             if(!currentRoomCode) return;
             navigator.clipboard.writeText(currentRoomCode);
-            alert(`Код комнаты (${currentRoomCode}) скопирован!`);
+            showToast(`Код комнаты (${currentRoomCode}) скопирован!`);
         }
 
         let currentRoomCode = '', playerName = '', playerSide = '', roomRef = null, lastProcessedTimestamp = 0;
@@ -920,7 +1153,50 @@
 
         const esc = v => String(v ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
         const cleanCode = v => String(v || '').trim().toUpperCase().replace(/[^A-Z0-9_-]/g, '').slice(0, 12);
-        const cleanName = (v, d) => (String(v || '').trim().slice(0, 20)) || d;
+        const cleanName = (v, d) => (String(v || '').trim().replace(/[.#$\[\]\/]/g, '').slice(0, 20)) || d;
+
+        function showToast(msg, type) {
+            type = type || (/скопирован/i.test(msg) ? 'ok' : 'warn');
+            const box = document.getElementById('toastBox');
+            const el = document.createElement('div');
+            const col = type === 'ok' ? 'border-emerald-500/60 text-emerald-200' : 'border-amber-500/60 text-amber-100';
+            el.className = 'w-full bg-slate-900/95 border ' + col + ' text-xs font-bold px-4 py-3 rounded-xl shadow-lg transition-all duration-300 opacity-0 -translate-y-2';
+            el.textContent = msg;
+            box.appendChild(el);
+            requestAnimationFrame(() => { el.classList.remove('opacity-0', '-translate-y-2'); });
+            setTimeout(() => { el.classList.add('opacity-0'); setTimeout(() => el.remove(), 300); }, 3500);
+        }
+
+        const spinSounds = new Set();
+        function startSpinSound() { const id = setInterval(() => playSound('spin'), 200); spinSounds.add(id); return id; }
+        function stopAllSpinSounds() { spinSounds.forEach(clearInterval); spinSounds.clear(); }
+
+        let presenceWatch = null, opponentSeen = false;
+        function joinPresence(ref, name) {
+            const me = ref.child('online/' + name);
+            me.set(true);
+            me.onDisconnect().remove();
+            opponentSeen = false;
+            if (presenceWatch) presenceWatch.off();
+            presenceWatch = ref.child('online');
+            presenceWatch.on('value', snap => {
+                const others = Object.keys(snap.val() || {}).filter(n => n !== name);
+                const banner = document.getElementById('opponentLeftBanner');
+                if (others.length) { opponentSeen = true; banner.classList.add('hidden'); }
+                else if (opponentSeen) {
+                    banner.classList.remove('hidden');
+                    stopAllSpinSounds();
+                    showToast('Соперник вышел из игры', 'warn');
+                }
+            });
+        }
+        function leavePresence(ref, name) {
+            if (presenceWatch) { presenceWatch.off(); presenceWatch = null; }
+            if (ref && name) ref.child('online/' + name).remove();
+            opponentSeen = false;
+            document.getElementById('opponentLeftBanner').classList.add('hidden');
+            stopAllSpinSounds();
+        }
 
         const WEAPONS_CT = [
             { title: 'USP-S', price: 200, category: 'secondary', label: 'Вторичное', color: 'border-blue-500/50 bg-blue-950/30', img: imgUSP },
@@ -1023,8 +1299,8 @@
             document.getElementById('miniGameMenu').classList.add('hidden');
             document.getElementById('miniGameScreen').classList.add('hidden');
             document.getElementById('mainMenu').classList.remove('hidden');
-            if (roomRef) { roomRef.off(); roomRef = null; currentRoomCode = ''; }
-            if (mgRef) { mgRef.off(); mgRef = null; mgCode = ''; hasShownDiceModal = false; }
+            if (roomRef) { leavePresence(roomRef, playerName); roomRef.off(); roomRef = null; currentRoomCode = ''; }
+            if (mgRef) { leavePresence(mgRef, mgName); mgRef.off(); mgRef = null; mgCode = ''; hasShownDiceModal = false; }
             if (timerInterval) clearInterval(timerInterval);
         }
 
@@ -1033,6 +1309,7 @@
             playerName = cleanName(document.getElementById('usernameInput').value, 'User');
             currentRoomCode = Math.random().toString(36).substring(2, 8).toUpperCase();
             roomRef = db.ref('rooms/' + currentRoomCode);
+            joinPresence(roomRef, playerName);
             roomRef.set({
                 players: { [playerName]: true },
                 sides: {}, spinCountCT: 0, spinCountT: 0,
@@ -1050,7 +1327,7 @@
             playSound('click');
             playerName = cleanName(document.getElementById('usernameInput').value, 'User');
             const code = cleanCode(document.getElementById('roomCodeInput').value);
-            if(!code) { alert('Введите код комнаты!'); return; }
+            if(!code) { showToast('Введите код комнаты!'); return; }
             roomRef = db.ref('rooms/' + code);
             roomRef.once('value').then((snapshot) => {
                 if(snapshot.exists()) {
@@ -1058,11 +1335,12 @@
                     const players = data.players || {};
                     currentRoomCode = code;
                     players[playerName] = true;
+                    joinPresence(roomRef, playerName);
                     roomRef.update({ players, status: 'choosing_sides' }).then(() => {
                         showLobby(code, 'Оба игрока в сборе! Выберите сторону:');
                         listenRoom();
                     });
-                } else { alert('Комната не найдена!'); }
+                } else { showToast('Комната не найдена!'); }
             });
         }
 
@@ -1202,7 +1480,7 @@
 
         function choosePersonalComplication(side) {
             playSound('click');
-            if(side !== playerSide) { alert('Вы не можете крутить усложнение чужой стороны!'); return; }
+            if(side !== playerSide) { showToast('Вы не можете крутить усложнение чужой стороны!'); return; }
             const picked = GENERAL_COMPLICATIONS[Math.floor(Math.random() * GENERAL_COMPLICATIONS.length)];
             roomRef.child(`personalComplications/${side}`).set(picked);
             roomRef.once('value', snap => {
@@ -1331,20 +1609,20 @@
             if ((type === 'T' || type === 'ARMOR_T') && playerSide !== 'T') return;
 
             if(type === 'CT') {
-                if(spinCountCT >= 3) { alert('Оружие за КТ можно крутить максимум 3 раза!'); return; }
+                if(spinCountCT >= 3) { showToast('Оружие за КТ можно крутить максимум 3 раза!'); return; }
                 if(isSpinningWeaponCT) return;
             }
             if(type === 'T') {
-                if(spinCountT >= 3) { alert('Оружие за Т можно крутить максимум 3 раза!'); return; }
+                if(spinCountT >= 3) { showToast('Оружие за Т можно крутить максимум 3 раза!'); return; }
                 if(isSpinningWeaponT) return;
             }
 
             if(type === 'ARMOR_CT') {
-                if(hasSpunArmorCT) { alert('Броню за CT можно крутить только 1 раз!'); return; }
+                if(hasSpunArmorCT) { showToast('Броню за CT можно крутить только 1 раз!'); return; }
                 if(isSpinningArmorCT) return;
             }
             if(type === 'ARMOR_T') {
-                if(hasSpunArmorT) { alert('Броню за T можно крутить только 1 раз!'); return; }
+                if(hasSpunArmorT) { showToast('Броню за T можно крутить только 1 раз!'); return; }
                 if(isSpinningArmorT) return;
             }
 
@@ -1372,7 +1650,7 @@
                     if (targetItem.title !== 'Flashbang') {
                         const hasSameGrenade = currentList.some(idx => items[idx] && items[idx].title === targetItem.title);
                         if (hasSameGrenade) {
-                            alert(`Нельзя брать две одинаковые гранаты (${targetItem.title})!`);
+                            showToast(`Нельзя брать две одинаковые гранаты (${targetItem.title})!`);
                             return;
                         }
                     }
@@ -1434,7 +1712,7 @@
                 track.style.transition = 'transform 4s cubic-bezier(0.15, 0.85, 0.15, 1)';
                 track.style.transform = `translateX(-${offset}px)`;
 
-                let soundInterval = setInterval(() => playSound('spin'), 200);
+                let soundInterval = startSpinSound();
                 setTimeout(() => { clearInterval(soundInterval); playSound('win'); resolve(winner); }, 4100);
             });
         }
@@ -1637,6 +1915,7 @@
             mgCode = Math.random().toString(36).substring(2, 8).toUpperCase();
             hasShownDiceModal = false;
             mgRef = db.ref('mgRooms/' + mgCode);
+            joinPresence(mgRef, mgName);
             mgRef.set({
                 players: { [mgName]: { name: mgName, avatar: mgAvatar, balance: 20, dice: 0, inventory: [] } },
                 turn: '', phase: 'waiting', currentAuctionItem: null, bidsOnCurrentItem: {}, firstBidDone: false, itemEndTime: 0,
@@ -1649,7 +1928,7 @@
             playSound('click');
             mgName = cleanName(document.getElementById('mgUsername').value, 'Player');
             mgCode = cleanCode(document.getElementById('mgRoomCodeInput').value);
-            if(!mgCode) { alert('Введите код комнаты!'); return; }
+            if(!mgCode) { showToast('Введите код комнаты!'); return; }
             hasShownDiceModal = false;
             mgRef = db.ref('mgRooms/' + mgCode);
             mgRef.once('value').then(snapshot => {
@@ -1657,8 +1936,9 @@
                     const data = snapshot.val();
                     const players = data.players || {};
                     players[mgName] = { name: mgName, avatar: mgAvatar, balance: 20, dice: 0, inventory: [] };
+                    joinPresence(mgRef, mgName);
                     mgRef.child('players').set(players).then(() => { showMgScreen(mgCode); listenMg(); });
-                } else { alert('Комната не найдена!'); }
+                } else { showToast('Комната не найдена!'); }
             });
         }
 
@@ -1894,8 +2174,8 @@
             if(isMgSpinning) return;
             mgRef.once('value', snap => {
                 const data = snap.val();
-                if(data.turn !== mgName) { alert('Сейчас не ваш ход крутить рулетку!'); return; }
-                if(data.currentAuctionItem) { alert('Лот уже выставлен!'); return; }
+                if(data.turn !== mgName) { showToast('Сейчас не ваш ход крутить рулетку!'); return; }
+                if(data.currentAuctionItem) { showToast('Лот уже выставлен!'); return; }
                 const winnerItem = ALL_CS2_ITEMS[Math.floor(Math.random() * ALL_CS2_ITEMS.length)];
                 mgRef.child('action').set({ type: 'SPIN', item: winnerItem, player: mgName, timestamp: Date.now() });
             });
@@ -1919,7 +2199,7 @@
                 track.style.transition = 'transform 4s cubic-bezier(0.15, 0.85, 0.15, 1)';
                 track.style.transform = `translateX(-${offset}px)`;
 
-                let soundInterval = setInterval(() => playSound('spin'), 200);
+                let soundInterval = startSpinSound();
                 setTimeout(() => {
                     clearInterval(soundInterval);
                     playSound('win');
@@ -1935,12 +2215,12 @@
         function placeBid() {
             playSound('click');
             const val = parseInt(document.getElementById('bidInput').value);
-            if(isNaN(val) || val <= 0) { alert('Введите корректную ставку!'); return; }
+            if(isNaN(val) || val <= 0) { showToast('Введите корректную ставку!'); return; }
             mgRef.once('value', snap => {
                 const data = snap.val();
                 if(!data.currentAuctionItem) return;
                 const currentBalance = data.players[mgName].balance || 0;
-                if(currentBalance < val) { alert('Недостаточно средств!'); return; }
+                if(currentBalance < val) { showToast('Недостаточно средств!'); return; }
 
                 mgRef.update({
                     [`players/${mgName}/balance`]: currentBalance - val,
