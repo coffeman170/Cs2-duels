@@ -2615,7 +2615,7 @@
                 const loser = winner === p1 ? p2 : p1;
                 const auctionItem = data.currentAuctionItem;
                 const winInventory = players[winner].inventory || [];
-                winInventory.push({ title: auctionItem.title, price: auctionItem.price, label: auctionItem.label, color: auctionItem.color, img: auctionItem.img });
+                winInventory.push(cleanLot(auctionItem));
 
                 const chat = data.chat || [];
                 chat.push({ user: 'Сервер', text: `⏰ Время вышло! Победитель аукциона: ${winner} (ставка: $${bids[winner] || 0}). Деньги сгорели.` });
@@ -2713,7 +2713,7 @@
                 setTimeout(() => {
                     clearInterval(soundInterval);
                     playSound('win');
-                    const lotUpdate = { currentAuctionItem: act.item, bidsOnCurrentItem: {}, itemEndTime: Date.now() + 10000 };
+                    const lotUpdate = { currentAuctionItem: cleanLot(act.item), bidsOnCurrentItem: {}, itemEndTime: Date.now() + 10000 };
                     if (act.spinNo) { lotUpdate.mgSpins = act.spinNo; lotUpdate.mgDropped = act.dropped || []; }
                     mgRef.update(lotUpdate);
                     isMgSpinning = false;
@@ -2740,6 +2740,11 @@
             });
         }
 
+        // Firebase не принимает undefined (у брони нет картинки) — подставляем пустые значения
+        function cleanLot(it) {
+            return Object.assign(JSON.parse(JSON.stringify(it)), { img: it.img || '' }); // JSON отбрасывает все undefined
+        }
+
         function giveItem() {
             playSound('click');
             mgRef.once('value', snap => {
@@ -2755,7 +2760,7 @@
                 const myRefundedBalance = (players[mgName].balance || 0) + myCurrentBid;
 
                 const oppInventory = players[opponentName].inventory || [];
-                oppInventory.push({ title: auctionItem.title, price: auctionItem.price, label: auctionItem.label, color: auctionItem.color, img: auctionItem.img });
+                oppInventory.push(cleanLot(auctionItem));
 
                 const chat = data.chat || [];
                 chat.push({ user: mgName, text: `отдал лот оппоненту (ставка возвращена).` });
