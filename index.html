@@ -149,7 +149,7 @@
         input[type=range].rng::-moz-range-thumb { width: 14px; height: 14px; border: 0; border-radius: 50%; background: #fff; }
         .ctl-on { color: #22d3ee !important; background: rgba(34,211,238,.12) !important; }
         .track-row.active { border-color: rgba(34,211,238,.6) !important; background: linear-gradient(90deg, rgba(34,211,238,.12), rgba(15,23,42,.6)) !important; }
-        #miniPlayer { position: fixed; left: 16px; bottom: 16px; z-index: 40; width: min(270px, calc(100vw - 32px)); }
+        #miniPlayer { position: fixed; left: 16px; bottom: 16px; z-index: 40; width: min(320px, calc(100vw - 32px)); }
         @media (prefers-reduced-motion: reduce) { * { animation: none !important; transition: none !important; } }
     </style>
 </head>
@@ -217,9 +217,9 @@
                     </button>
                     <button id="repeatBtn" onclick="toggleRepeat()" title="Повтор трека" class="p-2 rounded-full text-slate-500 hover:text-white text-sm active:scale-95">🔁</button>
                 </div>
-                <div class="flex items-center gap-3 pt-1">
+                <div class="flex items-center justify-center gap-3 pt-1">
                     <span class="text-xs text-slate-500">🔈</span>
-                    <input type="range" id="volumeBar" class="rng flex-1" min="0" max="100" value="80">
+                    <input type="range" id="volumeBar" class="rng w-32" min="0" max="100" value="80">
                     <span id="volLabel" class="text-[11px] text-slate-400 font-mono w-8 text-right">80%</span>
                 </div>
             </div>
@@ -244,14 +244,16 @@
         </div>
     </div>
 
-    <div id="miniPlayer" class="hidden bg-slate-900/90 border border-slate-700/70 rounded-2xl shadow-2xl p-2 pr-3 flex items-center gap-2.5 cursor-pointer" onclick="openMusicModal()">
+    <div id="miniPlayer" class="hidden bg-slate-900/90 border border-slate-700/70 rounded-2xl shadow-2xl p-2 pr-3 flex items-center gap-2 cursor-pointer" onclick="openMusicModal()">
         <img id="miniCover" src="" class="w-10 h-10 rounded-xl object-cover flex-shrink-0" alt="">
         <div class="min-w-0 flex-1">
             <div id="miniTitle" class="text-xs font-bold text-white truncate">-</div>
             <div id="miniArtist" class="text-[10px] text-slate-400 truncate">-</div>
             <div class="h-0.5 bg-slate-800 rounded mt-1"><div id="miniProg" class="h-full bg-gradient-to-r from-indigo-500 to-cyan-400 rounded" style="width:0%"></div></div>
         </div>
+        <button onclick="event.stopPropagation(); prevTrack()" title="Назад" class="w-7 h-7 rounded-full bg-slate-800 hover:bg-slate-700 text-slate-200 flex items-center justify-center flex-shrink-0 active:scale-95"><svg class="w-3 h-3" fill="currentColor" viewBox="0 0 24 24"><path d="M6 6h2v12H6zm3.5 6l8.5 6V6z"/></svg></button>
         <button onclick="event.stopPropagation(); togglePlayPause()" class="w-8 h-8 rounded-full bg-gradient-to-br from-indigo-500 to-cyan-500 text-white text-xs flex items-center justify-center flex-shrink-0"><span id="miniPlayBtn">▶</span></button>
+        <button onclick="event.stopPropagation(); nextTrack()" title="Вперёд" class="w-7 h-7 rounded-full bg-slate-800 hover:bg-slate-700 text-slate-200 flex items-center justify-center flex-shrink-0 active:scale-95"><svg class="w-3 h-3" fill="currentColor" viewBox="0 0 24 24"><path d="M16 6h2v12h-2zM6 18l8.5-6L6 6z"/></svg></button>
     </div>
 
     <div id="diceResultModal" class="fixed inset-0 bg-black/90 backdrop-blur-md flex flex-col items-center justify-center z-50 hidden space-y-4 p-4 text-center">
@@ -425,7 +427,7 @@
             <div class="bg-slate-900/80 backdrop-blur-xl p-5 rounded-2xl border border-blue-900/50 space-y-4 shadow-xl">
                 <div class="flex justify-between items-center border-b border-slate-800 pb-3">
                     <h2 class="text-blue-400 font-black text-sm uppercase">🛡️ CT (Контр-террористы)</h2>
-                    <span id="playerCTName" class="text-xs font-bold text-slate-300">-</span>
+                    <div class="flex items-center gap-2"><img id="playerCTAvatar" alt="" class="w-7 h-7 rounded-full object-cover border border-slate-700 bg-slate-800"><span id="playerCTName" class="text-xs font-bold text-slate-300">-</span></div>
                 </div>
                 <div class="space-y-2">
                     <div class="flex justify-between items-center">
@@ -448,7 +450,7 @@
             <div class="bg-slate-900/80 backdrop-blur-xl p-5 rounded-2xl border border-amber-900/50 space-y-4 shadow-xl">
                 <div class="flex justify-between items-center border-b border-slate-800 pb-3">
                     <h2 class="text-amber-400 font-black text-sm uppercase">⚔️ T (Террористы)</h2>
-                    <span id="playerTName" class="text-xs font-bold text-slate-300">-</span>
+                    <div class="flex items-center gap-2"><img id="playerTAvatar" alt="" class="w-7 h-7 rounded-full object-cover border border-slate-700 bg-slate-800"><span id="playerTName" class="text-xs font-bold text-slate-300">-</span></div>
                 </div>
                 <div class="space-y-2">
                     <div class="flex justify-between items-center">
@@ -485,7 +487,7 @@
             </div>
 
             <div class="md:col-span-2 bg-slate-900/90 backdrop-blur-xl p-4 rounded-2xl border border-slate-800/80 space-y-2">
-                <h4 class="text-xs font-black uppercase text-slate-400">📢 Лента событий (Синхронно)</h4>
+                <h4 class="text-xs font-black uppercase text-slate-400">📢 Лента событий</h4>
                 <div id="feedContainer" class="space-y-1 max-h-24 overflow-y-auto hide-scrollbar text-xs">
                     <div class="text-slate-500">Событий пока нет...</div>
                 </div>
@@ -506,7 +508,13 @@
                 <label class="block text-slate-400 font-bold mb-1.5">Ваш никнейм:</label>
                 <input type="text" id="mgUsername" value="Player" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-2.5 text-sm text-white focus:outline-none focus:border-emerald-500 transition">
             </div>
-            <div>
+            <div id="mgAvatarMine" class="hidden">
+                <div class="flex items-center gap-3 justify-center bg-slate-950/60 rounded-2xl border border-slate-800 p-3">
+                    <img id="mgMyAvatarImg" alt="" class="w-10 h-10 rounded-full object-cover border border-slate-700 bg-slate-800">
+                    <span class="text-slate-400 font-bold text-xs">Аватар берётся из вашего аккаунта</span>
+                </div>
+            </div>
+            <div id="mgAvatarPicker">
                 <label class="block text-slate-400 font-bold mb-1.5">Выберите аватар:</label>
                 <div class="flex gap-3 justify-center">
                     <button onclick="setAvatar('👨')" id="btnAvatarMan" class="p-3 bg-emerald-600 rounded-2xl text-xl border border-emerald-400 transition active:scale-95">👨 Мужчина</button>
@@ -527,7 +535,10 @@
 
     <div id="miniGameScreen" class="hidden max-w-4xl w-full space-y-5">
         <div class="bg-slate-900/90 backdrop-blur-xl p-4 rounded-2xl border border-slate-800 flex justify-between items-center shadow-lg">
-            <div class="text-sm font-black text-emerald-400 uppercase">🎲 MINI GAME 20$ | Комната: <span id="mgDisplayCode" class="text-white"></span></div>
+            <div class="flex items-center gap-2 flex-wrap">
+                <div class="text-sm font-black text-emerald-400 uppercase">🎲 MINI GAME 20$ | Комната: <span id="mgDisplayCode" class="text-white"></span></div>
+                <button onclick="copyMgCode()" class="inline-flex items-center gap-1.5 px-3 py-1 bg-slate-800 hover:bg-slate-700 border border-slate-700 rounded-lg text-xs font-bold text-slate-300 transition active:scale-95 normal-case">📋 Скопировать код</button>
+            </div>
             <button onclick="backToMenu()" class="px-3 py-1 bg-slate-800 hover:bg-slate-700 rounded-lg text-xs font-bold transition">Выйти</button>
         </div>
 
@@ -948,6 +959,41 @@
         const tgUser = tg && tg.initDataUnsafe && tg.initDataUnsafe.user;
         const googleReady = !!(firebaseConfig.apiKey && firebaseConfig.authDomain);
         let currentUser = null;
+        const GUEST_AVATAR = 'data:image/svg+xml,' + encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><rect width="24" height="24" fill="#475569"/><text x="12" y="17" font-size="14" text-anchor="middle">👤</text></svg>');
+        function safePhoto(u) { return (typeof u === 'string' && /^https:\/\//.test(u) && u.length < 500) ? u : ''; }
+        function myPhoto() { return (currentUser && currentUser.photo) ? safePhoto(currentUser.photo) : ''; }
+        function myPlayerEntry() { return { avatar: myPhoto(), guest: !currentUser || currentUser.provider === 'guest' }; }
+        function isGuest() { return !currentUser || currentUser.provider === 'guest'; }
+        function refreshMgAvatarPicker() {
+            const guest = isGuest();
+            document.getElementById('mgAvatarPicker').classList.toggle('hidden', !guest);
+            document.getElementById('mgAvatarMine').classList.toggle('hidden', guest);
+            if (!guest) setPlayerAvatar('mgMyAvatarImg', myPhoto());
+        }
+        function renderMgAvatar(id, p) {
+            const el = document.getElementById(id);
+            if (!el) return;
+            if (p.guest === false) {
+                const url = safePhoto(p.photo) || GUEST_AVATAR;
+                const old = el.firstElementChild;
+                if (old && old.tagName === 'IMG' && old.dataset.src === url) return;
+                el.textContent = '';
+                const img = document.createElement('img');
+                img.className = 'w-10 h-10 rounded-full object-cover border border-slate-700 bg-slate-800';
+                img.alt = ''; img.dataset.src = url;
+                img.onerror = () => { img.onerror = null; img.src = GUEST_AVATAR; };
+                img.src = url;
+                el.appendChild(img);
+            } else {
+                el.textContent = p.avatar || '👤';
+            }
+        }
+        function setPlayerAvatar(imgId, url) {
+            const el = document.getElementById(imgId);
+            if (!el) return;
+            el.onerror = () => { el.onerror = null; el.src = GUEST_AVATAR; };
+            el.src = safePhoto(url) || GUEST_AVATAR;
+        }
 
         function userRef() { return currentUser && currentUser.key ? db.ref('users/' + currentUser.key) : null; }
 
@@ -977,6 +1023,7 @@
             document.getElementById('profileKind').textContent = { telegram: 'Telegram', google: 'Google', guest: 'Гость · без сохранения' }[provider];
             document.getElementById('profileAvatar').src = info.photo || 'data:image/svg+xml,' + encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><rect width="24" height="24" fill="#475569"/><text x="12" y="17" font-size="14" text-anchor="middle">👤</text></svg>');
             applyName(info.name);
+            refreshMgAvatarPicker();
             favorites = [];
             const r = userRef();
             if (!r) { refreshMusicUI(); return; }
@@ -1016,6 +1063,7 @@
             if (currentUser && currentUser.provider === 'google' && googleReady) firebase.auth().signOut();
             sessionStorage.setItem('noAuto', '1');
             currentUser = null; favorites = [];
+            refreshMgAvatarPicker();
             refreshMusicUI();
             showLogin();
         }
@@ -1103,6 +1151,19 @@
             showToast(`Код комнаты (${currentRoomCode}) скопирован!`);
         }
 
+        function copyMgCode() {
+            playSound('click');
+            if(!mgCode) return;
+            const done = () => showToast(`Код комнаты (${mgCode}) скопирован!`);
+            if (navigator.clipboard && navigator.clipboard.writeText) {
+                navigator.clipboard.writeText(mgCode).then(done).catch(() => showToast('Не удалось скопировать код', 'warn'));
+            } else {
+                const t = document.createElement('textarea'); t.value = mgCode; document.body.appendChild(t); t.select();
+                try { document.execCommand('copy'); done(); } catch (e) { showToast('Не удалось скопировать код', 'warn'); }
+                t.remove();
+            }
+        }
+
         let currentRoomCode = '', playerName = '', playerSide = '', roomRef = null, lastProcessedTimestamp = 0;
         let mgCode = '', mgName = 'Player', mgAvatar = '👨', mgRef = null, isMgSpinning = false, mgLastTs = 0;
         let timerInterval = null;
@@ -1131,13 +1192,13 @@
         const imgTec9 = "https://raw.githubusercontent.com/coffeman170/rap-music/main/TEC-9.png";
         const imgZeus = "https://raw.githubusercontent.com/coffeman170/rap-music/main/Zeus%20x27.png";
         const imgDualBerettas = "https://raw.githubusercontent.com/coffeman170/rap-music/main/dual%20berettas.png";
-        const imgR8 = "https://raw.githubusercontent.com/coffeman170/rap-music/main/" + encodeURIComponent("Револьвер R8.png");
+        const imgR8 = "https://raw.githubusercontent.com/coffeman170/rap-music/main/" + encodeURIComponent("Револвер R8.png");
         const imgM249 = "https://raw.githubusercontent.com/coffeman170/rap-music/main/M249.png";
         const imgNova = "https://raw.githubusercontent.com/coffeman170/rap-music/main/Nova.png";
         const imgXM1014 = "https://raw.githubusercontent.com/coffeman170/rap-music/main/XM1014.png";
         const imgNegev = "https://raw.githubusercontent.com/coffeman170/rap-music/main/" + encodeURIComponent("Негев.png");
         const imgSawedOff = "https://raw.githubusercontent.com/coffeman170/rap-music/main/" + encodeURIComponent("обрез.png");
-        const imgBizon = "https://raw.githubusercontent.com/coffeman170/rap-music/main/" + encodeURIComponent("ПП-19 Бизон.png");
+        const imgBizon = "https://raw.githubusercontent.com/coffeman170/rap-music/main/" + encodeURIComponent("PP-Bizon.png");
         const imgAUG = "https://raw.githubusercontent.com/coffeman170/rap-music/main/AUG.png";
         const imgG3SG1 = "https://raw.githubusercontent.com/coffeman170/rap-music/main/G3SG1.png";
         const imgSCAR20 = "https://raw.githubusercontent.com/coffeman170/rap-music/main/SCAR-20.png";
@@ -1313,7 +1374,7 @@
             roomRef = db.ref('rooms/' + currentRoomCode);
             joinPresence(roomRef, playerName);
             roomRef.set({
-                players: { [playerName]: true },
+                players: { [playerName]: myPlayerEntry() },
                 sides: {}, spinCountCT: 0, spinCountT: 0,
                 itemsCT: [null, null, null], itemsT: [null, null, null],
                 selectedCTIndices: [], selectedTIndices: [],
@@ -1336,7 +1397,7 @@
                     const data = snapshot.val();
                     const players = data.players || {};
                     currentRoomCode = code;
-                    players[playerName] = true;
+                    players[playerName] = myPlayerEntry();
                     joinPresence(roomRef, playerName);
                     roomRef.update({ players, status: 'choosing_sides' }).then(() => {
                         showLobby(code, 'Оба игрока в сборе! Выберите сторону:');
@@ -1558,6 +1619,10 @@
                     document.getElementById('mySideDisplay').className = playerSide === 'CT' ? 'font-bold text-blue-400' : 'font-bold text-amber-400';
                     document.getElementById('playerCTName').innerText = players.find(p => sides[p] === 'CT') || '-';
                     document.getElementById('playerTName').innerText = players.find(p => sides[p] === 'T') || '-';
+                    const _pObj = data.players || {};
+                    const _ctN = players.find(p => sides[p] === 'CT'), _tN = players.find(p => sides[p] === 'T');
+                    setPlayerAvatar('playerCTAvatar', _ctN && _pObj[_ctN] && _pObj[_ctN].avatar);
+                    setPlayerAvatar('playerTAvatar', _tN && _pObj[_tN] && _pObj[_tN].avatar);
                     renderComplicationsUI(data);
 
                     const resetVotesCount = Object.keys(data.resetVotes || {}).length;
@@ -1919,7 +1984,7 @@
             mgRef = db.ref('mgRooms/' + mgCode);
             joinPresence(mgRef, mgName);
             mgRef.set({
-                players: { [mgName]: { name: mgName, avatar: mgAvatar, balance: 20, dice: 0, inventory: [] } },
+                players: { [mgName]: { name: mgName, avatar: mgAvatar, photo: myPhoto(), guest: isGuest(), balance: 20, dice: 0, inventory: [] } },
                 turn: '', phase: 'waiting', currentAuctionItem: null, bidsOnCurrentItem: {}, firstBidDone: false, itemEndTime: 0,
                 lastAuctionWinnerData: null,
                 chat: [{ user: 'Сервер', text: 'Комната создана. Ожидание соперника...' }]
@@ -1937,7 +2002,7 @@
                 if(snapshot.exists()) {
                     const data = snapshot.val();
                     const players = data.players || {};
-                    players[mgName] = { name: mgName, avatar: mgAvatar, balance: 20, dice: 0, inventory: [] };
+                    players[mgName] = { name: mgName, avatar: mgAvatar, photo: myPhoto(), guest: isGuest(), balance: 20, dice: 0, inventory: [] };
                     joinPresence(mgRef, mgName);
                     mgRef.child('players').set(players).then(() => { showMgScreen(mgCode); listenMg(); });
                 } else { showToast('Комната не найдена!'); }
@@ -1991,14 +2056,14 @@
                 if(pKeys.length > 0) {
                     const p1 = players[pKeys[0]];
                     document.getElementById('mgP1Name').innerText = p1.name;
-                    document.getElementById('mgP1Avatar').innerText = p1.avatar;
+                    renderMgAvatar('mgP1Avatar', p1);
                     document.getElementById('mgP1Balance').innerText = '$' + p1.balance;
                     renderInventory('mgP1Inventory', p1.inventory);
                 }
                 if(pKeys.length > 1) {
                     const p2 = players[pKeys[1]];
                     document.getElementById('mgP2Name').innerText = p2.name;
-                    document.getElementById('mgP2Avatar').innerText = p2.avatar;
+                    renderMgAvatar('mgP2Avatar', p2);
                     document.getElementById('mgP2Balance').innerText = '$' + p2.balance;
                     renderInventory('mgP2Inventory', p2.inventory);
                 }
